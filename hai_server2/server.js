@@ -10,6 +10,7 @@ var path = __dirname + '/views/';
 
 app.post('/upload', function(req, res) {
 	console.log("image received");
+	res.send("ok");
 });
 
 app.listen(5000, function(){

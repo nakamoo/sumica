@@ -25,9 +25,8 @@ if __name__ == "__main__":
 
             if k == 27:  # esc
                 break
-
+                
             send(stream.image)
-            time.sleep(1)
         else:
             print("%i: no frame data" % time.time())
             time.sleep(1)

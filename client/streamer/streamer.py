@@ -13,6 +13,7 @@ class Streamer(object):
             thread_stream = threading.Thread(target=self.start_stream)
         else:
             thread_stream = threading.Thread(target=self.start_stream, args=(url,))
+            
         thread_stream.daemon = True
         thread_stream.start()
 

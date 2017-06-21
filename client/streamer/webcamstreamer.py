@@ -10,10 +10,12 @@ class WebcamStream(Streamer):
         super().__init__()
 
     def start_stream(self, size=(640, 480)):
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, size[0]);
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, size[1]);
+
         while True:
             ret, frame = self.cap.read()
             self.image = frame
-
 
 if __name__ == "__main__":
     stream = WebcamStream()

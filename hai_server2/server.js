@@ -1,5 +1,6 @@
 var express = require("express");
 var fs = require('fs');
+var bodyParser = require('body-parser')
 var app = express();
 var path = __dirname + '/views/';
 
@@ -7,7 +8,7 @@ var path = __dirname + '/views/';
   res.sendFile(path + "index.html");
 });*/
 
-app.get('/detect', function(req, res) {
+app.post('/upload', function(req, res) {
 	console.log("image received");
 });
 

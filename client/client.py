@@ -9,7 +9,7 @@ def send(image):
 
     r = requests.post(sys.argv[1], files={'image': open("image.png", "rb")})
 
-    print(r.text)
+    print("response: {}".format(r.text))
 
 if __name__ == "__main__":
     print("ip", sys.argv[1])

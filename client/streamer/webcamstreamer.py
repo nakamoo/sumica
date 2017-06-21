@@ -10,8 +10,6 @@ class WebcamStream(Streamer):
         super().__init__()
 
     def start_stream(self, size=(640, 480)):
-
-
         while True:
             ret, frame = self.cap.read()
             self.image = frame

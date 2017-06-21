@@ -170,4 +170,5 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-
+# node.js modules
+hai_server2/node_modules

@@ -8,6 +8,7 @@ def send(image):
     cv2.imwrite("image.png", image)
 
     r = requests.post(sys.argv[1], files={'image': open("image.png", "rb")})
+
     print(r.text)
 
 if __name__ == "__main__":

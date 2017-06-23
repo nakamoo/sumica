@@ -16,11 +16,11 @@ if __name__ == "__main__":
 
     stream = WebcamStream()
     stream.start_stream_threads()
-    cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("capture", cv2.WINDOW_NORMAL)
 
     while (True):
         if stream.image is not None:
-            cv2.imshow("frame", stream.image)
+            cv2.imshow("capture", stream.image)
             k = cv2.waitKey(1)
 
             if k == 27:  # esc

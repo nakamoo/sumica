@@ -3,9 +3,38 @@ var fs = require('fs');
 var formidable = require('formidable');
 var app = express();
 var zerorpc = require("zerorpc");
+var MongoClient = require('mongodb').MongoClient;
 
 var vision = new zerorpc.Client();
 vision.connect("tcp://127.0.0.1:5001");
+
+var dburl = "mongodb://localhost:27017/hai";
+
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/views/index.html')
+})
+
+app.get('/sendcmd', function (req, res) {
+    MongoClient.connect(dburl, function(err, db) {
+        if (err) throw err;
+        console.log("Database connected; recording command [" + req.query.cmd + "]");
+
+        var d = new Date();
+        var n = d.getTime();
+
+        var data = {time: n, action: req.query.cmd};
+
+        db.collection("actions").insertOne(data, function(err, res) {
+            if (err) throw err;
+            console.log("Command recorded.");
+            db.close();
+        });
+
+        db.close();
+    });
+
+    res.sendFile(__dirname + '/views/index.html')
+})
 
 app.post('/upload', function(req, res) {
 	//console.log("image received");

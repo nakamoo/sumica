@@ -2,15 +2,15 @@ import pymongo
 
 client = pymongo.MongoClient('localhost', 27017)
 
-db = client.imagedb
+db = client.hai
 
-co = db.image_means
+co = db.images
 
-print("current data:")
+#print("current data:")
 
-for data in co.find():
-	print(data)
+#for data in co.find():
+#	print(data)
 
-def save(path, data):
-	print(path, data)
-	co.insert_one({"path": path, "mean": data})
+def save(data):
+	#print(data)
+	co.insert_one(data)

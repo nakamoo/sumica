@@ -23,11 +23,11 @@ cfg_from_list(['ANCHOR_SCALES', '[4,8,16,32]', 'ANCHOR_RATIOS', '[0.5,1,2]'])
 imdb = get_imdb("coco_2014_minival")
 imdb.competition_mode(False)
 
-tfconfig = tf.ConfigProto(device_count={'GPU': 0})
+#tfconfig = tf.ConfigProto(device_count={'GPU': 0})
 #tfconfig.gpu_options.allow_growth=True
 
 # init session
-sess = tf.Session(config=tfconfig)
+sess = tf.Session()
 
 net = resnetv1(batch_size=1, num_layers=101)
 

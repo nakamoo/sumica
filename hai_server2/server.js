@@ -9,6 +9,7 @@ var vision = new zerorpc.Client();
 vision.connect("tcp://127.0.0.1:5001");
 
 var dburl = "mongodb://localhost:27017/hai";
+app.use(express.static(__dirname + '/views'));
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/views/index.html')
@@ -34,6 +35,10 @@ app.get('/sendcmd', function (req, res) {
     });
 
     res.sendFile(__dirname + '/views/index.html')
+})
+
+app.get('/upload', function(req, res) {
+    res.sendFile(__dirname + '/views/upload.html')
 })
 
 app.post('/upload', function(req, res) {

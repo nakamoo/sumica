@@ -54,7 +54,7 @@ def update_loop():
                 ms = int(latest_img.split("/")[-1][:-4])
                 d = datetime.datetime.utcfromtimestamp(ms/1000.0)
 
-                state = {"path": path, "time": d, "detections": dets}
+                state = {"path": latest_img, "time": d, "detections": dets}
 
                 actor.act(state)
 

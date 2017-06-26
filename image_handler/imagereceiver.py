@@ -2,7 +2,7 @@ import zerorpc
 import imageparser
 import imagedb
 import os
-import thread
+import _thread as thread
 import cv2
 import numpy as np
 import json
@@ -11,7 +11,7 @@ from PIL import Image
 CLEAR_IMGS = True
 VISUALIZE = True
 
-image_dir = "../hai_server2/images"
+image_dir = "../hai_server2/images/"
 img_paths = []
 
 class HelloRPC(object):
@@ -44,7 +44,8 @@ def update_loop():
             if os.path.isfile(latest_img):
                 dets = imageparser.detect(latest_img)
                 timestamp = int(latest_img.split("/")[-1][:-4])
-                imagedb.save({"path": path, "time": timestamp, "detections": dets})
+                # imagedb.save({"path": path, "time": timestamp, "detections": dets})
+                imagedb.save({"path": latest_img, "time": timestamp, "detections": dets})
 
                 if VISUALIZE:
                     img = Image.open(latest_img)

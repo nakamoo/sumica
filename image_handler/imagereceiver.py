@@ -2,7 +2,7 @@ import zerorpc
 import imageparser
 import imagedb
 import os
-import thread
+import _thread as thread
 import cv2
 import numpy as np
 import json
@@ -13,7 +13,7 @@ import baseline1
 CLEAR_IMGS = True
 VISUALIZE = True
 
-image_dir = "../hai_server2/images"
+image_dir = "../hai_server2/images/"
 img_paths = []
 
 actor = baseline1.Actor()

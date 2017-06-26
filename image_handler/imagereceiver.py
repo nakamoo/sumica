@@ -7,12 +7,16 @@ import cv2
 import numpy as np
 import json
 from PIL import Image
+import datetime
+import baseline1
 
 CLEAR_IMGS = True
 VISUALIZE = True
 
 image_dir = "../hai_server2/images/"
 img_paths = []
+
+actor = baseline1.Actor()
 
 class HelloRPC(object):
     def newimage(self, path):
@@ -21,6 +25,10 @@ class HelloRPC(object):
         img_paths.append(path)
 
         return "ok"#str(mean)
+
+    def newcommand(self, cmd):
+        actor.rebuild()
+        return "ok"
 
 if CLEAR_IMGS:
     print("deleting {} images".format(len(os.listdir(image_dir))))
@@ -43,9 +51,14 @@ def update_loop():
             
             if os.path.isfile(latest_img):
                 dets = imageparser.detect(latest_img)
-                timestamp = int(latest_img.split("/")[-1][:-4])
-                # imagedb.save({"path": path, "time": timestamp, "detections": dets})
-                imagedb.save({"path": latest_img, "time": timestamp, "detections": dets})
+                ms = int(latest_img.split("/")[-1][:-4])
+                d = datetime.datetime.utcfromtimestamp(ms/1000.0)
+
+                state = {"path": latest_img, "time": d, "detections": dets}
+
+                actor.act(state)
+
+                imagedb.save(state)
 
                 if VISUALIZE:
                     img = Image.open(latest_img)

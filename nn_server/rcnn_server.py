@@ -48,7 +48,7 @@ def detect():
     elif image.shape[2] == 1:
         image = np.repeat(image, 3, 2)
 
-    dets, image = rcnn.detect(image, conf_thresh=0.5, get_image=True)
+    dets, image = rcnn.detect(image, conf_thresh=0.7, get_image=True)
 
     return json.dumps(dets), image
 

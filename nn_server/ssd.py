@@ -76,9 +76,12 @@ def display(image, classes, scores, boxes):
         cv2.putText(frame, c, (b[0], b[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
         cv2.rectangle(frame, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
 
+    cv2.imshow("frame", frame[..., [2,1,0]])
+    cv2.waitKey(1)
+
     return frame
 
-def detect(image, conf_thresh=0.5, nms_thresh=0.45, get_image=False):
+def detect(image, conf_thresh=0.3, nms_thresh=0.45, get_image=False):
     rclasses, rscores, rbboxes =  process_image(image, select_threshold=conf_thresh, nms_threshold=nms_thresh)
 
     boxes = []
@@ -94,9 +97,9 @@ def detect(image, conf_thresh=0.5, nms_thresh=0.45, get_image=False):
 
     all_boxes = []
     for label, box, confidence in zip(rclasses, boxes, rscores):
-        all_boxes.append({"label": label, "box": box, "confidence": confidence})
+        all_boxes.append({"label": label, "box": box, "confidence": float(confidence)})
 
-    frame = display(img, rclasses, rscores, boxes)
+    frame = display(image, rclasses, rscores, boxes)
 
     if get_image:
         return all_boxes, frame

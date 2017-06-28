@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 import re
 import os
-import rcnn
+import ssd as nn
 import json
 from PIL import Image
 import numpy as np
@@ -48,7 +48,7 @@ def detect():
     elif image.shape[2] == 1:
         image = np.repeat(image, 3, 2)
 
-    dets, image = rcnn.detect(image, conf_thresh=0.7, get_image=True)
+    dets, image = nn.detect(image, get_image=True)
 
     return json.dumps(dets), image
 

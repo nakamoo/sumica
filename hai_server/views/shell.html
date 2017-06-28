@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Landing Page</title>
+<title>Open URL</title>
 <meta charset="utf-8">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -10,10 +10,11 @@
 <body>
     <div class="container">
     	<div class="row">
-                <h1>Landing Page (Client Side)</h1>
-            	<a href="./upload">upload</a>: Access webcam and send images
-            	<br>
-            	<a href="./shell">shell</a>: Send a shell command
+                <h1>Open URL Command</h1>
+            	<form action="/sendshellcmd" method="post">
+                    <input type="text" name="cmd">
+                    <input type="submit" class="btn btn-primary" value="Send">
+                </form>
     	</div>
     </div>
 </body>

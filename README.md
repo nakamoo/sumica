@@ -7,7 +7,7 @@
 * (in hai_server) ```node server.js```
 * (in image_handler) ```python imagereceiver.py```
 * (in nn_server) ```python detect_server.py```
-* (in client) ```python client.py http://127.0.0.1:5000/upload```
+* (in client) ```python client.py http://server_address:5000/upload```
 
 ## schematic
 ![](images/diagram.png)

@@ -7,6 +7,7 @@ import datetime
 from sklearn import neighbors
 from subprocess import call
 from subprocess import Popen
+import actionmanager as acts
 
 client = MongoClient('localhost', 27017)
 
@@ -108,13 +109,7 @@ class Actor:
 				msg = self.dataset.class_names[self.execute]
 				print(msg)
 
-				try:
-					Popen(msg, shell=True)
-					#call(msg, shell=True)
-				except Exception as e:
-					print("command error")
-					print(e)
-
+				acts.execute(msg)
 
 			if len(self.action_history) > 100:
 				self.action_history = self.action_history[-50:]

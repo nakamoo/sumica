@@ -48,7 +48,7 @@ def detect():
     elif image.shape[2] == 1:
         image = np.repeat(image, 3, 2)
 
-    dets, image = rcnn.detect(image, conf_thresh=0.7, get_image=True)
+    dets, image = rcnn.detect(image, get_image=True)
 
     return json.dumps(dets), image
 
@@ -64,4 +64,4 @@ def process_image():
 
 if __name__ == "__main__":
     #context = (cer, key)
-    app.run(host='localhost', threaded=True, use_reloader=False, debug=True, port=5002)
+    app.run(host='localhost', threaded=False, use_reloader=False, debug=True, port=5002)

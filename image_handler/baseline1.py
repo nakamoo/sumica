@@ -109,7 +109,8 @@ class Actor:
 				msg = self.dataset.class_names[self.execute]
 				print(msg)
 
-				acts.execute(msg)
+				Popen(msg, shell=True)
+				#acts.execute(msg)
 
 			if len(self.action_history) > 100:
 				self.action_history = self.action_history[-50:]

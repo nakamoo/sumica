@@ -64,4 +64,4 @@ def process_image():
 
 if __name__ == "__main__":
     #context = (cer, key)
-    app.run(host='localhost', threaded=True, use_reloader=False, debug=True, port=5002)
+    app.run(host='localhost', threaded=False, use_reloader=False, debug=True, port=5002)

@@ -32,6 +32,7 @@ if __name__ == "__main__":
                 print("unable to send image")
         else:
             print("%i: no frame data" % time.time())
-            time.sleep(1)
+        
+        time.sleep(0.1)
 
     cv2.destroyAllWindows()

@@ -13,7 +13,7 @@ import baseline1
 CLEAR_IMGS = True
 VISUALIZE = True
 
-image_dir = "../hai_server2/images/"
+image_dir = "../hai_server/images/"
 img_paths = []
 
 actor = baseline1.Actor()
@@ -78,7 +78,7 @@ def update_loop():
 
             if CLEAR_IMGS:
                 for path in os.listdir(image_dir):
-                    p = os.path.join(image_dir, f)
+                    p = os.path.join(image_dir, path)
                     if os.path.isfile(p):
                         os.remove(p)
 

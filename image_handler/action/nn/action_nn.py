@@ -8,26 +8,26 @@ from subprocess import Popen
 import actor
 import time
 
+imdb = get_imdb("coco_2014_minival")
+
 class Dataset:
 	def __init__(self):
 		self.update()
 
 	def transform(self, x):
 		dets = json.loads(x["detections"])
+		X = []
 
-		max_area = 0
-		pt = None
 		for det in dets:
-			if det["label"] == "person":
-				#print(det)
-				area = (det["box"][2]-det["box"][0])*(det["box"][3]-det["box"][1])
-				if area > max_area:
-					cX = (det["box"][0] + det["box"][2]) / 2.0
-					cY = (det["box"][1] + det["box"][3]) / 2.0
-					max_area = area
-					pt = (cX, cY)
+			class_i = imdb.class_names.index(det["label"])
+			class_vec = np.zeros([imdb.classes])
+			class_vec[class_i] = 1
+			box_vec = np.array(det["box"])
+			fin_vec = np.concat([class_vec, box_vec], axis=0)
 
-		return pt
+			X.append(fin_vec)
+
+		return np.array(X)
 
 	def update(self):
 		self.X = []
@@ -48,16 +48,15 @@ class Dataset:
 				tmpX.append(r)
 				tmpY.append(action)
 
-		for img, y in zip(tmpX, tmpY):
-			pt = self.transform(img)
+		for img_data, y in zip(tmpX, tmpY):
+			x = self.transform(img_data)
 
-			if pt:
-				self.X.append([pt[0], pt[1]])
-				y_names.append(y["action"])
+			self.X.append(x)
+			y_names.append(y["action"])
 
 		self.class_names = list(set(y_names))
 
-		for y in y_names:
+		for y in tmpY:
 			self.Y.append(self.class_names.index(y))
 
 class NNActor(actor.Actor):
@@ -108,19 +107,3 @@ class NNActor(actor.Actor):
 
 			if len(self.action_history) > 100:
 				self.action_history = self.action_history[-50:]
-
-if __name__ == "__main__":
-	test = NNActor()
-
-	for i in range(100):
-		x1, y1 = np.random.randint(600, size=2)
-		x2, y2 = x1 + np.random.randint(100), y1 + np.random.randint(100)
-		state = {"path": "", "time": time.time()}
-
-		det = [{"label":"person", "box":[int(x1), int(y1), int(x2), int(y2)], "confidence":0.83}]
-		state["detections"] = json.dumps(det)
-
-		test.act(state)
-
-		time.sleep(0.1)
-		print(i)

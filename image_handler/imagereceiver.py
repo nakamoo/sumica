@@ -8,7 +8,7 @@ import numpy as np
 import json
 from PIL import Image
 import datetime
-import baseline1
+import action.baseline1 as baseline1
 
 CLEAR_IMGS = True
 VISUALIZE = True
@@ -16,7 +16,7 @@ VISUALIZE = True
 image_dir = "../hai_server/images/"
 img_paths = []
 
-actor = baseline1.Actor()
+actor = baseline1.BaselineActor()
 
 class HelloRPC(object):
     def newimage(self, path):

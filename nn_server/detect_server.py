@@ -12,12 +12,16 @@ app = Flask(__name__)
 
 import re
 import os
-import ssd as nn
 import json
 from PIL import Image
 import numpy as np
 from io import BytesIO
 import cv2
+
+if len(sys.argv) == 2 and sys.argv[1] == "ssd":
+    import ssd as nn
+else:
+    import rcnn as nn
 
 #from OpenSSL import SSL
 

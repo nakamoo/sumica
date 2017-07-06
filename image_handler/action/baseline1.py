@@ -5,7 +5,7 @@ import datetime
 from sklearn import neighbors
 from subprocess import call
 from subprocess import Popen
-import actor
+from . import actor
 import time
 import json
 

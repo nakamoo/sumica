@@ -41,7 +41,7 @@ saver = tf.train.Saver()
 saver.restore(sess, model_ckpt)
 print('Loaded.')
 
-def detect(image, conf_thresh=0.7, nms_thresh=0.3, get_image=False):
+def detect(image, conf_thresh=0.7, nms_thresh=0.5, get_image=False):
     all_boxes = []
     frame = image
     scores, boxes = im_detect(sess, net, frame)

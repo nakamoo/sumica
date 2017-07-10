@@ -25,26 +25,26 @@ app.get('/upload', function(req, res) {
     res.sendFile(__dirname + '/views/upload.html')
 })
 
-app.get('/shell', function(req, res) {
+app.get('/general', function(req, res) {
     res.sendFile(__dirname + '/views/shell.html')
 })
 
 // to-server operations
 
-app.post('/sendshellcmd', function (req, res) {
+app.post('/record_act', function (req, res) {
     MongoClient.connect(dburl, function(err, db) {
         if (err) throw err;
-        console.log("Database connected; recording command [" + req.body.cmd + "]");
+        console.log("Database connected; recording command [" + req.body.app + ": " + req.body.cmd + "]");
 
         var d = moment().toDate();
 
-        var data = {time: d, action: req.body.cmd};
+        var data = {time: d, app: req.body.app, action: req.body.cmd};
 
         db.collection("actions").insertOne(data, function(err, res) {
             if (err) throw err;
             console.log("Command recorded.");
 
-            vision.invoke("newcommand", req.body.cmd, function(error, res, more) {});
+            vision.invoke("new_act", JSON.stringify(data), function(error, res, more) {});
             db.close();
         });
 

@@ -1,3 +1,7 @@
+#import sys
+#sys.path.insert(0, '../../tf-faster-rcnn/tools')
+#sys.path.insert(0, '../../tf-faster-rcnn/lib')
+#sys.path.insert(0, '../../tf-faster-rcnn/data/coco/PythonAPI')
 import json
 import cv2
 import numpy as np
@@ -5,10 +9,20 @@ import datetime
 from sklearn import neighbors
 from subprocess import call
 from subprocess import Popen
-import actor
+from .. import actor
 import time
+from .bagger_model import BaggerModel
+import cv2
 
-imdb = get_imdb("coco_2014_minival")
+object_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus','train',
+	'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter','bench', 'bird', 'cat',
+	'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack','umbrella', 'handbag',
+	'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite','baseball bat', 'baseball glove',
+	'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+	'banana', 'apple', 'sandwich', 'orange', 'broccoli','carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+	'potted plant', 'bed', 'dining table','toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+	'microwave', 'oven','toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier','toothbrush']
+classes = 80
 
 class Dataset:
 	def __init__(self):
@@ -19,15 +33,15 @@ class Dataset:
 		X = []
 
 		for det in dets:
-			class_i = imdb.class_names.index(det["label"])
-			class_vec = np.zeros([imdb.classes])
+			class_i = object_names.index(det["label"])
+			class_vec = np.zeros([classes])
 			class_vec[class_i] = 1
 			box_vec = np.array(det["box"])
-			fin_vec = np.concat([class_vec, box_vec], axis=0)
+			fin_vec = np.concatenate([class_vec, box_vec], axis=0)
 
 			X.append(fin_vec)
 
-		return np.array(X)
+		return np.array(X, dtype=np.float32)
 
 	def update(self):
 		self.X = []
@@ -46,18 +60,21 @@ class Dataset:
 
 			for r in results:
 				tmpX.append(r)
-				tmpY.append(action)
+				tmpY.append((action["app"], action["action"]))
 
 		for img_data, y in zip(tmpX, tmpY):
 			x = self.transform(img_data)
 
 			self.X.append(x)
-			y_names.append(y["action"])
+
+			y_names.append(y)
 
 		self.class_names = list(set(y_names))
 
 		for y in tmpY:
 			self.Y.append(self.class_names.index(y))
+
+		print(self.class_names)
 
 class NNActor(actor.Actor):
 	def __init__(self):
@@ -72,7 +89,10 @@ class NNActor(actor.Actor):
 		if len(self.dataset.class_names) <= 0:
 			return
 
-		# update NN
+		print("rebuilt")
+		print("training actor")
+		self.model = BaggerModel(self.dataset)
+		print("training complete.")
 
 	def observe_state(self, state):
 		pass
@@ -86,24 +106,41 @@ class NNActor(actor.Actor):
 
 		state = self.dataset.transform(state)
 
-		if state:
-			#pred_y = self.clf.predict([state])[0]
-			self.action_history.append(pred_y)
+		pred_y, probs = self.model.predict([state])#[0]
+		self.action_history.append(pred_y)
+		probs = probs[0]
 
-			repeated = True
+		print(["{}:{}".format(str(self.dataset.class_names[i]), probs[i]) for i in range(len(probs))])
+		print(self.dataset.class_names[pred_y])
 
-			for a, b in zip(self.action_history[-5:-1], self.action_history[-4:]):
-				if a != b:
-					repeated = False
-					break
+		canvas = np.zeros([300, 300, 3])
+		cv2.putText(canvas, str(self.dataset.class_names[self.execute]), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, 255)
+		cv2.imshow("m", canvas)
+		cv2.waitKey(1)
 
-			if repeated and self.execute != self.action_history[-1]:
-				self.execute = self.action_history[-1]
-				msg = self.dataset.class_names[self.execute]
-				print(msg)
+		repeated = True
 
-				#Popen(msg, shell=True)
-				#acts.execute(msg)
+		for a, b in zip(self.action_history[-5:-1], self.action_history[-4:]):
+			if a != b:
+				repeated = False
+				break
 
-			if len(self.action_history) > 100:
-				self.action_history = self.action_history[-50:]
+		if repeated and self.execute != self.action_history[-1]:
+			self.execute = self.action_history[-1]
+			msg = self.dataset.class_names[self.execute]
+			print(msg)
+
+			#Popen(msg, shell=True)
+			#acts.execute(msg)
+
+		if len(self.action_history) > 100:
+			self.action_history = self.action_history[-50:]
+
+if __name__ == "__main__":
+	dataset = Dataset()
+
+	canvas = cv2.zeros([600, 800, 3])
+
+	for x, y in zip(dataset.X, dataset.Y):
+		print(x)
+		print(y)

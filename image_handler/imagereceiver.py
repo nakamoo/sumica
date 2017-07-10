@@ -9,14 +9,15 @@ import json
 from PIL import Image
 import datetime
 import action.baseline1 as baseline1
+import action.nn.action_nn as action_nn
 
 CLEAR_IMGS = True
-VISUALIZE = True
+VISUALIZE = False
 
 image_dir = "../hai_server/images/"
 img_paths = []
 
-actor = baseline1.BaselineActor()
+actor = action_nn.NNActor()#baseline1.BaselineActor()
 
 class HelloRPC(object):
     def newimage(self, path):
@@ -26,7 +27,7 @@ class HelloRPC(object):
 
         return "ok"#str(mean)
 
-    def newcommand(self, cmd):
+    def new_act(self, data):
         actor.rebuild()
         return "ok"
 

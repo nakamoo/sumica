@@ -105,7 +105,7 @@ class BaselineActor(actor.Actor):
 				msg = self.dataset.class_names[self.execute]
 				print(msg)
 
-				Popen(msg, shell=True)
+				#Popen(msg, shell=True)
 				#acts.execute(msg)
 
 			if len(self.action_history) > 100:

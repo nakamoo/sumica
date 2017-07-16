@@ -10,6 +10,7 @@ from PIL import Image
 import datetime
 import action.baseline1 as baseline1
 import action.nn.action_nn as action_nn
+from actions.doer import do_action
 
 CLEAR_IMGS = True
 VISUALIZE = False
@@ -28,6 +29,9 @@ class HelloRPC(object):
         return "ok"#str(mean)
 
     def new_act(self, data):
+        data = json.loads(data)
+        print(data)
+        do_action(data["app"], data["action"])
         actor.rebuild()
         return "ok"
 
@@ -57,7 +61,11 @@ def update_loop():
 
                 state = {"path": latest_img, "time": d, "detections": dets}
 
-                actor.act(state)
+                act = actor.act(state)
+                print(act)
+
+                if act is not None:
+                    do_action(act[0], act[1])
 
                 imagedb.save(state)
 

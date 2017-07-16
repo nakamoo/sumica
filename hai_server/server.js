@@ -25,7 +25,7 @@ app.get('/upload', function(req, res) {
     res.sendFile(__dirname + '/views/upload.html')
 })
 
-app.get('/general', function(req, res) {
+app.get('/shell', function(req, res) {
     res.sendFile(__dirname + '/views/shell.html')
 })
 

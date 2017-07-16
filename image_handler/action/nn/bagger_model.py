@@ -93,12 +93,12 @@ class BaggerModel():
 			if loss.data[0] <= 0:
 				break
 
-			if loss.data[0] / min_loss < 0.9:
+			if loss.data[0] / min_loss < 0.5:
 				min_loss = loss.data[0]
 				patience = 0
 				print("RESET")
 
-			if patience > 100 and accuracy > 0.9:
+			if patience > 100:
 				break
 
 	def predict(self, state):

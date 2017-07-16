@@ -78,9 +78,10 @@ class Dataset:
 
 class NNActor(actor.Actor):
 	def __init__(self):
-		self.rebuild()
 		self.execute = -1
 		self.action_history = []
+		self.model = None
+		self.rebuild()
 
 	def rebuild(self):
 		print("rebuilding")
@@ -91,6 +92,10 @@ class NNActor(actor.Actor):
 
 		print("rebuilt")
 		print("training actor")
+
+		if self.model is not None:
+			return
+
 		self.model = BaggerModel(self.dataset)
 		print("training complete.")
 
@@ -125,16 +130,16 @@ class NNActor(actor.Actor):
 				repeated = False
 				break
 
+		msg = None
+
 		if repeated and self.execute != self.action_history[-1]:
 			self.execute = self.action_history[-1]
 			msg = self.dataset.class_names[self.execute]
-			print(msg)
-
-			#Popen(msg, shell=True)
-			#acts.execute(msg)
 
 		if len(self.action_history) > 100:
 			self.action_history = self.action_history[-50:]
+
+		return msg
 
 if __name__ == "__main__":
 	dataset = Dataset()

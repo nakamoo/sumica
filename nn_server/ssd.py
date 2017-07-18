@@ -10,7 +10,6 @@ slim = tf.contrib.slim
 
 import sys
 sys.path.insert(0, '../../SSD-Tensorflow')
-
 from nets import ssd_vgg_300, ssd_common, np_methods
 from preprocessing import ssd_vgg_preprocessing
 from notebooks import visualization

@@ -8,15 +8,17 @@ import numpy as np
 import json
 from PIL import Image
 import datetime
-import baseline1
+import action.baseline1 as baseline1
+import action.nn.action_nn as action_nn
+from actions.doer import do_action
 
 CLEAR_IMGS = True
-VISUALIZE = True
+VISUALIZE = False
 
 image_dir = "../hai_server/images/"
 img_paths = []
 
-actor = baseline1.Actor()
+actor = action_nn.NNActor()#baseline1.BaselineActor()
 
 class HelloRPC(object):
     def newimage(self, path):
@@ -26,7 +28,10 @@ class HelloRPC(object):
 
         return "ok"#str(mean)
 
-    def newcommand(self, cmd):
+    def new_act(self, data):
+        data = json.loads(data)
+        print(data)
+        do_action(data["app"], data["action"])
         actor.rebuild()
         return "ok"
 
@@ -56,7 +61,11 @@ def update_loop():
 
                 state = {"path": latest_img, "time": d, "detections": dets}
 
-                actor.act(state)
+                act = actor.act(state)
+                print(act)
+
+                if act is not None:
+                    do_action(act[0], act[1])
 
                 imagedb.save(state)
 

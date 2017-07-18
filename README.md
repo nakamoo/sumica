@@ -16,4 +16,5 @@
 * 5000: website <-> server
 * 5001: server.js <-> imagereceiver.py
 * 5002: object detection server
+* 5003: imagereceiver.py <-> actionserver.py
 * 27017: mongodb

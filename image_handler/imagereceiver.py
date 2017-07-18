@@ -11,6 +11,7 @@ import datetime
 import action.baseline1 as baseline1
 import action.nn.action_nn as action_nn
 from actions.doer import do_action
+import requests
 
 CLEAR_IMGS = True
 VISUALIZE = False
@@ -40,6 +41,11 @@ if CLEAR_IMGS:
     for f in os.listdir(image_dir):
         os.remove(os.path.join(image_dir, f))
 
+def detect(path):
+    r = requests.post("http://localhost:5002/detect", files={'image': open(path, "rb")})
+    
+    return r.text
+
 def update_loop():
     global img_paths
 
@@ -55,7 +61,7 @@ def update_loop():
             img_paths = []
             
             if os.path.isfile(latest_img):
-                dets = imageparser.detect(latest_img)
+                dets = detect(latest_img)
                 ms = int(latest_img.split("/")[-1][:-4])
                 d = datetime.datetime.utcfromtimestamp(ms/1000.0)
 

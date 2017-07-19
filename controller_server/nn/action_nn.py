@@ -9,7 +9,7 @@ import datetime
 from sklearn import neighbors
 from subprocess import call
 from subprocess import Popen
-from .. import actor
+import actor
 import time
 from .bagger_model import BaggerModel
 import cv2
@@ -29,7 +29,7 @@ class Dataset:
 		self.update()
 
 	def transform(self, x):
-		dets = json.loads(x["detections"])
+		dets = x["detections"]
 		X = []
 
 		for det in dets:
@@ -54,11 +54,13 @@ class Dataset:
 		images = actor.hai_db.images
 
 		for action in actions.find():
+			print(action)
 			isoDate = action["time"]
 			before = isoDate - datetime.timedelta(seconds=10)#minutes=1)
 			results = images.find({"time":{"$gte": before, "$lt": isoDate}})
 
 			for r in results:
+				print(r)
 				tmpX.append(r)
 				tmpY.append((action["app"], action["action"]))
 
@@ -112,6 +114,7 @@ class NNActor(actor.Actor):
 		state = self.dataset.transform(state)
 
 		pred_y, probs = self.model.predict([state])#[0]
+		pred_y = pred_y[0]
 		self.action_history.append(pred_y)
 		probs = probs[0]
 

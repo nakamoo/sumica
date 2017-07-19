@@ -62,7 +62,7 @@ app.post('/upload', function(req, res) {
 		var oldpath = files.image.path;
 		var d = moment().toDate();
         //console.log(d);
-      	var newpath = __dirname + '/images/' + d.getTime() + ".png";
+      	var newpath = __dirname + '/../captures/' + d.getTime() + ".png";
 
       	fs.readFile(oldpath, function (err, data) {
             if (err) throw err;

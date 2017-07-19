@@ -4,17 +4,18 @@
 * ```npm install```
 
 ## complete launch
-* (in hai_server) ```node server.js```
-* (in image_handler) ```python imagereceiver.py```
-* (in nn_server) ```python detect_server.py```
-* (in client) ```python client.py http://server_address:5000/upload```
+* (in recognition_server) ```python detect_server.py```
+* (in controller_server) ```python control_server.py```
+* (in actor_server) ```python receiver.py```
+* (in interface_server) ```node server.js```
+* (in cam) ```python client.py```
 
 ## schematic
 ![](images/diagram.png)
 
 ## ports
-* 5000: website <-> server
-* 5001: server.js <-> imagereceiver.py
+* 5000: website <-> interface server
+* 5001: interface server <-> actor server
 * 5002: object detection server
-* 5003: imagereceiver.py <-> actionserver.py
+* 5003: action prediction server
 * 27017: mongodb

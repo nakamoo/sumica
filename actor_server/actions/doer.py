@@ -8,3 +8,5 @@ def do_action(app, cmd):
 		Popen("{}".format(cmd), shell=True)
 	elif app == "print":
 		print(cmd)
+	elif app == "sound":
+		Popen("play ../sounds/{}".format(cmd), shell=True)

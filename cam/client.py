@@ -41,8 +41,8 @@ if __name__ == "__main__":
             thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
             #cv2.imshow("diff", thresh)
 
-            if np.sum(thresh) <= 0:
-                skip = True
+            #if np.sum(thresh) <= 0:
+            #    skip = True
 
             if not skip:
                 cv2.imshow("capture", stream.image)

@@ -10,7 +10,7 @@ import datetime
 from actions.doer import do_action
 import requests
 
-CLEAR_IMGS = True
+CLEAR_IMGS = False
 VISUALIZE = False
 
 image_dir = "../captures"
@@ -44,7 +44,10 @@ def detect(path):
 def control(state):
     r = requests.post("http://localhost:5003/control", json={'state': state})
     
-    return json.loads(r.text)
+    if r == "null":
+        return None
+    else:
+        return json.loads(r.text) 
 
 def update_loop():
     global img_paths
@@ -70,8 +73,9 @@ def update_loop():
                 try:
                     act = control(state)
 
-                    if act != "null":
-                        do_action(act["app"], act["cmd"])
+                    if act is not None:
+                        for a in act:
+                            do_action(a["app"], a["cmd"])
 
                     state["time"] = d
                     imagedb.save(state)

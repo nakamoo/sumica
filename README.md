@@ -10,6 +10,9 @@
 * (in interface_server) ```node server.js```
 * (in cam) ```python client.py```
 
+## example console image
+![](images/launch_console.png)
+
 ## schematic
 ![](images/diagram.png)
 

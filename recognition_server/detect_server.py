@@ -1,5 +1,4 @@
 import flask
-import cv2
 import scipy.misc
 import sys
 

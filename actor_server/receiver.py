@@ -1,5 +1,4 @@
 import zerorpc
-import imageparser
 import imagedb
 import os
 import _thread as thread
@@ -8,18 +7,14 @@ import numpy as np
 import json
 from PIL import Image
 import datetime
-import action.baseline1 as baseline1
-import action.nn.action_nn as action_nn
 from actions.doer import do_action
 import requests
 
-CLEAR_IMGS = True
+CLEAR_IMGS = False
 VISUALIZE = False
 
-image_dir = "../hai_server/images/"
+image_dir = "../captures"
 img_paths = []
-
-actor = action_nn.NNActor()#baseline1.BaselineActor()
 
 class HelloRPC(object):
     def newimage(self, path):
@@ -33,7 +28,7 @@ class HelloRPC(object):
         data = json.loads(data)
         print(data)
         do_action(data["app"], data["action"])
-        actor.rebuild()
+        requests.post("http://localhost:5003/rebuild")
         return "ok"
 
 if CLEAR_IMGS:
@@ -44,7 +39,15 @@ if CLEAR_IMGS:
 def detect(path):
     r = requests.post("http://localhost:5002/detect", files={'image': open(path, "rb")})
     
-    return r.text
+    return json.loads(r.text)
+
+def control(state):
+    r = requests.post("http://localhost:5003/control", json={'state': state})
+    
+    if r == "null":
+        return None
+    else:
+        return json.loads(r.text) 
 
 def update_loop():
     global img_paths
@@ -65,15 +68,19 @@ def update_loop():
                 ms = int(latest_img.split("/")[-1][:-4])
                 d = datetime.datetime.utcfromtimestamp(ms/1000.0)
 
-                state = {"path": latest_img, "time": d, "detections": dets}
+                state = {"path": latest_img, "time": ms, "detections": dets}
 
-                act = actor.act(state)
-                print(act)
+                try:
+                    act = control(state)
 
-                if act is not None:
-                    do_action(act[0], act[1])
+                    if act is not None:
+                        for a in act:
+                            do_action(a["app"], a["cmd"])
 
-                imagedb.save(state)
+                    state["time"] = d
+                    imagedb.save(state)
+                except:
+                    print("no response from control server")
 
                 if VISUALIZE:
                     img = Image.open(latest_img)

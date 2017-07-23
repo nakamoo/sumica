@@ -62,7 +62,7 @@ app.post('/upload', function(req, res) {
 		var oldpath = files.image.path;
 		var d = moment().toDate();
         //console.log(d);
-      	var newpath = __dirname + '/images/' + d.getTime() + ".png";
+      	var newpath = __dirname + '/../captures/' + d.getTime() + ".png";
 
       	fs.readFile(oldpath, function (err, data) {
             if (err) throw err;
@@ -74,14 +74,18 @@ app.post('/upload', function(req, res) {
                 //console.log('File written!');		
 
 				vision.invoke("newimage", newpath, function(error, res, more) {
-					//console.log(res.toString('utf8'))
+					if (error) {
+                        fs.unlink(newpath, function (err) {
+                            console.log("error; deleting captured image");
+                            if (err) throw err;
+                        });
+                    }
 				});
             });
 
             // Delete the file
             fs.unlink(oldpath, function (err) {
                 if (err) throw err;
-                //console.log('File deleted!');
             });
         });
     });

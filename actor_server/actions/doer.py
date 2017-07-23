@@ -6,3 +6,7 @@ def do_action(app, cmd):
 		Popen("node actions/youtube.js {}".format(cmd), shell=True)
 	elif app == "shell":
 		Popen("{}".format(cmd), shell=True)
+	elif app == "print":
+		print(cmd)
+	elif app == "sound":
+		Popen("play ../sounds/{}".format(cmd), shell=True)

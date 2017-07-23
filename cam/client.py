@@ -5,15 +5,20 @@ import requests
 import sys
 import numpy as np
 
-def send(image):
+def send(image, ip):
     cv2.imwrite("image.png", image)
 
-    r = requests.post(sys.argv[1], files={'image': open("image.png", "rb")})
+    r = requests.post(ip, files={'image': open("image.png", "rb")})
 
     #print("response: {}".format(r.text))
 
 if __name__ == "__main__":
-    print("ip", sys.argv[1])
+    if len(sys.argv) == 2:
+        ip = sys.argv[1]
+    else:
+        ip = "http://localhost:5000/upload"
+
+    print("ip", ip)
 
     stream = WebcamStream()
     stream.start_stream_threads()
@@ -36,8 +41,8 @@ if __name__ == "__main__":
             thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
             #cv2.imshow("diff", thresh)
 
-            if np.sum(thresh) <= 0:
-                skip = True
+            #if np.sum(thresh) <= 0:
+            #    skip = True
 
             if not skip:
                 cv2.imshow("capture", stream.image)
@@ -48,7 +53,7 @@ if __name__ == "__main__":
                     break
                     
                 try:
-                    send(stream.image)
+                    send(stream.image, ip)
                 except:
                     print("unable to send image")
             else:

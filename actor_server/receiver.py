@@ -16,6 +16,11 @@ VISUALIZE = False
 image_dir = "../captures"
 img_paths = []
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--detect_ip", default="localhost")
+args = parser.parse_args()
+
 class HelloRPC(object):
     def newimage(self, path):
         #print("new image: {}".format(path))
@@ -37,7 +42,7 @@ class HelloRPC(object):
 #        os.remove(os.path.join(image_dir, f))
 
 def detect(path):
-    r = requests.post("http://localhost:5002/detect", files={'image': open(path, "rb")})
+    r = requests.post("http://{}:5002/detect".format(args.detect_ip), files={'image': open(path, "rb")})
     
     return json.loads(r.text)
 

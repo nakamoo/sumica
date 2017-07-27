@@ -104,7 +104,8 @@ def update():
 
                     state["time"] = d
                     imagedb.save(state)
-                except:
+                except Exception as e:
+                    print(e)
                     print("no response from control server")
 
                 if VISUALIZE:

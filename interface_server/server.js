@@ -60,7 +60,7 @@ app.post('/upload', function(req, res) {
 	var form = new formidable.IncomingForm();
 	form.parse(req, function (err, fields, files) {
 		var oldpath = files.image.path;
-		var d = moment().toDate();
+		var d = moment().utc().toDate();
         //console.log(d);
       	var newpath = __dirname + '/../captures/' + d.getTime() + ".png";
 

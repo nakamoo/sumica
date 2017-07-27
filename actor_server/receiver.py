@@ -93,16 +93,18 @@ def update():
                 ms = int(latest_img.split("/")[-1][:-4])
                 utc = datetime.datetime.utcfromtimestamp(ms/1000.0)
 
+                """
                 from_zone = tz.tzutc()
                 to_zone = tz.tzlocal()
                 utc = utc.replace(tzinfo=from_zone)
                 local = utc.astimezone(to_zone)
+                """
 
                 state = {"path": latest_img, "utc_time": ms, "detections": dets}
 
                 state_db = dict(state)
                 state_db["utc_time"] = utc
-                state_db["local_time"] = local
+                #state_db["local_time"] = local
                 imagedb.save(state_db)
 
                 try:

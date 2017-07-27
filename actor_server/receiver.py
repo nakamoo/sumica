@@ -95,15 +95,16 @@ def update():
 
                 state = {"path": latest_img, "time": ms, "detections": dets}
 
+                state_db = dict(state)
+                state_db["time"] = d
+                imagedb.save(state_db)
+
                 try:
                     act = control(state)
 
                     if act is not None:
                         for a in act:
                             do_action(a["app"], a["cmd"])
-
-                    state["time"] = d
-                    imagedb.save(state)
                 except Exception as e:
                     print(e)
                     print("no response from control server")

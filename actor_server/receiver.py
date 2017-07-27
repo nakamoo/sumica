@@ -10,7 +10,7 @@ import datetime
 from actions.doer import do_action
 import requests
 
-CLEAR_IMGS = False
+CLEAR_IMGS = True
 VISUALIZE = False
 
 image_dir = "../captures"
@@ -31,10 +31,10 @@ class HelloRPC(object):
         requests.post("http://localhost:5003/rebuild")
         return "ok"
 
-if CLEAR_IMGS:
-    print("deleting {} images".format(len(os.listdir(image_dir))))
-    for f in os.listdir(image_dir):
-        os.remove(os.path.join(image_dir, f))
+#if CLEAR_IMGS:
+#    print("deleting {} images".format(len(os.listdir(image_dir))))
+#    for f in os.listdir(image_dir):
+#        os.remove(os.path.join(image_dir, f))
 
 def detect(path):
     r = requests.post("http://localhost:5002/detect", files={'image': open(path, "rb")})
@@ -50,21 +50,41 @@ def control(state):
         return json.loads(r.text) 
 
 def update_loop():
-    global img_paths
+    try:
+        while True:
+            update()
+    except KeyboardInterrupt:
+        clear_imgs()
 
-    while True:
-        if len(img_paths) > 0:
-            if CLEAR_IMGS:
-                for path in img_paths[:-1]:
-                    if os.path.isfile(path):
-                        os.remove(path)
-                
-            latest_img = img_paths[-1]
+def clear_imgs():
+    while len(img_paths) > 0:
+        path = img_paths.pop()
+        p = os.path.join(image_dir, path)
+        if os.path.isfile(p):
+            os.remove(p)
+
+def update():
+    if len(img_paths) > 0:
+            latest_img = img_paths.pop()
             
-            img_paths = []
+            if CLEAR_IMGS:
+                clear_imgs()
             
             if os.path.isfile(latest_img):
-                dets = detect(latest_img)
+                print(latest_img)
+                error = False
+
+                try:
+                    dets = detect(latest_img)
+                except:
+                    error = True
+
+                os.remove(latest_img)
+
+                if error:
+                    print("server error")
+                    return
+
                 ms = int(latest_img.split("/")[-1][:-4])
                 d = datetime.datetime.utcfromtimestamp(ms/1000.0)
 
@@ -97,12 +117,6 @@ def update_loop():
 
                     cv2.imshow("frame.png", canvas[..., [2, 1, 0]])
                     cv2.waitKey(1)
-
-            if CLEAR_IMGS:
-                for path in os.listdir(image_dir):
-                    p = os.path.join(image_dir, path)
-                    if os.path.isfile(p):
-                        os.remove(p)
 
 thread.start_new_thread(update_loop, ())
 s = zerorpc.Server(HelloRPC())

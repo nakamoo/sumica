@@ -77,7 +77,6 @@ app.post('/upload', function(req, res) {
 					if (error) {
                         fs.unlink(newpath, function (err) {
                             console.log("error; deleting captured image");
-                            if (err) throw err;
                         });
                     }
 				});
@@ -93,6 +92,4 @@ app.post('/upload', function(req, res) {
 	res.send("ok");
 });
 
-app.listen(5000, function(){
-  console.log("Live at port 5000");
-});
+app.listen(5000, "0.0.0.0");

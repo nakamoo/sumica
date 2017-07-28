@@ -1,5 +1,5 @@
 import zerorpc
-import imagedb
+import db
 import os
 import _thread as thread
 import cv2
@@ -9,6 +9,8 @@ from PIL import Image
 import datetime
 from actions.doer import do_action
 import requests
+import subprocess
+import time
 
 CLEAR_IMGS = True
 VISUALIZE = False
@@ -105,7 +107,7 @@ def update():
             state_db = dict(state)
             state_db["utc_time"] = utc
             #state_db["local_time"] = local
-            imagedb.save(state_db)
+            db.save(state_db)
 
             try:
                 act = control(state)
@@ -133,7 +135,22 @@ def update():
                 cv2.imshow("frame.png", canvas[..., [2, 1, 0]])
                 cv2.waitKey(1)
 
+def get_hue_loop():
+    while True:
+        result = subprocess.run(['node', 'actions/hue.js', 'get_state'], stdout=subprocess.PIPE)
+        state = json.loads(result.stdout.decode('utf-8'))
+
+        for light in state["lights"]:
+            if light["state"]["reachable"]:
+                data = light
+                data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time()/1000.0)
+                db.save_hue_data(data)
+                print("saved hue data.")
+
+        time.sleep(10)
+
 thread.start_new_thread(update_loop, ())
+thread.start_new_thread(get_hue_loop, ())
 s = zerorpc.Server(HelloRPC())
 s.bind("tcp://0.0.0.0:5001")
 s.run()

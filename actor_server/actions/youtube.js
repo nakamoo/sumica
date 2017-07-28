@@ -13,6 +13,7 @@ youTube.search(process.argv.slice(2).join(" "), 1, function(error, result) {
     console.log(error);
   }
   else {
+    console.log(result)
     var id = result["items"][0]["id"]["videoId"];
     console.log(id);
 

@@ -137,8 +137,12 @@ def update():
 
 def get_hue_loop():
     while True:
-        result = subprocess.run(['node', 'actions/hue.js', 'get_state'], stdout=subprocess.PIPE)
-        state = json.loads(result.stdout.decode('utf-8'))
+        # >= Python 3.5
+        #result = subprocess.run(['node', 'actions/hue.js', 'get_state'], stdout=subprocess.PIPE)
+        #state = json.loads(result.stdout.decode('utf-8'))
+
+        out = subprocess.check_output(['node', 'actions/hue.js', 'get_state'])
+        state = json.loads(out.decode('utf-8'))
 
         for light in state["lights"]:
             if light["state"]["reachable"]:

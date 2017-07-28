@@ -89,7 +89,7 @@ def update():
             os.remove(latest_img)
 
             if error:
-                print("server error")
+                print("recognition server error")
                 return
 
             ms = int(latest_img.split("/")[-1][:-4])
@@ -107,7 +107,7 @@ def update():
             state_db = dict(state)
             state_db["utc_time"] = utc
             #state_db["local_time"] = local
-            db.save(state_db)
+            db.save_image_data(state_db)
 
             try:
                 act = control(state)

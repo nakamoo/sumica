@@ -70,68 +70,68 @@ def clear_imgs():
 
 def update():
     if len(img_paths) > 0:
-            latest_img = img_paths.pop()
-            
-            if CLEAR_IMGS:
-                clear_imgs()
-            
-            if os.path.isfile(latest_img):
-                print(latest_img)
-                error = False
+        latest_img = img_paths.pop()
+        
+        if CLEAR_IMGS:
+            clear_imgs()
+        
+        if os.path.isfile(latest_img):
+            print(latest_img)
+            error = False
 
-                try:
-                    dets = detect(latest_img)
-                except:
-                    error = True
+            try:
+                dets = detect(latest_img)
+            except:
+                error = True
 
-                os.remove(latest_img)
+            os.remove(latest_img)
 
-                if error:
-                    print("server error")
-                    return
+            if error:
+                print("server error")
+                return
 
-                ms = int(latest_img.split("/")[-1][:-4])
-                utc = datetime.datetime.utcfromtimestamp(ms/1000.0)
+            ms = int(latest_img.split("/")[-1][:-4])
+            utc = datetime.datetime.utcfromtimestamp(ms/1000.0)
 
-                """
-                from_zone = tz.tzutc()
-                to_zone = tz.tzlocal()
-                utc = utc.replace(tzinfo=from_zone)
-                local = utc.astimezone(to_zone)
-                """
+            """
+            from_zone = tz.tzutc()
+            to_zone = tz.tzlocal()
+            utc = utc.replace(tzinfo=from_zone)
+            local = utc.astimezone(to_zone)
+            """
 
-                state = {"path": latest_img, "utc_time": ms, "detections": dets}
+            state = {"path": latest_img, "utc_time": ms, "detections": dets}
 
-                state_db = dict(state)
-                state_db["utc_time"] = utc
-                #state_db["local_time"] = local
-                imagedb.save(state_db)
+            state_db = dict(state)
+            state_db["utc_time"] = utc
+            #state_db["local_time"] = local
+            imagedb.save(state_db)
 
-                try:
-                    act = control(state)
+            try:
+                act = control(state)
 
-                    if act is not None:
-                        for a in act:
-                            do_action(a["app"], a["cmd"])
-                except Exception as e:
-                    print(e)
-                    print("no response from control server")
+                if act is not None:
+                    for a in act:
+                        do_action(a["app"], a["cmd"])
+            except Exception as e:
+                print(e)
+                print("no response from control server")
 
-                if VISUALIZE:
-                    img = Image.open(latest_img)
-                    canvas = np.array(img)#np.zeros([img.size[1], img.size[0], 3], dtype=np.uint8)
+            if VISUALIZE:
+                img = Image.open(latest_img)
+                canvas = np.array(img)#np.zeros([img.size[1], img.size[0], 3], dtype=np.uint8)
 
-                    for obj in json.loads(dets):
-                        box = obj["box"]
-                        c = (0, 255, 0)
+                for obj in json.loads(dets):
+                    box = obj["box"]
+                    c = (0, 255, 0)
 
-                        if obj["label"] == "person":
-                            c = (255, 0, 0)
+                    if obj["label"] == "person":
+                        c = (255, 0, 0)
 
-                        canvas = cv2.rectangle(canvas, (box[0], box[1]), (box[2], box[3]), c, 3)
+                    canvas = cv2.rectangle(canvas, (box[0], box[1]), (box[2], box[3]), c, 3)
 
-                    cv2.imshow("frame.png", canvas[..., [2, 1, 0]])
-                    cv2.waitKey(1)
+                cv2.imshow("frame.png", canvas[..., [2, 1, 0]])
+                cv2.waitKey(1)
 
 thread.start_new_thread(update_loop, ())
 s = zerorpc.Server(HelloRPC())

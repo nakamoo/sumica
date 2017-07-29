@@ -28,14 +28,14 @@ class Thing:
 		return iou
 
 	def match(self, det):
-		if self.label == det["label"] and self.iou(self.box, det["box"]) > 0.5:
+		if self.label == det["label"] and self.iou(self.box, det["box"]) > 0.0:
 			return True
 
 		return False
 
 class Tracker:
 	def __init__(self):
-		self.past_n = 10
+		self.past_n = 5
 		self.things = []
 
 	def update(self, d):
@@ -67,11 +67,11 @@ class Tracker:
 
 		for thing in self.things:
 			if len(thing.history) >= self.past_n:
-				avg_conf = sum(thing.history[-self.past_n:]) / self.past_n
+				avg_conf = sum(thing.history[-self.past_n:])
 
-				if avg_conf <= 0.5:
+				if avg_conf <= 2:
 					del thing
-				elif avg_conf >= 0.7:
+				else:
 					clean_dets.append({"label": thing.label, "box": thing.box, "confidence": -1})
 
 		return clean_dets

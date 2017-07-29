@@ -11,6 +11,8 @@ from actions.doer import do_action
 import requests
 import subprocess
 import time
+from apps.hello import hello
+from apps.learner import baseline2
 
 CLEAR_IMGS = True
 VISUALIZE = False
@@ -22,6 +24,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--detect_ip", default="localhost")
 args = parser.parse_args()
+
+apps = [hello.HelloActor(), baseline2.LearningActor()]
 
 class HelloRPC(object):
     def newimage(self, path):
@@ -35,7 +39,11 @@ class HelloRPC(object):
         data = json.loads(data)
         print(data)
         do_action(data["app"], data["action"])
-        requests.post("http://localhost:5003/rebuild")
+
+        for app in apps:
+            app.new_action(data)
+
+        # requests.post("http://localhost:5003/rebuild")
         return "ok"
 
 #if CLEAR_IMGS:
@@ -70,8 +78,25 @@ def clear_imgs():
         if os.path.isfile(p):
             os.remove(p)
 
+def visualize_detections(latest_img, dets):
+    img = Image.open(latest_img)
+    canvas = np.array(img)#np.zeros([img.size[1], img.size[0], 3], dtype=np.uint8)
+
+    for obj in json.loads(dets):
+        box = obj["box"]
+        c = (0, 255, 0)
+
+        if obj["label"] == "person":
+            c = (255, 0, 0)
+
+        canvas = cv2.rectangle(canvas, (box[0], box[1]), (box[2], box[3]), c, 3)
+
+    cv2.imshow("frame.png", canvas[..., [2, 1, 0]])
+    cv2.waitKey(1)
+
 def update():
     if len(img_paths) > 0:
+        # latest path in buffer
         latest_img = img_paths.pop()
         
         if CLEAR_IMGS:
@@ -79,6 +104,7 @@ def update():
         
         if os.path.isfile(latest_img):
             print(latest_img)
+
             error = False
 
             try:
@@ -109,37 +135,27 @@ def update():
             #state_db["local_time"] = local
             db.save_image_data(state_db)
 
-            try:
-                act = control(state)
+            if VISUALIZE: # old code; probably has error
+                visualize_detections()
 
-                if act is not None:
-                    for a in act:
-                        do_action(a["app"], a["cmd"])
-            except Exception as e:
-                print(e)
-                print("no response from control server")
+            #=================================================
 
-            if VISUALIZE:
-                img = Image.open(latest_img)
-                canvas = np.array(img)#np.zeros([img.size[1], img.size[0], 3], dtype=np.uint8)
+            act = []
+            # select actions (iterate through apps)
+            for app in apps:
+                act.extend(app.act(state))
 
-                for obj in json.loads(dets):
-                    box = obj["box"]
-                    c = (0, 255, 0)
+            # execute actions
+            for a in act:
+                do_action(a["app"], a["cmd"])
 
-                    if obj["label"] == "person":
-                        c = (255, 0, 0)
-
-                    canvas = cv2.rectangle(canvas, (box[0], box[1]), (box[2], box[3]), c, 3)
-
-                cv2.imshow("frame.png", canvas[..., [2, 1, 0]])
-                cv2.waitKey(1)
-
+# get state of Philips Hue every n seconds
 def get_hue_loop():
     while True:
         # >= Python 3.5
         #result = subprocess.run(['node', 'actions/hue.js', 'get_state'], stdout=subprocess.PIPE)
         #state = json.loads(result.stdout.decode('utf-8'))
+        time.sleep(10)
 
         out = subprocess.check_output(['node', 'actions/hue.js', 'get_state'])
         state = json.loads(out.decode('utf-8'))
@@ -147,11 +163,14 @@ def get_hue_loop():
         for light in state["lights"]:
             if light["state"]["reachable"]:
                 data = light
-                data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time()/1000.0)
+                data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time())
+                apps[1].new_state(data)
                 db.save_hue_data(data)
                 print("saved hue data.")
+                apps[1].update(data)
 
-        time.sleep(10)
+                break
+
 
 thread.start_new_thread(update_loop, ())
 thread.start_new_thread(get_hue_loop, ())

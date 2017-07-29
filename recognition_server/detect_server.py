@@ -78,7 +78,7 @@ def preprocess(img):
     img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
     img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
 
-    #img_output = cv2.fastNlMeansDenoisingColored(img_output,None,5,5,7,21)
+    img_output = cv2.fastNlMeansDenoisingColored(img_output,None,5,5,7,21)
 
     cv2.imwrite('image.png', img_output)
 
@@ -97,7 +97,9 @@ def process_image():
 
     preprocess(cv2.imread('image.png'))
 
+    print("detecting...")
     dets = detect()
+    print("detected")
 
     visualize(cv2.imread('image.png'), dets)
 

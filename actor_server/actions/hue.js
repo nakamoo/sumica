@@ -1,5 +1,6 @@
 var hue = require("node-hue-api");
 var HueApi = require("node-hue-api").HueApi;
+var fs = require('fs');
 
 var displayBridges = function(bridge) {
 	//console.log("Hue Bridges Found: " + JSON.stringify(bridge));
@@ -78,13 +79,19 @@ var manage = function(ip, user) {
 
 	api = new HueApi(host, username);
 
-	api.lights()
-	    .then(displayResult)
-	    .done();
+	cmd = process.argv[2];
 
-	/*state = {"hue": 20000, "on": true}
-	api.setLightState(3, state, function(err, lights) {
-	    if (err) throw err;
-	    displayResult(lights);
-	});*/
+	if (cmd == "get_state") {
+		api.lights()
+		    .then(displayResult)
+		    .done();
+	} else if (cmd == "set_state") {
+		console.log("setting state");
+		var state = JSON.parse(fs.readFileSync('actions/hue_state.json', 'utf8'))
+
+		api.setLightState(3, state, function(err, lights) {
+		    if (err) throw err;
+		    displayResult(lights);
+		});
+	}
 }

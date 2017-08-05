@@ -32,6 +32,7 @@ app.get('/shell', function(req, res) {
 // to-server operations
 
 app.post('/record_act', function (req, res) {
+    console.log(req.body);
     MongoClient.connect(dburl, function(err, db) {
         if (err) throw err;
         console.log("Database connected; recording command [" + req.body.app + ": " + req.body.cmd + "]");
@@ -60,9 +61,9 @@ app.post('/upload', function(req, res) {
 	var form = new formidable.IncomingForm();
 	form.parse(req, function (err, fields, files) {
 		var oldpath = files.image.path;
-		var d = moment().toDate();
+		var d = moment().utc().valueOf();
         //console.log(d);
-      	var newpath = __dirname + '/../captures/' + d.getTime() + ".png";
+      	var newpath = __dirname + '/../captures/' + d + ".png";
 
       	fs.readFile(oldpath, function (err, data) {
             if (err) throw err;
@@ -77,7 +78,6 @@ app.post('/upload', function(req, res) {
 					if (error) {
                         fs.unlink(newpath, function (err) {
                             console.log("error; deleting captured image");
-                            if (err) throw err;
                         });
                     }
 				});
@@ -93,6 +93,4 @@ app.post('/upload', function(req, res) {
 	res.send("ok");
 });
 
-app.listen(5000, function(){
-  console.log("Live at port 5000");
-});
+app.listen(5000, "0.0.0.0");

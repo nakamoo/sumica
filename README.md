@@ -3,6 +3,12 @@
 * install mongodb
 * ```npm install```
 
+## dependencies
+* TensorFlow
+* OpenCV
+* Flask
+* Cython
+
 ## complete launch
 * (in recognition_server) ```python detect_server.py```
 * (in controller_server) ```python control_server.py```

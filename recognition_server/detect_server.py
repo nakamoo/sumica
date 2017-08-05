@@ -68,8 +68,8 @@ def visualize(frame, all_boxes, win_name="frame"):
         cv2.putText(frame, name, (det[0], det[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, c, 2)
         cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
 
-    cv2.imshow(win_name, frame)
-    cv2.waitKey(1)
+    #cv2.imshow(win_name, frame)
+    #cv2.waitKey(1)
 
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
 

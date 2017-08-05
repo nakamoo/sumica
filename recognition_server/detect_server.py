@@ -107,7 +107,7 @@ def process_image():
 
     visualize(cv2.imread('image.png'), clean_dets, "clean")
 
-    return json.dumps(clean_dets)#json.dumps(dets)
+    return json.dumps(dets)
 
 if __name__ == "__main__":
     #context = (cer, key)

@@ -9,3 +9,6 @@ def save_image_data(data):
 
 def save_hue_data(data):
 	db.hue.insert_one(data)
+
+def save_youtube_data(data):
+	db.youtube.insert_one(data)

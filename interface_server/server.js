@@ -32,6 +32,7 @@ app.get('/shell', function(req, res) {
 // to-server operations
 
 app.post('/record_act', function (req, res) {
+    console.log(req.body);
     MongoClient.connect(dburl, function(err, db) {
         if (err) throw err;
         console.log("Database connected; recording command [" + req.body.app + ": " + req.body.cmd + "]");

@@ -53,16 +53,16 @@ class HelloRPC(object):
 
 def detect(path):
     r = requests.post("http://{}:5002/detect".format(args.detect_ip), files={'image': open(path, "rb")})
-    
+
     return json.loads(r.text)
 
 def control(state):
     r = requests.post("http://localhost:5003/control", json={'state': state})
-    
+
     if r == "null":
         return None
     else:
-        return json.loads(r.text) 
+        return json.loads(r.text)
 
 def update_loop():
     try:
@@ -98,10 +98,10 @@ def update():
     if len(img_paths) > 0:
         # latest path in buffer
         latest_img = img_paths.pop()
-        
+
         if CLEAR_IMGS:
             clear_imgs()
-        
+
         if os.path.isfile(latest_img):
             print(latest_img)
 
@@ -171,9 +171,35 @@ def get_hue_loop():
 
                 break
 
+# get state of Youtube every n seconds
+def get_youtube_loop():
+    while True:
+        time.sleep(10)
+
+        command = "chrome-cli list links | grep www.youtube.com"
+        proc = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_data, stderr_data = proc.communicate()
+        links = stdout_data.decode('ascii')
+
+        if not links == '':
+            while True:
+                start = links.find('http')
+                end = links.find('\n')
+                if (start != -1) and (end != -1):
+                    link = links[start: end]
+                    data = {}
+                    data["time"] = datetime.datetime.utcfromtimestamp(time.time())
+                    data['app'] = "youtube"
+                    data['link'] = link
+                    db.save_youtube_data(data)
+                    links = links[end + 1:]
+                else:
+                    break
 
 thread.start_new_thread(update_loop, ())
 thread.start_new_thread(get_hue_loop, ())
+thread.start_new_thread(get_youtube_loop, ())
 s = zerorpc.Server(HelloRPC())
 s.bind("tcp://0.0.0.0:5001")
 s.run()

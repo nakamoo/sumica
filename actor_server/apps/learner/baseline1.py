@@ -9,58 +9,6 @@ from . import actor
 import time
 import json
 
-class Dataset:
-	def __init__(self):
-		self.update()
-
-	def transform(self, x):
-		dets = json.loads(x["detections"])
-
-		max_area = 0
-		pt = None
-		for det in dets:
-			if det["label"] == "person":
-				#print(det)
-				area = (det["box"][2]-det["box"][0])*(det["box"][3]-det["box"][1])
-				if area > max_area:
-					cX = (det["box"][0] + det["box"][2]) / 2.0
-					cY = (det["box"][1] + det["box"][3]) / 2.0
-					max_area = area
-					pt = (cX, cY)
-
-		return pt
-
-	def update(self):
-		self.X = []
-		self.Y = []
-		tmpX = []
-		tmpY = []
-		y_names = []
-
-		actions = actor.hai_db.actions
-		images = actor.hai_db.images
-
-		for action in actions.find():
-			isoDate = action["time"]
-			before = isoDate - datetime.timedelta(seconds=10)#minutes=1)
-			results = images.find({"time":{"$gte": before, "$lt": isoDate}})
-
-			for r in results:
-				tmpX.append(r)
-				tmpY.append(action)
-
-		for img, y in zip(tmpX, tmpY):
-			pt = self.transform(img)
-
-			if pt:
-				self.X.append([pt[0], pt[1]])
-				y_names.append(y["action"])
-
-		self.class_names = list(set(y_names))
-
-		for y in y_names:
-			self.Y.append(self.class_names.index(y))
-
 class BaselineActor(actor.Actor):
 	def __init__(self):
 		self.rebuild()

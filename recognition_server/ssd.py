@@ -75,8 +75,8 @@ def display(image, classes, scores, boxes):
         cv2.putText(frame, c, (b[0], b[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
         cv2.rectangle(frame, (b[0], b[1]), (b[2], b[3]), (0, 255, 0), 2)
 
-    cv2.imshow("frame", frame[..., [2,1,0]])
-    cv2.waitKey(1)
+    #cv2.imshow("frame", frame[..., [2,1,0]])
+    #cv2.waitKey(1)
 
     return frame
 

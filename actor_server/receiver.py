@@ -186,7 +186,7 @@ def get_youtube_loop():
             while True:
                 start = links.find('http')
                 end = links.find('\n')
-                if start != -1 and end != 1:
+                if (start != -1) and (end != -1):
                     link = links[start: end]
                     data = {}
                     data["time"] = datetime.datetime.utcfromtimestamp(time.time())

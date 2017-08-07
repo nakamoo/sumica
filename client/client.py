@@ -1,26 +1,25 @@
-import threading
-import json
-
-from sensors.camera import Camera
-#from sensors.hue import Hue
-
-import actions
-
 # create ID
 # discover hardware (e.g. discover cameras)
 # send sensor data
 # receive commands and act
 
+import threading
+import json
+import os, importlib
+import requests
+
 SERVER_IP = ""
+
+fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
+sensor_mods = [m.Manager(SERVER_IP) for m in map(importlib.import_module, fs)]
+
+import actions
+
 # hard-code for now
 ID = "noguchi"
 
-# hard-code for now
-inputs = [Camera(0)]
-
-for inp in inputs:
-    threading.Thread(target=inp.start)
-    
+for inp in sensor_mods:
+    thread_stream = threading.Thread(target=inp.start())    
     thread_stream.daemon = True
     thread_stream.start()
 

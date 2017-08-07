@@ -2,7 +2,11 @@ from subprocess import Popen
 import subprocess
 import json
 
-def do_action(app, cmd):
+def act_list(actions):
+	for action in actions:
+		act(action["app"], action["cmd"])
+
+def act(app, cmd):
 	if app == "youtube":
 		print("OPENING YOUTUBE")
 		Popen("node utils/youtube.js {}".format(cmd), shell=True)

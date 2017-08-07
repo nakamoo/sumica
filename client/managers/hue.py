@@ -1,6 +1,5 @@
 import subprocess
 import time
-from utils import doer
 import json
 import datetime
 

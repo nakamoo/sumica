@@ -8,6 +8,7 @@ import json
 import os, importlib
 import requests
 import time
+from utils import actions
 
 SERVER_IP = ""
 
@@ -22,9 +23,7 @@ for inp in sensor_mods:
     thread_stream.daemon = True
     thread_stream.start()
 
-time.sleep(100)
-
 while True:
     r = requests.post(SERVER_IP, data={'id': ID})
     action_data = json.loads(r.text)
-    actions.act(action_data)
+    actions.act_list(action_data)

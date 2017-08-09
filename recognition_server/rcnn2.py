@@ -15,7 +15,8 @@ from PIL import Image
 #%matplotlib inline
 
 # This is needed since the notebook is stored in the object_detection folder.
-sys.path.append("..")
+sys.path.append("../../models/object_detection")
+sys.path.append("../../models")
 
 from utils import label_map_util
 
@@ -27,20 +28,20 @@ MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
+PATH_TO_CKPT = '../../models/object_detection/' + MODEL_NAME + '/frozen_inference_graph.pb'
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join('../../models/object_detection', 'data', 'mscoco_label_map.pbtxt')
 
 NUM_CLASSES = 90
 
-opener = urllib.request.URLopener()
-opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
-tar_file = tarfile.open(MODEL_FILE)
-for file in tar_file.getmembers():
-  file_name = os.path.basename(file.name)
-  if 'frozen_inference_graph.pb' in file_name:
-    tar_file.extract(file, os.getcwd())
+#opener = urllib.request.URLopener()
+#opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
+#tar_file = tarfile.open(MODEL_FILE)
+#for file in tar_file.getmembers():
+#  file_name = os.path.basename(file.name)
+#  if 'frozen_inference_graph.pb' in file_name:
+#    tar_file.extract(file, os.getcwd())
 
 detection_graph = tf.Graph()
 with detection_graph.as_default():
@@ -63,16 +64,18 @@ def load_image_into_numpy_array(image):
 # image1.jpg
 # image2.jpg
 # If you want to test the code with your images, just add path to the images to the TEST_IMAGE_PATHS.
-PATH_TO_TEST_IMAGES_DIR = 'test_images'
-TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3) ]
+#PATH_TO_TEST_IMAGES_DIR = 'test_images'
+#TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3) ]
 
 # Size, in inches, of the output images.
 IMAGE_SIZE = (12, 8)
 
 
-with detection_graph.as_default():
-  with tf.Session(graph=detection_graph) as sess:
-    for image_path in TEST_IMAGE_PATHS:
+#with detection_graph.as_default():
+sess = tf.Session(graph=detection_graph)
+
+def detect(image):
+    #for image_path in ["room.jpg"]:
       image = Image.open(image_path)
       # the array based representation of the image will be used later in order to prepare the
       # result image with boxes and labels on it.

@@ -2,48 +2,46 @@ var hue = require("node-hue-api");
 var HueApi = require("node-hue-api").HueApi;
 var fs = require('fs');
 
-var displayBridges = function(bridge) {
-	//console.log("Hue Bridges Found: " + JSON.stringify(bridge));
-};
+cmd = process.argv[2];
 
+console.log("searching for Hues");
 hue.nupnpSearch(function(err, result) {
 	if (err) throw err;
-	displayBridges(result);
-	connect(result[0]["ipaddress"], "ybh9yzkJXCwzmGVjbaWcFU28i5V0WVcz0IdJ9WtO");
+	console.log("Hue Bridges Found: " + JSON.stringify(result));
+	ip = result[0]["ipaddress"];
+
+	if (fs.existsSync(__dirname + '/hue_user.txt')) {
+		if (cmd != "connect") {
+	    	connect(ip, fs.readFileSync(__dirname + '/hue_user.txt', 'utf8'));
+		}
+	    console.log("ok");
+	} else {
+		register(ip);
+	}
 });
 
 var register = function(ip) {
 	console.log("registering");
 
-	var host = ip,
-	    userDescription = "Node API";
-
-	var displayUserResult = function(result) {
-	    console.log("Created user: " + JSON.stringify(result));
-	    // save name
-	    connect(ip, result);
-	};
-
-	var displayError = function(err) {
-	    console.log(err);
-	};
-
+	var host = ip, userDescription = "Node API";
 	var hue = new HueApi();
 
-	// --------------------------
-	// Using a callback (with default description and auto generated username)
 	hue.createUser(host, function(err, user) {
-		if (err) console.log(err);
-		displayUserResult(user);
+		if (err) {
+			console.log(err);
+		} else {
+			console.log("Created user: " + JSON.stringify(user));
+
+			fs.writeFileSync(__dirname + "/hue_user.txt", user); 
+
+	    	//connect(ip, user);
+	    	console.log("ok");
+		}
 	});
 }
 
 var connect = function(ip, user) {
-	var HueApi = require("node-hue-api").HueApi;
-
 	var displayResult = function(result) {
-	    //console.log(JSON.stringify(result, null, 2));
-
 	    if (!result.hasOwnProperty('ipaddress')) {
 	    	console.log("not registered");
 	    	register(ip);
@@ -58,8 +56,6 @@ var connect = function(ip, user) {
 
 	api = new HueApi(host, username);
 
-	// --------------------------
-	// Using a callback
 	api.config(function(err, config) {
 	    if (err) throw err;
 	    displayResult(config);
@@ -79,19 +75,19 @@ var manage = function(ip, user) {
 
 	api = new HueApi(host, username);
 
-	cmd = process.argv[2];
-
 	if (cmd == "get_state") {
 		api.lights()
 		    .then(displayResult)
 		    .done();
 	} else if (cmd == "set_state") {
 		console.log("setting state");
-		var state = JSON.parse(fs.readFileSync('actions/hue_state.json', 'utf8'))
+		var state = JSON.parse(fs.readFileSync(__dirname + '/hue_state.json', 'utf8'))
 
-		api.setLightState(3, state, function(err, lights) {
-		    if (err) throw err;
-		    displayResult(lights);
-		});
+		for (var i = 0; i < 4; i++) { //for now, control all
+			api.setLightState(i, state, function(err, lights) {
+			    if (err) throw err;
+			    displayResult(lights);
+			});
+		}
 	}
 }

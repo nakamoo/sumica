@@ -149,57 +149,8 @@ def update():
             for a in act:
                 do_action(a["app"], a["cmd"])
 
-# get state of Philips Hue every n seconds
-def get_hue_loop():
-    while True:
-        # >= Python 3.5
-        #result = subprocess.run(['node', 'actions/hue.js', 'get_state'], stdout=subprocess.PIPE)
-        #state = json.loads(result.stdout.decode('utf-8'))
-        time.sleep(10)
-
-        out = subprocess.check_output(['node', 'actions/hue.js', 'get_state'])
-        state = json.loads(out.decode('utf-8'))
-
-        for light in state["lights"]:
-            if light["state"]["reachable"]:
-                data = light
-                data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time())
-                apps[1].new_state(data)
-                db.save_hue_data(data)
-                print("saved hue data.")
-                apps[1].update(data)
-
-                break
-
-# get state of Youtube every n seconds
-def get_youtube_loop():
-    while True:
-        time.sleep(10)
-
-        command = "chrome-cli list links | grep www.youtube.com"
-        proc = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_data, stderr_data = proc.communicate()
-        links = stdout_data.decode('ascii')
-
-        if not links == '':
-            while True:
-                start = links.find('http')
-                end = links.find('\n')
-                if (start != -1) and (end != -1):
-                    link = links[start: end]
-                    data = {}
-                    data["time"] = datetime.datetime.utcfromtimestamp(time.time())
-                    data['app'] = "youtube"
-                    data['link'] = link
-                    db.save_youtube_data(data)
-                    links = links[end + 1:]
-                else:
-                    break
-
 thread.start_new_thread(update_loop, ())
-thread.start_new_thread(get_hue_loop, ())
-thread.start_new_thread(get_youtube_loop, ())
+
 s = zerorpc.Server(HelloRPC())
 s.bind("tcp://0.0.0.0:5001")
 s.run()

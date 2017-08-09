@@ -3,15 +3,15 @@ from flask_pymongo import PyMongo
 
 import uuid
 
-from controllers.controller import SampleController
+from controllers.controller import Sample
 
 app = Flask(__name__)
 mongo = PyMongo(app)
 
 # TODO: use DB
 controllers_objects = {}
-controllers_objects['koki'] = {"SampleController": SampleController()}
-controllers_objects['sean'] = {"SampleController": SampleController()}
+controllers_objects['koki'] = {"SampleController": Sample()}
+controllers_objects['sean'] = {"SampleController": Sample()}
 
 
 @app.route('/')

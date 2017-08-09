@@ -1,6 +1,8 @@
-from flask import render_template, request
-from hai import app, mongo
+from flask import Flask, render_template, request
+from flask_pymongo import PyMongo
 
+app = Flask(__name__)
+mongo = PyMongo(app)
 
 @app.route('/')
 def home_page():
@@ -14,8 +16,6 @@ def get_image_data():
 
 @app.route('/data/image', methods=['POST'])
 def post_image_data():
-    mongo.save_file("./images/unique_name.png", request.files['image'])
-    ## rename image and save at ./images/
     return render_template('index.html')
 
 
@@ -26,6 +26,8 @@ def get_hue_data():
 
 @app.route('/data/hue', methods=['POST'])
 def post_hue_data():
+    data = request.form.to_dict()
+    mongo.db.hue.insert_one(data)
     return render_template('index.html')
 
 
@@ -36,6 +38,8 @@ def get_youtube_data():
 
 @app.route('/data/youtube', methods=['POST'])
 def post_youtube_data():
+    data = request.form.to_dict()
+    mongo.db.youtube.insert_one(data)
     return render_template('index.html')
 
 
@@ -53,3 +57,5 @@ def update_controllers():
 def execute_controllers():
     return render_template('index.html')
 
+if __name__ == '__main__':
+    app.run()

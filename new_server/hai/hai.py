@@ -3,8 +3,16 @@ from flask_pymongo import PyMongo
 
 import uuid
 
+from controllers.controller import SampleController
+
 app = Flask(__name__)
 mongo = PyMongo(app)
+
+# TODO: use DB
+controllers_objects = {}
+controllers_objects['koki'] = {"SampleController": SampleController()}
+controllers_objects['sean'] = {"SampleController": SampleController()}
+
 
 @app.route('/')
 def home_page():
@@ -66,7 +74,20 @@ def update_controllers():
 
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
+    user_name = request.form['user_name']
+    commands = {}
+    for c, i in controllers_objects[user_name].items():
+        cmd = i.execute()
+        if cmd is not None:
+            commands[c] = cmd
+
+    return jsonify(commands), 201
+
+
+@app.route('/controllers/<controller_name>/execute', methods=['POST'])
+def execute_specific_controller():
     return "Not implemented", 404
+
 
 if __name__ == '__main__':
     app.run()

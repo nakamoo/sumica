@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request
 from flask_pymongo import PyMongo
 
+import uuid
+
 app = Flask(__name__)
 mongo = PyMongo(app)
 
@@ -14,8 +16,14 @@ def get_image_data():
     return render_template('index.html')
 
 
-@app.route('/data/image', methods=['POST'])
+@app.route('/data/images', methods=['POST'])
 def post_image_data():
+    filename = str(uuid.uuid4()) + ".png"
+    request.files['image'].save("./images/" + filename)
+    data = request.form.to_dict()
+    data['filename'] = filename
+    mongo.db.images.insert_one(data)
+
     return render_template('index.html')
 
 

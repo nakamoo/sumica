@@ -43,7 +43,7 @@ def process_image_dataurl():
 
     return dets
 
-def detect(image):
+def format_image(image):
     #image = np.array(Image.open("image.png"))
     
     if len(image.shape) == 2:
@@ -54,9 +54,7 @@ def detect(image):
     elif image.shape[2] == 1:
         image = np.repeat(image, 3, 2)
 
-    dets = nn.detect(image)
-
-    return dets
+    return image
 
 def visualize(frame, all_boxes, win_name="frame"):
     for result in all_boxes["objects"]:
@@ -120,14 +118,16 @@ def process_image():
     only_img_feats = get_img_feats and not get_obj_feats and not get_obj_dets
 
     print("detecting...")
-    out = detect(imgmat, thres, only_img_feats)
+    imgmat = format_image(imgmat)
+    out = nn.detect(imgmat, thres, only_img_feats)
     print("detected")
 
+    out_data = {}
     if only_img_feats:
-        out_data = {"features": out}
-    else:
+        out_data["features"] = out.tolist()
+    elif get_obj_feats or get_obj_dets:
         img_feats, obj_dets, obj_feats = out
-        objs = [{} for _ in range(len(all_boxes))]
+        objs = [{} for _ in range(len(obj_dets))]
 
         if get_obj_feats:
             for i, feat in enumerate(obj_feats):

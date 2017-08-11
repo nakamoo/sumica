@@ -15,11 +15,14 @@ def visualize(frame, all_boxes, win_name="frame"):
         c = tuple([int(x * 255.0) for x in c])
         cv2.putText(frame, name, (det[0], det[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, c, 2)
         cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+    
+    return frame
 
 class Manager:
-    def __init__(self, server_ip):
+    def __init__(self, server_ip, detect_only=False):
         self.server_ip = server_ip
         self.enabled = True
+        self.detect_only = detect_only
 
         try:
             self.cap = cv2.VideoCapture(0)
@@ -81,7 +84,10 @@ class Manager:
                         break
                         
                     try:
-                        self.send(self.image, self.server_ip)
+                        if self.detect_only:
+                            self.show(self.image, self.server_ip)
+                        else:
+                            self.send(self.image, self.server_ip)
                     except Exception as e:
                         print("unable to send image to server.")
                         print(e)
@@ -100,14 +106,21 @@ class Manager:
     def send(self, image, ip):
         cv2.imwrite("image.png", image)
         
-        r = requests.post("{}/detect".format(ip), files={'image': open("image.png", "rb")})
-
         data = {}
-        
         r = requests.post("{}/data/image".format(ip), files={'image': open("image.png", "rb")}, data=data)
 
-        #print("response: {}".format(r.text))
+    def show(self, image, ip):
+        cv2.imwrite("image.png", image)
 
-        #visualize(image, json.loads(r.text))
-        #cv2.imshow("dets", image)
-        #cv2.waitKey(1)
+        data = {"threshold": "0.3"}
+        r = requests.post("{}/detect".format(ip), files={'image': open("image.png", "rb")}, data=data)
+
+        print(r.text)
+
+        frame = visualize(image, json.loads(r.text)["objects"])
+        cv2.imshow("dets", frame)
+        cv2.waitKey(1)
+
+if __name__ == "__main__":
+    cam = Manager('http://153.120.159.210:5002', detect_only=True)
+    cam.start()

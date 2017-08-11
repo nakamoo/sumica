@@ -75,7 +75,7 @@ clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
 def preprocess(img):
     img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
     img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
-    img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+    img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
 
     #img_output = cv2.fastNlMeansDenoisingColored(img_output,None,5,5,7,21)
 
@@ -97,7 +97,7 @@ def process_image():
 
     f.save(fname)
 
-    imgmat = cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB)#preprocess(cv2.imread(fname))
+    imgmat = preprocess(cv2.imread(fname))
 
     thres = 0.3
     get_img_feats = False
@@ -135,7 +135,7 @@ def process_image():
         if get_obj_dets:
             for i, det in enumerate(obj_dets):
                 objs[i].update(det)
-                
+
         out_data["objects"] = objs
 
     #visualize(imgmat, dets)

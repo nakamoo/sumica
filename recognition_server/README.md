@@ -16,3 +16,18 @@
 * (optional, default:"false") ```get_image_features``` to get feature map for entire image
 * (optional, default:"true") ```get_object_detections``` to get object detections (label, box, confidence)
 * (optional, default:"false") ```get_object_features``` to get a feature vector for every object
+
+## format
+```
+{
+  "features": ...,
+  "objects": [
+    {
+      "label": ..,
+      "box": ..,
+      "confidence": ..,
+      "features": ..
+    }
+  ]
+}
+```

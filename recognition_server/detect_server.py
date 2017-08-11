@@ -101,27 +101,50 @@ def process_image():
 
     imgmat = cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB)#preprocess(cv2.imread(fname))
 
+    thres = 0.3
+    get_img_feats = False
+    get_obj_feats = False
+    get_obj_dets = True
+
+    data = request.form.to_dict()
+
+    if "threshold" in data:
+        thres = float(data["threshold"])
+    if "get_image_features" in data:
+        get_img_feats = data["get_image_features"] == "true"
+    if "get_object_detections" in data:
+        get_obj_dets = data["get_object_detections"] == "true"
+    if "get_object_features" in data:
+        get_obj_feats = data["get_object_features"] == "true"
+
+    only_img_feats = get_img_feats and not get_obj_feats and not get_obj_dets
+
     print("detecting...")
-    feats, objs, obj_feats = detect(imgmat)
+    out = detect(imgmat, thres, only_img_feats)
     print("detected")
+
+    if only_img_feats:
+        out_data = {"features": out}
+    else:
+        img_feats, obj_dets, obj_feats = out
+        objs = [{} for _ in range(len(all_boxes))]
+
+        if get_obj_feats:
+            for i, feat in enumerate(obj_feats):
+                objs[i]["features"] = feat.tolist()
+        if get_obj_dets:
+            for i, det in enumerate(obj_dets):
+                objs[i].update(det)
+                
+        out_data["objects"] = objs
 
     #visualize(imgmat, dets)
 
     os.remove(fname)
 
-    #clean_dets = track.update(dets)
-
     #visualize(cv2.imread('image.png'), clean_dets, "clean")
-    data = request.form.to_dict()
-    out = {"objects": objs}
 
-    if "get_image_features" in data and data["get_image_features"] == "true":
-      out["features"] = feats.tolist()
-    if "get_object_features" in data and data["get_object_features"] == "true":
-      for obj, feats in zip(objs, obj_feats):
-        obj["features"] = feats.tolist()
-
-    return json.dumps(out)
+    return json.dumps(out_data)
 
 if __name__ == "__main__":
     #context = (cer, key)

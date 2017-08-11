@@ -1,7 +1,7 @@
 ## 2 models from existing repositories
 * Place repository next to HAI
-### Faster R-CNN
-* Depends on [this repo](https://github.com/endernewton/tf-faster-rcnn)
+### Faster R-CNN (currently supported)
+* Depends on [TensorFlow Object Detection API](https://github.com/tensorflow/models/tree/master/object_detection)
 * 80 classes (MS COCO)
 * Recommended for GPU
 
@@ -9,3 +9,10 @@
 * Depends on [this repo](https://github.com/balancap/SSD-Tensorflow)
 * 20 classes (PASCAL VOC)
 * Recommended for CPU-only computers (fast)
+
+## sending requests
+* must include ```image``` as file
+* (optional, default:"0.3") ```threshold``` to set confidence threshold [0.0~1.0]
+* (optional, default:"false") ```get_image_features``` to get feature map for entire image
+* (optional, default:"true") ```get_object_detections``` to get object detections (label, box, confidence)
+* (optional, default:"false") ```get_object_features``` to get a feature vector for every object

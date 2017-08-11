@@ -69,7 +69,7 @@ IMAGE_SIZE = (12, 8)
 #with detection_graph.as_default():
 sess = tf.Session(graph=detection_graph)
 
-def detect(image):
+def detect(image, thres, only_img_feats):
   # the array based representation of the image will be used later in order to prepare the
   # result image with boxes and labels on it.
   image_np = image#load_image_into_numpy_array(image)
@@ -87,35 +87,44 @@ def detect(image):
   scores = detection_graph.get_tensor_by_name('detection_scores:0')
   classes = detection_graph.get_tensor_by_name('detection_classes:0')
   num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-  # Actual detection.
-  (boxes, scores, classes, num_detections, img_feats, obj_feats) = sess.run(
-      [boxes, scores, classes, num_detections,
-       detection_graph.get_tensor_by_name('Conv/Relu6:0'),
-       detection_graph.get_tensor_by_name('SecondStageBoxPredictor/AvgPool:0')],
-      feed_dict={image_tensor: image_np_expanded})
 
-  boxes = np.squeeze(boxes)
-  scores = np.squeeze(scores)
-  classes = np.squeeze(classes)
-  img_feats = np.squeeze(img_feats)
-  obj_feats_raw = np.squeeze(obj_feats)
+  if only_img_feats:
+    img_feats = sess.run(
+        [detection_graph.get_tensor_by_name('Conv/Relu6:0')],
+        feed_dict={image_tensor: image_np_expanded})
 
-  all_boxes = []
-  obj_feats = []
+    img_feats = np.squeeze(img_feats)
+    return img_feats
+  else:
+    # Actual detection.
+    (boxes, scores, classes, num_detections, img_feats, obj_feats) = sess.run(
+        [boxes, scores, classes, num_detections,
+         detection_graph.get_tensor_by_name('Conv/Relu6:0'),
+         detection_graph.get_tensor_by_name('SecondStageBoxPredictor/AvgPool:0')],
+        feed_dict={image_tensor: image_np_expanded})
 
-  for label, box, confidence, feats in zip(classes, boxes, scores, obj_feats_raw):
-      if confidence < 0.3:
-          continue      
+    boxes = np.squeeze(boxes)
+    scores = np.squeeze(scores)
+    classes = np.squeeze(classes)
+    img_feats = np.squeeze(img_feats)
+    obj_feats_raw = np.squeeze(obj_feats)
 
-      box[0] *= width
-      box[1] *= height
-      box[2] *= width
-      box[3] *= height
+    all_boxes = []
+    obj_feats = []
 
-      all_boxes.append({"label": category_index[label]["name"], "box": [int(b) for b in box], "confidence": float(confidence)})
-        #"features": feats.tolist()})
-      obj_feats.append(feats)
+    for label, box, confidence, feats in zip(classes, boxes, scores, obj_feats_raw):
+        if confidence < thres:
+            continue      
 
-  #outputs = {"features": img_feats.tolist(), "objects": all_boxes}
+        box[0] *= width
+        box[1] *= height
+        box[2] *= width
+        box[3] *= height
 
-  return img_feats, all_boxes, obj_feats
+        all_boxes.append({"label": category_index[label]["name"], "box": [int(b) for b in box], "confidence": float(confidence)})
+          #"features": feats.tolist()})
+        obj_feats.append(feats)
+
+    #outputs = {"features": img_feats.tolist(), "objects": all_boxes}
+
+    return img_feats, all_boxes, obj_feats

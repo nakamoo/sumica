@@ -23,7 +23,7 @@ import random
 if len(sys.argv) == 2 and sys.argv[1] == "ssd":
     import ssd as nn
 else:
-    import rcnn as nn
+    import rcnn2 as nn
 
 #from OpenSSL import SSL
 

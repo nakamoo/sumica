@@ -19,12 +19,12 @@ def home_page():
     return render_template('index.html')
 
 
-@app.route('/data/images')
+@app.route('/data/image')
 def get_image_data():
     return "Not implemented", 404
 
 
-@app.route('/data/images', methods=['POST'])
+@app.route('/data/image', methods=['POST'])
 def post_image_data():
     filename = str(uuid.uuid4()) + ".png"
     request.files['image'].save("./images/" + filename)
@@ -90,4 +90,4 @@ def execute_specific_controller():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)

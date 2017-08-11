@@ -23,7 +23,7 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 # What model to download.
-MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
+MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
 MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
@@ -77,7 +77,7 @@ sess = tf.Session(graph=detection_graph)
 def detect(image):
   # the array based representation of the image will be used later in order to prepare the
   # result image with boxes and labels on it.
-  image_np = load_image_into_numpy_array(image)
+  image_np = image#load_image_into_numpy_array(image)
   # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
   image_np_expanded = np.expand_dims(image_np, axis=0)
   image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
@@ -89,12 +89,32 @@ def detect(image):
   classes = detection_graph.get_tensor_by_name('detection_classes:0')
   num_detections = detection_graph.get_tensor_by_name('num_detections:0')
   # Actual detection.
+  #print(image_np_expanded.shape)
   (boxes, scores, classes, num_detections) = sess.run(
       [boxes, scores, classes, num_detections],
       feed_dict={image_tensor: image_np_expanded})
 
-  print(boxes.shape)
-  print(scores.shape)
-  print(classes.shape)
+  #print(boxes.shape)
+  #print(scores.shape)
+  #print(classes.shape)
+  #print(category_index)
+  boxes = np.squeeze(boxes)
+  classes = np.squeeze(classes)
+  scores = np.squeeze(scores)
+  im_width, im_height = image.shape[1], image.shape[0]
+  all_boxes = []
+  for label, box, confidence in zip(classes, boxes, scores):
+    if confidence < 0.3:
+      continue
+    label = category_index[label]["name"]
+    #print(label)
+    #print(box)
+    #print(confidence)
+    box[0] *= im_height
+    box[1] *= im_width
+    box[2] *= im_height
+    box[3] *= im_width
+    box = [box[1], box[0], box[3], box[2]]
+    all_boxes.append({"label": label, "box": [int(b) for b in box], "confidence": float(confidence)})
 
-  
+  return all_boxes

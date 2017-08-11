@@ -9,13 +9,14 @@ class Detection(Controller):
     def on_event(self, event, data):
         if event == "image":
             print("image received")
-            print(data)
+            #print(data)
 
             addr = "http://localhost:5002/detect"
 
             r = requests.post(addr, files={'image': open("images/" + data["filename"], "rb")}, data=data)
 
-            print("detections: {}".format(r.text))
+            print("image analyzed.")
+            #print("detections: {}".format(r.text))
 
     def execute(self):
         return "turn off"

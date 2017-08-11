@@ -20,10 +20,10 @@ import tracker
 import colorsys
 import random
 
-if len(sys.argv) == 2 and sys.argv[1] == "ssd":
-    import ssd as nn
-else:
-    import rcnn2 as nn
+#if len(sys.argv) == 2 and sys.argv[1] == "ssd":
+#    import ssd as nn
+#else:
+import rcnn2 as nn
 
 #from OpenSSL import SSL
 
@@ -59,7 +59,7 @@ def detect(image):
     return dets
 
 def visualize(frame, all_boxes, win_name="frame"):
-    for result in all_boxes:
+    for result in all_boxes["objects"]:
         det = result["box"]
         name = result["label"]
 
@@ -102,18 +102,26 @@ def process_image():
     imgmat = cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB)#preprocess(cv2.imread(fname))
 
     print("detecting...")
-    dets = detect(imgmat)
+    feats, objs, obj_feats = detect(imgmat)
     print("detected")
 
-    visualize(imgmat, dets)
+    #visualize(imgmat, dets)
 
     os.remove(fname)
 
     #clean_dets = track.update(dets)
 
     #visualize(cv2.imread('image.png'), clean_dets, "clean")
+    data = request.form.to_dict()
+    out = {"objects": objs}
 
-    return json.dumps(dets)
+    if "get_image_features" in data and data["get_image_features"] == "true":
+      out["features"] = feats.tolist()
+    if "get_object_features" in data and data["get_object_features"] == "true":
+      for obj, feats in zip(objs, obj_feats):
+        obj["features"] = feats.tolist()
+
+    return json.dumps(out)
 
 if __name__ == "__main__":
     #context = (cer, key)

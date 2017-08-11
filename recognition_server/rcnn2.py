@@ -23,7 +23,7 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 # What model to download.
-MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
+MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
 MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
@@ -78,7 +78,9 @@ def detect(image):
   image_np_expanded = np.expand_dims(image_np, axis=0)
   image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
   # Each box represents a part of the image where a particular object was detected.
-  print([n.name for n in detection_graph.as_graph_def().node])
+  #for n in detection_graph.as_graph_def().node:
+  #  if not "Suppression" in n.name:
+  #    print(n.name)
   boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
   # Each score represent how level of confidence for each of the objects.
   # Score is shown on the result image, together with the class label.
@@ -86,19 +88,34 @@ def detect(image):
   classes = detection_graph.get_tensor_by_name('detection_classes:0')
   num_detections = detection_graph.get_tensor_by_name('num_detections:0')
   # Actual detection.
-  (boxes, scores, classes, num_detections) = sess.run(
-      [boxes, scores, classes, num_detections],
+  (boxes, scores, classes, num_detections, img_feats, obj_feats) = sess.run(
+      [boxes, scores, classes, num_detections,
+       detection_graph.get_tensor_by_name('Conv/Relu6:0'),
+       detection_graph.get_tensor_by_name('SecondStageBoxPredictor/AvgPool:0')],
       feed_dict={image_tensor: image_np_expanded})
 
   boxes = np.squeeze(boxes)
   scores = np.squeeze(scores)
   classes = np.squeeze(classes)
+  img_feats = np.squeeze(img_feats)
+  obj_feats_raw = np.squeeze(obj_feats)
 
   all_boxes = []
-  for label, box, confidence in zip(classes, boxes, scores):
+  obj_feats = []
+
+  for label, box, confidence, feats in zip(classes, boxes, scores, obj_feats_raw):
+      if confidence < 0.3:
+          continue      
+
       box[0] *= width
       box[1] *= height
       box[2] *= width
       box[3] *= height
 
       all_boxes.append({"label": category_index[label]["name"], "box": [int(b) for b in box], "confidence": float(confidence)})
+        #"features": feats.tolist()})
+      obj_feats.append(feats)
+
+  #outputs = {"features": img_feats.tolist(), "objects": all_boxes}
+
+  return img_feats, all_boxes, obj_feats

@@ -69,16 +69,19 @@ def post_fb_data():
         print("received msg", msg, "from", event["sender"]["id"])
 
         # temporary (test)
-        if fb_id not in fb2user:
-            send_fb_message(fb_id, "who are you?")
+        if msg.startswith("reset"):
+            global fb2user
+            fb2user = {}
         elif msg.startswith("i am"):
             fb2user[fb_id] = msg.split()[-1]
-            send_fb_message(fb_id, "who are you?")
+            send_fb_message(fb_id, "hi " + msg.split()[-1])
         elif msg.startswith("who am i"):
             if fb_id in fb2user:
                 send_fb_message(fb_id, "you are " + fb2user[fb_id])
             else:
                 send_fb_message(fb_id, "i dont know")
+        elif fb_id not in fb2user:
+            send_fb_message(fb_id, "who are you?")
         else:
             send_fb_message(event["sender"]["id"], "what")
 

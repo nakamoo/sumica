@@ -1,4 +1,4 @@
-from controller import Controller
+from .controller import Controller
 import numpy as np
 
 class Detection(Controller):

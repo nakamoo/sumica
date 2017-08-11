@@ -29,7 +29,7 @@ def get_image_data():
     return "Not implemented", 404
 
 def trigger_controllers(user, event, data):
-    for c in controllers_objects[user]:
+    for c in controllers_objects[user].values():
         c.on_event(event, data)
 
 @app.route('/data/image', methods=['POST'])

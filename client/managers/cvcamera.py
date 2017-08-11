@@ -99,11 +99,13 @@ class Manager:
 
     def send(self, image, ip):
         cv2.imwrite("image.png", image)
+
+        data = {}
         
-        r = requests.post("{}/detect".format(ip), files={'image': open("image.png", "rb")})
+        r = requests.post("{}/data/image".format(ip), files={'image': open("image.png", "rb")}, data=data)
 
-        print("response: {}".format(r.text))
+        #print("response: {}".format(r.text))
 
-        visualize(image, json.loads(r.text))
-        cv2.imshow("dets", image)
-        cv2.waitKey(1)
+        #visualize(image, json.loads(r.text))
+        #cv2.imshow("dets", image)
+        #cv2.waitKey(1)

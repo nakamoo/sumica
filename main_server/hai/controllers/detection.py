@@ -10,6 +10,12 @@ class Detection(Controller):
     		print("image received")
     		print(data)
 
+    		addr = "http://localhost:5002/detect"
+
+    		r = requests.post(addr, files={'image': open("images/" + data["filename"], "rb")}, data=data)
+
+        	print("detections: {}".format(r.text))
+
     def execute(self):
         return "turn off"
 

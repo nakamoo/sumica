@@ -24,7 +24,7 @@ def home_page():
     return render_template('index.html')
 
 
-@app.route('/data/images')
+@app.route('/data/image')
 def get_image_data():
     return "Not implemented", 404
 
@@ -32,7 +32,7 @@ def trigger_controllers(user, event, data):
     for c in controllers_objects[user]:
         c.on_event(event, data)
 
-@app.route('/data/images', methods=['POST'])
+@app.route('/data/image', methods=['POST'])
 def post_image_data():
     filename = str(uuid.uuid4()) + ".png"
     request.files['image'].save("./images/" + filename)

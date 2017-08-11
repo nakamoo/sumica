@@ -19,6 +19,9 @@ controllers_objects = {}
 controllers_objects['koki'] = standard_controllers()
 controllers_objects['sean'] = standard_controllers()
 
+# temporary
+fb2user = {}
+
 fb_token = "EAAF0dXCeCJwBANZB6PIdJYHmpsvoRDMj8bZCMZAjZB3eZCosq69BS1yR2cSsFCrkxrsWtvzjgeJZCMaVt73sYz5CP98nBQlrxVxm7QSHMxyUpjCTkn69EZA4xymrEpBmGIVTl7RZAJDJwvoo49CZCvzdMQ0A8hF0vomiQqL3yH9o34t569ZA51nHUn"
 
 @app.route('/')
@@ -59,10 +62,25 @@ def post_fb_data():
     event = json.loads(data["event"])
     print(event)
     bot_id = "318910425200757"
+    fb_id = event["sender"]["id"]
+    msg = event["message"]["text"].lower()
 
-    if event["sender"]["id"] != bot_id: 
-        print("received msg", event["message"]["text"], "from", event["sender"]["id"])
-        send_fb_message(event["sender"]["id"], "woah")
+    if fb_id != bot_id:
+        print("received msg", msg, "from", event["sender"]["id"])
+
+        # temporary (test)
+        if fb_id not in fb2user:
+            send_fb_message(fb_id, "who are you?")
+        elif msg.startswith("i am"):
+            fb2user[fb_id] = msg.split()[-1]
+            send_fb_message(fb_id, "who are you?")
+        elif msg.startswith("who am i"):
+            if fb_id in fb2user:
+                send_fb_message(fb_id, "you are " + fb2user[fb_id])
+            else:
+                send_fb_message(fb_id, "i dont know")
+        else:
+            send_fb_message(event["sender"]["id"], "what")
 
     return "Not implemented", 404
 

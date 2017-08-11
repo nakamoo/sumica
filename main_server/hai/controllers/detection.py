@@ -1,5 +1,6 @@
-from controller import Controller
+from .controller import Controller
 import numpy as np
+import requests
 
 class Detection(Controller):
     def __init__(self):

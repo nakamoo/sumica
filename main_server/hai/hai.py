@@ -45,6 +45,12 @@ def post_image_data():
     data.pop("_id")
     return jsonify(data), 201
 
+# messenger
+@app.route('/data/fb', methods=['POST'])
+def post_fb_data():
+    data = request.form.to_dict()
+    print(data)
+    return "Not implemented", 404
 
 @app.route('/data/hue')
 def get_hue_data():

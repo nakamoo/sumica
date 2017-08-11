@@ -112,7 +112,7 @@ class Manager:
     def show(self, image, ip):
         cv2.imwrite("image.png", image)
 
-        data = {"threshold": "0.3"}
+        data = {"threshold": "0.5"}
         r = requests.post("{}/detect".format(ip), files={'image': open("image.png", "rb")}, data=data)
 
         print(r.text)

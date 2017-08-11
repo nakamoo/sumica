@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_pymongo import PyMongo
+import json
 
 import uuid
 
@@ -18,6 +19,7 @@ controllers_objects = {}
 controllers_objects['koki'] = standard_controllers()
 controllers_objects['sean'] = standard_controllers()
 
+fb_token = "EAAF0dXCeCJwBANZB6PIdJYHmpsvoRDMj8bZCMZAjZB3eZCosq69BS1yR2cSsFCrkxrsWtvzjgeJZCMaVt73sYz5CP98nBQlrxVxm7QSHMxyUpjCTkn69EZA4xymrEpBmGIVTl7RZAJDJwvoo49CZCvzdMQ0A8hF0vomiQqL3yH9o34t569ZA51nHUn"
 
 @app.route('/')
 def home_page():
@@ -49,7 +51,12 @@ def post_image_data():
 @app.route('/data/fb', methods=['POST'])
 def post_fb_data():
     data = request.form.to_dict()
-    print(data)
+    event = json.loads(data["event"])
+    print(event)
+    bot_id = "318910425200757"
+
+    if event["sender"]["id"] != bot_id: 
+        print("received msg", event["message"]["text"], "from", event["sender"]["id"])
     return "Not implemented", 404
 
 @app.route('/data/hue')

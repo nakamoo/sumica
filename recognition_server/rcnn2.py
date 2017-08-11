@@ -55,11 +55,6 @@ label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
-def load_image_into_numpy_array(image):
-  (im_width, im_height) = image.size
-  return np.array(image.getdata()).reshape(
-      (im_height, im_width, 3)).astype(np.uint8)
-
 # For the sake of simplicity we will use only 2 images:
 # image1.jpg
 # image2.jpg
@@ -77,7 +72,8 @@ sess = tf.Session(graph=detection_graph)
 def detect(image):
   # the array based representation of the image will be used later in order to prepare the
   # result image with boxes and labels on it.
-  image_np = load_image_into_numpy_array(image)
+  image_np = image#load_image_into_numpy_array(image)
+  height, width = image.shape[0], image.shape[1]
   # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
   image_np_expanded = np.expand_dims(image_np, axis=0)
   image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
@@ -94,8 +90,15 @@ def detect(image):
       [boxes, scores, classes, num_detections],
       feed_dict={image_tensor: image_np_expanded})
 
-  print(boxes.shape)
-  print(scores.shape)
-  print(classes.shape)
+  boxes = np.squeeze(boxes)
+  scores = np.squeeze(scores)
+  classes = np.squeeze(classes)
 
-  
+  all_boxes = []
+  for label, box, confidence in zip(classes, boxes, scores):
+      box[0] *= width
+      box[1] *= height
+      box[2] *= width
+      box[3] *= height
+
+      all_boxes.append({"label": category_index[label]["name"], "box": [int(b) for b in box], "confidence": float(confidence)})

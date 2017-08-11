@@ -17,6 +17,8 @@
 * (optional, default:"true") ```get_object_detections``` to get object detections (label, box, confidence)
 * (optional, default:"false") ```get_object_features``` to get a feature vector for every object (2-D array)
 
+Warning: Getting object features is slow, getting image features is very slow. Probably need to find a better way to send data and/or use compression.
+
 ## format
 ```
 {

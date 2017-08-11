@@ -99,6 +99,8 @@ class Manager:
 
     def send(self, image, ip):
         cv2.imwrite("image.png", image)
+        
+        r = requests.post("{}/detect".format(ip), files={'image': open("image.png", "rb")})
 
         data = {}
         

@@ -29,7 +29,7 @@ def get_image_data():
     return "Not implemented", 404
 
 def trigger_controllers(user, event, data):
-    for c in controllers_objects[user]:
+    for c in controllers_objects[user].values():
         c.on_event(event, data)
 
 @app.route('/data/image', methods=['POST'])
@@ -100,4 +100,8 @@ def execute_specific_controller():
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     app.run()
+=======
+    app.run(host='0.0.0.0', port=5000)
+>>>>>>> 51dc6f4fbe4d9ab54040be0de66deab2b692ebb3

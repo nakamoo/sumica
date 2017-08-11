@@ -24,6 +24,7 @@ from utils import visualization_utils as vis_util
 
 # What model to download.
 MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
+#MODEL_NAME = 'faster_rcnn_resnet101_coco_11_06_2017'
 MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
@@ -79,7 +80,7 @@ def detect(image, thres, only_img_feats):
   image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
   # Each box represents a part of the image where a particular object was detected.
   #for n in detection_graph.as_graph_def().node:
-  #  if not "Suppression" in n.name:
+  #  if "relu" in n.name.lower() or "pool" in n.name.lower():
   #    print(n.name)
   boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
   # Each score represent how level of confidence for each of the objects.
@@ -116,10 +117,11 @@ def detect(image, thres, only_img_feats):
         if confidence < thres:
             continue      
 
-        box[0] *= width
-        box[1] *= height
-        box[2] *= width
-        box[3] *= height
+        box[1] *= width
+        box[0] *= height
+        box[3] *= width
+        box[2] *= height
+        box = [box[1], box[0], box[3], box[2]]
 
         all_boxes.append({"label": category_index[label]["name"], "box": [int(b) for b in box], "confidence": float(confidence)})
           #"features": feats.tolist()})

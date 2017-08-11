@@ -47,6 +47,11 @@ def post_image_data():
     data.pop("_id")
     return jsonify(data), 201
 
+def send_fb_message(id, text):
+    data = {"access_token": fb_token, "recipient": {"id": id, "message": text}}
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages", data=data)
+    print(r.text)
+
 # messenger
 @app.route('/data/fb', methods=['POST'])
 def post_fb_data():
@@ -57,6 +62,8 @@ def post_fb_data():
 
     if event["sender"]["id"] != bot_id: 
         print("received msg", event["message"]["text"], "from", event["sender"]["id"])
+        send_fb_message(event["sender"]["id"], "woah")
+
     return "Not implemented", 404
 
 @app.route('/data/hue')

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_pymongo import PyMongo
 import json
-
+import requests
 import uuid
 
 from controllers.controller import Sample
@@ -51,8 +51,9 @@ def post_image_data():
     return jsonify(data), 201
 
 def send_fb_message(id, text):
-    data = {"access_token": fb_token, "recipient": {"id": id, "message": text}}
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages", data=data)
+    data = {"access_token": fb_token}
+    data2 = {"recipient": {"id": id}, "message": {"text": text}}
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=data, json=data2)
     print(r.text)
 
 # messenger
@@ -60,7 +61,6 @@ def send_fb_message(id, text):
 def post_fb_data():
     data = request.form.to_dict()
     event = json.loads(data["event"])
-    print(event)
     bot_id = "318910425200757"
     fb_id = event["sender"]["id"]
     msg = event["message"]["text"].lower()

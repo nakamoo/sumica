@@ -1,8 +1,10 @@
-from actors import actor
-
+from server_actors import actor
 
 class Controller(object):
     def __init__(self):
+        pass
+
+    def on_event(self, event, data):
         pass
 
     def execute(self):

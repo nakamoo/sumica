@@ -26,22 +26,18 @@ from controllers.chatbot import Chatbot
 app = Flask(__name__)
 mongo = PyMongo(app)
 
-def standard_controllers():
-    return {"SampleController": Sample(),
-            "detection": Detection(),
-            "chatbot": Chatbot()}
-
-# TODO: use DB
-controllers_objects = {}
-controllers_objects['koki'] = standard_controllers()
-controllers_objects['sean'] = standard_controllers()
+with app.app_context():
+  db = mongo.db.hai
 
 @app.route('/')
 def home_page():
     return render_template('index.html')
 
+# TODO: use DB
+controllers_objects = {}
 
 def trigger_controllers(user, event, data):
+    print("trigger: ", user, event, data)
     if user is None:
         for c in control_mods:
             c.on_global_event(event, data)
@@ -79,6 +75,18 @@ def execute_controllers():
 def execute_specific_controller():
     return "Not implemented", 404
 
+def standard_controllers(user):
+    return {"SampleController": Sample(),
+            "detection": Detection(),
+            "chatbot": Chatbot(user)}
+
+#@app.before_first_request
+def setup():
+  #global controllers_objects
+  controllers_objects['koki'] = standard_controllers('koki')
+  controllers_objects['sean'] = standard_controllers('sean')
+
+setup()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

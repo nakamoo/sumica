@@ -19,10 +19,9 @@ def post_fb_data():
     import hai
     username = None
 
-    for user in hai.mongo.fb_users.find({"fb_id": fb_id}):
-        print(user)
-        username = user["id"]
-        break
+    n = hai.db.fb_users.find_one({"fb_id": fb_id})
+    if n:
+        username = n["id"]
     
     if fb_id != bot_id:
         hai.trigger_controllers(username, "chat", event)

@@ -17,10 +17,14 @@ def post_fb_data():
     fb_id = event["sender"]["id"]
 
     import hai
+    username = None
+
+    for user in hai.mongo.fb_users.find({"fb_id": fb_id}):
+        print(user)
+        username = user["id"]
+        break
     
     if fb_id != bot_id:
-        hai.trigger_controllers(None, "user chat", event)
-    #else:
-    #    hai.trigger_controllers(data['user_id'], "unknown chat", event)
+        hai.trigger_controllers(username, "chat", event)
 
     return "ok", 201

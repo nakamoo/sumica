@@ -42,11 +42,12 @@ def home_page():
 
 
 def trigger_controllers(user, event, data):
-    for c in control_mods:
-        c.on_global_event(event, data)
-
-    for c in controllers_objects[user].values():
-        c.on_event(event, data)
+    if user is None:
+        for c in control_mods:
+            c.on_global_event(event, data)
+    else:
+        for c in controllers_objects[user].values():
+            c.on_event(event, data)
 
 for sensor in sensor_mods:
     app.register_blueprint(sensor.app)

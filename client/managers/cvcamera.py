@@ -1,11 +1,28 @@
+import requests
 import cv2
 import threading
 import time
+import json
+import colorsys
+
+def visualize(frame, all_boxes, win_name="frame"):
+    for result in all_boxes:
+        det = result["box"]
+        name = result["label"]
+
+        i = sum([ord(x) for x in name])
+        c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
+        c = tuple([int(x * 255.0) for x in c])
+        cv2.putText(frame, name, (det[0], det[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, c, 2)
+        cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+    
+    return frame
 
 class Manager:
-    def __init__(self, server_ip):
+    def __init__(self, server_ip, detect_only=False):
         self.server_ip = server_ip
         self.enabled = True
+        self.detect_only = detect_only
 
         try:
             self.cap = cv2.VideoCapture(0)
@@ -57,7 +74,7 @@ class Manager:
 
                 #if np.sum(thresh) <= 0:
                 #    skip = True
-
+                
                 if not skip:
                     cv2.imshow("capture", self.image)
                     last_img = gray
@@ -67,9 +84,13 @@ class Manager:
                         break
                         
                     try:
-                        send(stream.image, self.server_ip)
-                    except:
+                        if self.detect_only:
+                            self.show(self.image, self.server_ip)
+                        else:
+                            self.send(self.image, self.server_ip)
+                    except Exception as e:
                         print("unable to send image to server.")
+                        print(e)
             
                 time.sleep(0.1)
             else:
@@ -84,7 +105,22 @@ class Manager:
 
     def send(self, image, ip):
         cv2.imwrite("image.png", image)
+        
+        data = {}
+        r = requests.post("{}/data/image".format(ip), files={'image': open("image.png", "rb")}, data=data)
 
-        r = requests.post(ip, files={'image': open("image.png", "rb")})
+    def show(self, image, ip):
+        cv2.imwrite("image.png", image)
 
-        print("response: {}".format(r.text))
+        data = {"threshold": "0.5"}
+        r = requests.post("{}/detect".format(ip), files={'image': open("image.png", "rb")}, data=data)
+
+        print(r.text)
+
+        frame = visualize(image, json.loads(r.text)["objects"])
+        cv2.imshow("dets", frame)
+        cv2.waitKey(1)
+
+if __name__ == "__main__":
+    cam = Manager('http://153.120.159.210:5002', detect_only=True)
+    cam.start()

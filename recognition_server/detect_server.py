@@ -20,10 +20,10 @@ import tracker
 import colorsys
 import random
 
-if len(sys.argv) == 2 and sys.argv[1] == "ssd":
-    import ssd as nn
-else:
-    import rcnn as nn
+#if len(sys.argv) == 2 and sys.argv[1] == "ssd":
+#    import ssd as nn
+#else:
+import rcnn2 as nn
 
 #from OpenSSL import SSL
 
@@ -43,7 +43,7 @@ def process_image_dataurl():
 
     return dets
 
-def detect(image):
+def format_image(image):
     #image = np.array(Image.open("image.png"))
     
     if len(image.shape) == 2:
@@ -54,12 +54,10 @@ def detect(image):
     elif image.shape[2] == 1:
         image = np.repeat(image, 3, 2)
 
-    dets = nn.detect(image)
-
-    return dets
+    return image
 
 def visualize(frame, all_boxes, win_name="frame"):
-    for result in all_boxes:
+    for result in all_boxes["objects"]:
         det = result["box"]
         name = result["label"]
 
@@ -77,7 +75,7 @@ clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
 def preprocess(img):
     img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
     img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
-    img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+    img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
 
     #img_output = cv2.fastNlMeansDenoisingColored(img_output,None,5,5,7,21)
 
@@ -99,21 +97,54 @@ def process_image():
 
     f.save(fname)
 
-    imgmat = cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB)#preprocess(cv2.imread(fname))
+    imgmat = preprocess(cv2.imread(fname))
+
+    thres = 0.3
+    get_img_feats = False
+    get_obj_feats = False
+    get_obj_dets = True
+
+    data = request.form.to_dict()
+
+    if "threshold" in data:
+        thres = float(data["threshold"])
+    if "get_image_features" in data:
+        get_img_feats = data["get_image_features"] == "true"
+    if "get_object_detections" in data:
+        get_obj_dets = data["get_object_detections"] == "true"
+    if "get_object_features" in data:
+        get_obj_feats = data["get_object_features"] == "true"
+
+    only_img_feats = get_img_feats and not get_obj_feats and not get_obj_dets
 
     print("detecting...")
-    dets = detect(imgmat)
+    imgmat = format_image(imgmat)
+    out = nn.detect(imgmat, thres, only_img_feats)
     print("detected")
 
-    visualize(imgmat, dets)
+    out_data = {}
+    if only_img_feats:
+        out_data["features"] = out.tolist()
+    elif get_obj_feats or get_obj_dets:
+        img_feats, obj_dets, obj_feats = out
+        objs = [{} for _ in range(len(obj_dets))]
+
+        if get_obj_feats:
+            for i, feat in enumerate(obj_feats):
+                objs[i]["features"] = feat.tolist()
+        if get_obj_dets:
+            for i, det in enumerate(obj_dets):
+                objs[i].update(det)
+
+        out_data["objects"] = objs
+
+    #visualize(imgmat, dets)
 
     os.remove(fname)
 
-    #clean_dets = track.update(dets)
-
     #visualize(cv2.imread('image.png'), clean_dets, "clean")
 
-    return json.dumps(dets)
+    return json.dumps(out_data)
 
 if __name__ == "__main__":
     #context = (cer, key)

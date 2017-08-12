@@ -1,3 +1,7 @@
+!.gitkeep
+new_server/hai/images/*
+main_server/hai/images/*
+
 hai_server/images/*
 hai_server2/images/*
 nn_server/*.png

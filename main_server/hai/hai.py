@@ -27,9 +27,7 @@ app = Flask(__name__)
 mongo = PyMongo(app)
 
 def standard_controllers():
-    return {"SampleController": Sample(),
-            "detection": Detection(),
-            "chatbot": Chatbot()}
+    return [Sample(), Detection(), Chatbot()]
 
 # TODO: use DB
 controllers_objects = {}
@@ -65,14 +63,15 @@ def update_controllers():
 
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
-    user_id = request.form['user_id']
-    commands = {}
-    for c, i in controllers_objects[user_id].items():
-        cmd = i.execute()
-        if cmd is not None:
-            commands[c] = cmd
+    user_id = request.form['user_name']
+    response = {}
 
-    return jsonify(commands), 201
+    for controller in controllers_objects[user_id]:
+        commands = controller.execute()
+        for device, command in commands.items():
+            response[device] = command
+
+    return jsonify(response), 201
 
 
 @app.route('/controllers/<controller_name>/execute', methods=['POST'])
@@ -81,4 +80,4 @@ def execute_specific_controller():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

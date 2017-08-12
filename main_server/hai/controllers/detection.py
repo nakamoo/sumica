@@ -19,5 +19,5 @@ class Detection(Controller):
             #print("detections: {}".format(r.text))
 
     def execute(self):
-        return "turn off"
+        return {"hue": "turn off"}
 

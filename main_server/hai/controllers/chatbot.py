@@ -9,7 +9,7 @@ class Chatbot(Controller):
             chatbot.send_fb_message(self.fb_id, "hi!")
 
     def execute(self):
-        pass
+        return {}
 
 def on_global_event(event, data):
     import hai

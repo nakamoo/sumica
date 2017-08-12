@@ -1,4 +1,4 @@
-import ..hai as hai
+#import hai.trigger_controllers as trigger
 from flask import Blueprint
 
 app = Blueprint("image", __name__)
@@ -15,6 +15,7 @@ def post_image_data():
     data['filename'] = filename
     mongo.db.images.insert_one(data)
 
+    import hai
     hai.trigger_controllers(data['user_id'], "image", data)
 
     data.pop("_id")

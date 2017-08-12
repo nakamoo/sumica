@@ -10,7 +10,14 @@ fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('
 sensor_mods = map(importlib.import_module, fs)
 
 fs = ['controllers.{}'.format(f[:-3]) for f in os.listdir('controllers') if f.endswith('.py')]
-control_mods = [m for m in map(importlib.import_module, fs) if "on_global_event" in dir(m)]
+control_mods = []
+for f in fs:
+  try:
+    m = importlib.import_module(f)
+    if "on_global_event" in dir(m):
+      control_mods.append(m)
+  except:
+    print("failed to load", f)
 
 from controllers.controller import Sample
 from controllers.detection import Detection

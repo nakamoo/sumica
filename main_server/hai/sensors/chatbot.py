@@ -1,5 +1,6 @@
-from flask import Blueprint
-from ..sensors import chatbot
+from flask import Blueprint, request
+from server_actors import chatbot
+import json
 
 app = Blueprint("chatbot", __name__)
 
@@ -15,8 +16,10 @@ def post_fb_data():
     event = json.loads(data["event"])
     fb_id = event["sender"]["id"]
 
+    import hai
+    
     if fb_id != bot_id:
-        hai.trigger_controllers(data['user_id'], "user chat", event)
+        hai.trigger_controllers(None, "user chat", event)
     #else:
     #    hai.trigger_controllers(data['user_id'], "unknown chat", event)
 

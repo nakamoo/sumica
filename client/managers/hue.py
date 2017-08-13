@@ -23,7 +23,7 @@ class Manager:
                 if light["state"]["reachable"]:
                     data = light
                     data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time())
-                    print(data)
+                    #print(data)
                     #apps[1].new_state(data)
                     #db.save_hue_data(data)
                     #print("saved hue data.")

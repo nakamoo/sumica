@@ -1,22 +1,27 @@
 #import hai.trigger_controllers as trigger
-from flask import Blueprint
+import uuid
+from flask import Blueprint, request, jsonify
 
-app = Blueprint("image", __name__)
+from database import mongo
 
-@app.route('/data/image')
+app = Blueprint("images", __name__)
+
+@app.route('/data/images')
 def get_image_data():
     return "Not implemented", 404
 
-@app.route('/data/image', methods=['POST'])
+@app.route('/data/images', methods=['POST'])
 def post_image_data():
     filename = str(uuid.uuid4()) + ".png"
     request.files['image'].save("./images/" + filename)
     data = request.form.to_dict()
     data['filename'] = filename
     mongo.db.images.insert_one(data)
-
-    import hai
-    hai.trigger_controllers(data['user_id'], "image", data)
-
     data.pop("_id")
+
+    if request.args.get('execute') == 'True':
+        import hai
+        from database import controllers_objects
+        hai.trigger_controllers(data['user_name'], "image", data)
+
     return jsonify(data), 201

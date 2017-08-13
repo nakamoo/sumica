@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, jsonify
-from flask_pymongo import PyMongo
 import json
 import requests
 import uuid
 import os
 import importlib
+from database import mongo, controllers_objects
 
 fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
 sensor_mods = map(importlib.import_module, fs)
@@ -19,12 +19,9 @@ for f in fs:
   except:
     print("failed to load", f)
 
-from controllers.controller import Sample
-from controllers.detection import Detection
-from controllers.chatbot import Chatbot
 
 app = Flask(__name__)
-mongo = PyMongo(app)
+app.config.from_pyfile(filename="application.cfg")
 
 with app.app_context():
   db = mongo.db.hai
@@ -33,16 +30,15 @@ with app.app_context():
 def home_page():
     return render_template('index.html')
 
-# TODO: use DB
-controllers_objects = {}
 
 def trigger_controllers(user, event, data):
+    print(controllers_objects)
     print("trigger: ", user, event, data)
     if user is None:
         for c in control_mods:
             c.on_global_event(event, data)
     else:
-        for c in controllers_objects[user].values():
+        for c in controllers_objects[user]:
             c.on_event(event, data)
 
 for sensor in sensor_mods:
@@ -61,32 +57,21 @@ def update_controllers():
 
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
-    user_id = request.form['user_id']
-    commands = {}
-    for c, i in controllers_objects[user_id].items():
-        cmd = i.execute()
-        if cmd is not None:
-            commands[c] = cmd
+    user_id = request.form['user_name']
+    response = []
 
-    return jsonify(commands), 201
+    for controller in controllers_objects[user_id]:
+        commands = controller.execute()
+        for command in commands:
+            response.append(command)
+
+    return jsonify(response), 201
 
 
 @app.route('/controllers/<controller_name>/execute', methods=['POST'])
 def execute_specific_controller():
     return "Not implemented", 404
 
-def standard_controllers(user):
-    return {"SampleController": Sample(),
-            "detection": Detection(),
-            "chatbot": Chatbot(user)}
-
-#@app.before_first_request
-def setup():
-  #global controllers_objects
-  controllers_objects['koki'] = standard_controllers('koki')
-  controllers_objects['sean'] = standard_controllers('sean')
-
-setup()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

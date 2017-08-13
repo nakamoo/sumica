@@ -16,6 +16,8 @@ def post_fb_data():
     event = json.loads(data["event"])
     fb_id = event["sender"]["id"]
 
+    print(data)
+
     import hai
     username = None
 

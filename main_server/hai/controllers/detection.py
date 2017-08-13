@@ -13,7 +13,7 @@ class Detection(Controller):
 
             addr = "http://localhost:5002/detect"
 
-            r = requests.post(addr, files={'image': open("images/" + data["filename"], "rb")}, data=data)
+            r = requests.post(addr, files={'image': open("../images/" + data["filename"], "rb")}, data=data)
 
             print("image analyzed.")
             #print("detections: {}".format(r.text))

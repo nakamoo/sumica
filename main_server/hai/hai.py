@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, jsonify
-from flask_pymongo import PyMongo
 import json
 import requests
 import uuid
 import os
 import importlib
+from database import mongo
 
 fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
 sensor_mods = map(importlib.import_module, fs)
@@ -22,17 +22,18 @@ for f in fs:
 from controllers.controller import Sample
 from controllers.detection import Detection
 from controllers.chatbot import Chatbot
+from controllers.hello import HelloController
 
 app = Flask(__name__)
-mongo = PyMongo(app)
+app.config.from_pyfile(filename="application.cfg")
 
-def standard_controllers():
-    return [Sample(), Detection(), Chatbot()]
+def standard_controllers(user_name):
+    return [Sample(), Detection(), Chatbot(), HelloController(user_name)]
 
 # TODO: use DB
 controllers_objects = {}
-controllers_objects['koki'] = standard_controllers()
-controllers_objects['sean'] = standard_controllers()
+controllers_objects['koki'] = standard_controllers('koki')
+controllers_objects['sean'] = standard_controllers('sean')
 
 @app.route('/')
 def home_page():
@@ -44,7 +45,7 @@ def trigger_controllers(user, event, data):
         for c in control_mods:
             c.on_global_event(event, data)
     else:
-        for c in controllers_objects[user].values():
+        for c in controllers_objects[user]:
             c.on_event(event, data)
 
 for sensor in sensor_mods:

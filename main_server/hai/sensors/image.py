@@ -19,7 +19,8 @@ def post_image_data():
     mongo.db.images.insert_one(data)
     data.pop("_id")
 
-    import hai
-    # hai.trigger_controllers(data['user_name'], "image", data)
+    if request.args.get('execute') == 'True':
+        import hai
+        hai.trigger_controllers(data['user_name'], "image", data)
 
     return jsonify(data), 201

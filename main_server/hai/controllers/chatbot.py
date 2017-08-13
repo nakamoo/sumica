@@ -1,5 +1,6 @@
 from .controller import Controller
 from server_actors import chatbot
+import random
 
 class Chatbot(Controller):
     def __init__(self, user):
@@ -11,8 +12,12 @@ class Chatbot(Controller):
             self.fb_id = n["fb_id"]
 
         self.lights = None
+        self.id = random.random()
+        print(self.id)
 
     def on_event(self, event, data):
+        print(self.lights)
+        print(self.id)
         if event == "chat" and self.fb_id:
             msg = data["message"]["text"]
 
@@ -22,20 +27,23 @@ class Chatbot(Controller):
               chatbot.send_fb_message(self.fb_id, "データベースから削除しました")
             elif msg == "help":
               chatbot.send_fb_message(self.fb_id, "どうも！ボットです！よろしくお願いします！")
-            elif msg "hue on":
+            elif msg == "hue on":
               chatbot.send_fb_message(self.fb_id, "では電気をつけます")
               self.lights = True
-            elif msg "hue off":
+              print(self.lights)
+            elif msg == "hue off":
               chatbot.send_fb_message(self.fb_id, "では電気を消します")
               self.lights = False
             else:
               chatbot.send_fb_message(self.fb_id, "どうも！")
 
     def execute(self):
+        print(self.id)
+        print(self.lights)
         if self.lights is not None:
-            return {"platform": "hue", "data": {"on": self.lights}}
-
-        self.lights = None
+            l = self.lights
+            self.lights = None
+            return {"platform": "hue", "data": {"on": l}}
 
 def on_global_event(event, data):
     import hai

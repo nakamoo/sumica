@@ -37,6 +37,7 @@ def home_page():
 controllers_objects = {}
 
 def trigger_controllers(user, event, data):
+    print(controllers_objects)
     print("trigger: ", user, event, data)
     if user is None:
         for c in control_mods:
@@ -61,10 +62,12 @@ def update_controllers():
 
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
+    print(controllers_objects)
     user_id = request.form['user_id']
     commands = {}
     for c, i in controllers_objects[user_id].items():
         cmd = i.execute()
+        print(c, cmd)
         if cmd is not None:
             commands[c] = cmd
 
@@ -82,7 +85,9 @@ def standard_controllers(user):
 
 #@app.before_first_request
 def setup():
-  #global controllers_objects
+  if len(controllers_objects) > 0:
+    return
+  print("setting up")
   controllers_objects['koki'] = standard_controllers('koki')
   controllers_objects['sean'] = standard_controllers('sean')
 

@@ -24,7 +24,7 @@ class HelloController(Controller):
             from database import mongo
             data = mongo.db.images.find_one({"user_name": self.user_name},
                                      sort=[("_id", pymongo.DESCENDING)])
-            image_path = '../images/' + data['filename']
+            image_path = './images/' + data['filename']
 
         from hai import app
         state_json = requests.post("http://" +

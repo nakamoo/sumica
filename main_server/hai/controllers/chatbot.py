@@ -44,6 +44,8 @@ class Chatbot(Controller):
             l = self.lights
             self.lights = None
             return [{"platform": "hue", "data": {"on": l}}]
+        else:
+            return []
 
 def on_global_event(event, data):
     import hai

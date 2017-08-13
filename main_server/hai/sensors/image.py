@@ -13,7 +13,7 @@ def get_image_data():
 @app.route('/data/images', methods=['POST'])
 def post_image_data():
     filename = str(uuid.uuid4()) + ".png"
-    request.files['image'].save("../images/" + filename)
+    request.files['image'].save("./images/" + filename)
     data = request.form.to_dict()
     data['filename'] = filename
     mongo.db.images.insert_one(data)

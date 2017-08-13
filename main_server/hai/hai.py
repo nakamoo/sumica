@@ -30,15 +30,6 @@ with app.app_context():
 def home_page():
     return render_template('index.html')
 
-def standard_controllers(user):
-    return {"SampleController": Sample(),
-            "detection": Detection(),
-            "chatbot": Chatbot(user)}
-
-# TODO: use DB
-controllers_objects = {}
-controllers_objects['koki'] = standard_controllers('koki')
-controllers_objects['sean'] = standard_controllers('sean')
 
 def trigger_controllers(user, event, data):
     print(controllers_objects)

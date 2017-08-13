@@ -16,7 +16,7 @@ def post_fb_data():
     data = request.form.to_dict()
     event = json.loads(data["event"])
     fb_id = event["sender"]["id"]
-    print(data)
+    
     username = None
 
     n = db.mongo.fb_users.find_one({"fb_id": fb_id})

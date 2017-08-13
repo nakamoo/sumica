@@ -6,44 +6,19 @@ import os
 import importlib
 from database import mongo, controllers_objects
 
-fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
-sensor_mods = map(importlib.import_module, fs)
-
-fs = ['controllers.{}'.format(f[:-3]) for f in os.listdir('controllers') if f.endswith('.py')]
-control_mods = []
-for f in fs:
-  try:
-    m = importlib.import_module(f)
-    if "on_global_event" in dir(m):
-      control_mods.append(m)
-  except:
-    print("failed to load", f)
-
-
 app = Flask(__name__)
 app.config.from_pyfile(filename="application.cfg")
 
-with app.app_context():
-  db = mongo.db.hai
-
-@app.route('/')
-def home_page():
-    return render_template('index.html')
-
-
-def trigger_controllers(user, event, data):
-    print(controllers_objects)
-    print("trigger: ", user, event, data)
-    if user is None:
-        for c in control_mods:
-            c.on_global_event(event, data)
-    else:
-        for c in controllers_objects[user]:
-            c.on_event(event, data)
+# load sensor modules as blueprints
+fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
+sensor_mods = map(importlib.import_module, fs)
 
 for sensor in sensor_mods:
     app.register_blueprint(sensor.app)
 
+@app.route('/')
+def home_page():
+    return render_template('index.html')
 
 @app.route('/controllers')
 def get_controllers():

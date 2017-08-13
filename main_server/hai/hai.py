@@ -4,7 +4,7 @@ import requests
 import uuid
 import os
 import importlib
-from database import mongo
+from database import mongo, controllers_objects
 
 fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
 sensor_mods = map(importlib.import_module, fs)
@@ -19,21 +19,10 @@ for f in fs:
   except:
     print("failed to load", f)
 
-from controllers.controller import Sample
-from controllers.detection import Detection
-from controllers.chatbot import Chatbot
-from controllers.hello import HelloController
 
 app = Flask(__name__)
 app.config.from_pyfile(filename="application.cfg")
 
-def standard_controllers(user_name):
-    return [Sample(), Detection(), Chatbot(), HelloController(user_name)]
-
-# TODO: use DB
-controllers_objects = {}
-controllers_objects['koki'] = standard_controllers('koki')
-controllers_objects['sean'] = standard_controllers('sean')
 
 @app.route('/')
 def home_page():

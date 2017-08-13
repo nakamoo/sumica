@@ -21,6 +21,7 @@ def post_image_data():
 
     if request.args.get('execute') == 'True':
         import hai
+        from database import controllers_objects
         hai.trigger_controllers(data['user_name'], "image", data)
 
     return jsonify(data), 201

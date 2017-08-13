@@ -4,7 +4,6 @@ import pymongo
 
 from controllers.controller import Controller
 from server_actors import actor
-from database import mongo
 
 
 def has_object(obj_class, state):
@@ -22,6 +21,7 @@ class HelloController(Controller):
 
     def execute(self, image_path=None):
         if image_path is None:
+            from database import mongo
             data = mongo.db.images.find_one({"user_name": self.user_name},
                                      sort=[("_id", pymongo.DESCENDING)])
             image_path = '../images/' + data['filename']

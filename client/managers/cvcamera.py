@@ -84,10 +84,11 @@ class Manager:
                         break
                         
                     try:
-                        if self.detect_only:
-                            self.show(self.image, self.server_ip)
-                        else:
-                            self.send(self.image, self.server_ip)
+                        #if self.detect_only:
+                        #    self.show(self.image, self.server_ip)
+                        #else:
+                        #    self.send(self.image, self.server_ip)
+                        pass
                     except Exception as e:
                         print("unable to send image to server.")
                         print(e)

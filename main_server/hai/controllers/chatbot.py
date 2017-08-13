@@ -17,11 +17,11 @@ class Chatbot(Controller):
             if msg == "sudo reset fb":
               import hai
               hai.db.fb_users.delete_one({"fb_id": self.fb_id})
-              chatbot.send_fb_message(self.fb_id, "resetting fb db")
+              chatbot.send_fb_message(self.fb_id, "データベースから削除しました")
             elif msg == "help":
               chatbot.send_fb_message(self.fb_id, "どうも！ボットです！よろしくお願いします！")
             else:
-              chatbot.send_fb_message(self.fb_id, "hi!")
+              chatbot.send_fb_message(self.fb_id, "どうも！")
 
     def execute(self):
         pass
@@ -37,17 +37,17 @@ def on_global_event(event, data):
 
         #print("received msg", msg, "from", event["sender"]["id"])
 
-        if msg.startswith("i am"):
-            _id = msg.split()[-1]
+        if msg.startswith("私は"):
+            _id = msg.split("私は")[-1]
 
             if _id in hai.controllers_objects:
                 data = {"fb_id": fb_id, "id": _id}
                 hai.db.fb_users.insert_one(data)
                 hai.controllers_objects[_id]["chatbot"].fb_id = fb_id
-                chatbot.send_fb_message(fb_id, "hi " + _id)
+                chatbot.send_fb_message(fb_id, _id + "さんこんにちは！")
             else:
-                chatbot.send_fb_message(fb_id, _id + " is not in the database")
-        elif msg.startswith("who am i"):
-            chatbot.send_fb_message(fb_id, "i dont know")
+                chatbot.send_fb_message(fb_id, _id + " はデータベースに入っていません")
+        elif msg.startswith("私は誰？"):
+            chatbot.send_fb_message(fb_id, "わからないです")
         else:
-            chatbot.send_fb_message(fb_id, "who are you?")
+            chatbot.send_fb_message(fb_id, "誰ですか？（私は〜〜）")

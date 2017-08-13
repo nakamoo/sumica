@@ -22,5 +22,5 @@ class Sample(Controller):
 
         actor.sample()
 
-        return "turn off"
+        return "hello"
 

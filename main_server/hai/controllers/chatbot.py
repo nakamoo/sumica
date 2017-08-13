@@ -10,6 +10,8 @@ class Chatbot(Controller):
           if n:
             self.fb_id = n["fb_id"]
 
+        self.lights = None
+
     def on_event(self, event, data):
         if event == "chat" and self.fb_id:
             msg = data["message"]["text"]
@@ -20,11 +22,20 @@ class Chatbot(Controller):
               chatbot.send_fb_message(self.fb_id, "データベースから削除しました")
             elif msg == "help":
               chatbot.send_fb_message(self.fb_id, "どうも！ボットです！よろしくお願いします！")
+            elif msg "hue on":
+              chatbot.send_fb_message(self.fb_id, "では電気をつけます")
+              self.lights = True
+            elif msg "hue off":
+              chatbot.send_fb_message(self.fb_id, "では電気を消します")
+              self.lights = False
             else:
               chatbot.send_fb_message(self.fb_id, "どうも！")
 
     def execute(self):
-        pass
+        if self.lights is not None:
+            return {"platform": "hue", "data": {"on": self.lights}}
+
+        self.lights = None
 
 def on_global_event(event, data):
     import hai

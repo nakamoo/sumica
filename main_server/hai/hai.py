@@ -33,8 +33,15 @@ with app.app_context():
 def home_page():
     return render_template('index.html')
 
+def standard_controllers(user):
+    return {"SampleController": Sample(),
+            "detection": Detection(),
+            "chatbot": Chatbot(user)}
+
 # TODO: use DB
 controllers_objects = {}
+controllers_objects['koki'] = standard_controllers('koki')
+controllers_objects['sean'] = standard_controllers('sean')
 
 def trigger_controllers(user, event, data):
     print(controllers_objects)
@@ -78,20 +85,6 @@ def execute_controllers():
 def execute_specific_controller():
     return "Not implemented", 404
 
-def standard_controllers(user):
-    return {"SampleController": Sample(),
-            "detection": Detection(),
-            "chatbot": Chatbot(user)}
-
-#@app.before_first_request
-def setup():
-  if len(controllers_objects) > 0:
-    return
-  print("setting up")
-  controllers_objects['koki'] = standard_controllers('koki')
-  controllers_objects['sean'] = standard_controllers('sean')
-
-setup()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

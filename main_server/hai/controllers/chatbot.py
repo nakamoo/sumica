@@ -1,6 +1,6 @@
 from .controller import Controller
 from server_actors import chatbot
-import random
+import database as db
 
 class Chatbot(Controller):
     def __init__(self, user):
@@ -12,12 +12,8 @@ class Chatbot(Controller):
             self.fb_id = n["fb_id"]
 
         self.lights = None
-        self.id = random.random()
-        print(self.id)
 
     def on_event(self, event, data):
-        print(self.lights)
-        print(self.id)
         if event == "chat" and self.fb_id:
             msg = data["message"]["text"]
 
@@ -30,7 +26,6 @@ class Chatbot(Controller):
             elif msg == "hue on":
               chatbot.send_fb_message(self.fb_id, "では電気をつけます")
               self.lights = True
-              print(self.lights)
             elif msg == "hue off":
               chatbot.send_fb_message(self.fb_id, "では電気を消します")
               self.lights = False
@@ -38,8 +33,6 @@ class Chatbot(Controller):
               chatbot.send_fb_message(self.fb_id, "どうも！")
 
     def execute(self):
-        print(self.id)
-        print(self.lights)
         if self.lights is not None:
             l = self.lights
             self.lights = None
@@ -48,23 +41,17 @@ class Chatbot(Controller):
             return []
 
 def on_global_event(event, data):
-    import hai
-
     if event == "chat":
         msg = data["message"]["text"].lower()
         fb_id = data["sender"]["id"]
-
-        #has_id = hai.mongo.fb_users.find({"fb_id": fb_id, "id": {'$exists': True}}).count() > 0
-
-        #print("received msg", msg, "from", event["sender"]["id"])
 
         if msg.startswith("私は"):
             _id = msg.split("私は")[-1]
 
             if _id in hai.controllers_objects:
                 data = {"fb_id": fb_id, "id": _id}
-                hai.db.fb_users.insert_one(data)
-                hai.controllers_objects[_id]["chatbot"].fb_id = fb_id
+                db.mongo.fb_users.insert_one(data)
+                db.controllers_objects[_id]["chatbot"].fb_id = fb_id
                 chatbot.send_fb_message(fb_id, _id + "さんこんにちは！")
             else:
                 chatbot.send_fb_message(fb_id, _id + " はデータベースに入っていません")

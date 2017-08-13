@@ -1,6 +1,7 @@
 from flask import Blueprint, request
 from server_actors import chatbot
 import json
+import database as db
 
 app = Blueprint("chatbot", __name__)
 
@@ -16,16 +17,13 @@ def post_fb_data():
     event = json.loads(data["event"])
     fb_id = event["sender"]["id"]
 
-    print(data)
-
-    import hai
     username = None
 
-    n = hai.db.fb_users.find_one({"fb_id": fb_id})
+    n = db.mongo.fb_users.find_one({"fb_id": fb_id})
     if n:
         username = n["id"]
     
     if fb_id != bot_id:
-        hai.trigger_controllers(username, "chat", event)
+        db.trigger_controllers(username, "chat", event)
 
     return "ok", 201

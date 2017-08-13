@@ -18,6 +18,8 @@ class Chatbot(Controller):
               import hai
               hai.db.fb_users.delete_one({"fb_id": self.fb_id})
               chatbot.send_fb_message(self.fb_id, "resetting fb db")
+            elif msg == "help":
+              chatbot.send_fb_message(self.fb_id, "どうも！ボットです！よろしくお願いします！")
             else:
               chatbot.send_fb_message(self.fb_id, "hi!")
 

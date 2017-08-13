@@ -19,5 +19,7 @@ class Detection(Controller):
             #print("detections: {}".format(r.text))
 
     def execute(self):
-        return {"hue": "turn off"}
+        response = []
+        response.append({"app": "hue", "cmd": "turn on", "controller": "Detection"})
+        return response
 

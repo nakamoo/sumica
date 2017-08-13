@@ -33,17 +33,17 @@ class HelloController(Controller):
                                    files={'image': open(image_path, "rb")})
         state = json.loads(state_json.text)
 
-        response = {}
+        response = []
         if has_object("person", state):
             if not self.on:
-                response["print"] = "hi"
+                response.append({"app":"print", "cmd":"hi", "controller": "HelloController"})
                 #re.append({"app":"sound", "cmd":"button83.mp3"})
                 #re.append({"app":"hue", "cmd":'{"bri":255}'})
                 actor.sample("there is person")
                 self.on = True
         else:
             if self.on:
-                response["print"] = "bye",
+                response.append({"app":"print", "cmd":"bye", "controller": "HelloController"})
                 #re.append({"app":"hue", "cmd":'{"bri":64}'})
                 actor.sample("there is not person")
                 self.on = False

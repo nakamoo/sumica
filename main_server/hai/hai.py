@@ -65,12 +65,12 @@ def update_controllers():
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
     user_id = request.form['user_name']
-    response = {}
+    response = []
 
     for controller in controllers_objects[user_id]:
         commands = controller.execute()
-        for device, command in commands.items():
-            response[device] = command
+        for command in commands:
+            response.append(command)
 
     return jsonify(response), 201
 

@@ -22,5 +22,9 @@ class Sample(Controller):
 
         actor.sample()
 
-        return {"TV": "turn on", "music": "play"}
+        response = []
+        response.append({"app": "TV", "cmd": "turn on", "controller": "Sample"})
+        response.append({"app": "music", "cmd": "pray", "controller": "Sample"})
+        return response
+
 

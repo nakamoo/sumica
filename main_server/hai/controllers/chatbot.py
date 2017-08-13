@@ -5,10 +5,9 @@ import database as db
 class Chatbot(Controller):
     def __init__(self, user):
         self.fb_id = None
-        import hai
-        with hai.app.app_context():
-          n = hai.db.fb_users.find_one({"id": user})
-          if n:
+        
+        n = db.mongo.fb_users.find_one({"id": user})
+        if n:
             self.fb_id = n["fb_id"]
 
         self.lights = None
@@ -18,8 +17,7 @@ class Chatbot(Controller):
             msg = data["message"]["text"]
 
             if msg == "sudo reset fb":
-              import hai
-              hai.db.fb_users.delete_one({"fb_id": self.fb_id})
+              db.mongo.fb_users.delete_one({"fb_id": self.fb_id})
               chatbot.send_fb_message(self.fb_id, "データベースから削除しました")
             elif msg == "help":
               chatbot.send_fb_message(self.fb_id, "どうも！ボットです！よろしくお願いします！")

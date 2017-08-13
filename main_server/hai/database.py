@@ -2,19 +2,25 @@ from pymongo import MongoClient
 client = MongoClient()
 mongo = client.hai
 
+import os
+import importlib
+
 from controllers.detection import Detection
 from controllers.chatbot import Chatbot
 from controllers.hello import HelloController
 
 def load_controller_modules():
     fs = ['controllers.{}'.format(f[:-3]) for f in os.listdir('controllers') if f.endswith('.py')]
+    mods = []
     for f in fs:
-    try:
-        m = importlib.import_module(f)
-        if "on_global_event" in dir(m):
-            control_mods.append(m)
-    except:
-        print("failed to load", f)
+        try:
+            m = importlib.import_module(f)
+            if "on_global_event" in dir(m):
+                mods.append(m)
+        except Exception as e:
+            print("failed to load", f, e)
+
+    return mods
 
 # controller modules for global events
 control_mods = load_controller_modules()

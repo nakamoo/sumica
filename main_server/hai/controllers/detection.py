@@ -11,13 +11,18 @@ class Detection(Controller):
             print("image received")
             #print(data)
 
-            addr = "http://localhost:5002/detect"
 
-            r = requests.post(addr, files={'image': open("images/" + data["filename"], "rb")}, data=data)
+            from hai import app
+            image_path = '../images/' + data['filename']
+            state_json = requests.post("http://" +
+                                       app.config['RECOGNITION_SERVER_URL'] +
+                                       "/detect",
+                                       files={'image': open(image_path, "rb")})
 
             print("image analyzed.")
             #print("detections: {}".format(r.text))
 
     def execute(self):
-        pass
-
+        response = []
+        response.append({"app": "hue", "cmd": "turn on", "controller": "Detection"})
+        return response

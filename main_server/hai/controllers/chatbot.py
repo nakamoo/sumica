@@ -43,7 +43,7 @@ class Chatbot(Controller):
         if self.lights is not None:
             l = self.lights
             self.lights = None
-            return {"platform": "hue", "data": {"on": l}}
+            return [{"platform": "hue", "data": {"on": l}}]
 
 def on_global_event(event, data):
     import hai

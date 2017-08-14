@@ -4,6 +4,7 @@ import os
 
 class Settings(Controller):
     def __init__(self, user):
+        self.user = user
         n = db.mongo.settings.find_one({"user_name": user})
 
         if not n:
@@ -12,7 +13,7 @@ class Settings(Controller):
         self.load_settings()
 
     def load_settings(self):
-        n = db.mongo.settings.find_one({"user_name": user})
+        n = db.mongo.settings.find_one({"user_name": self.user})
         self.save_images = n["save_images"]
 
     def on_event(self, event, data):
@@ -22,12 +23,13 @@ class Settings(Controller):
             elif data["message"]["text"] == "save images off":
                 self.save_images = False
 
-            db.mongo.settings.update_one({"user_name": self.user_name}, {"save_images": self.save_images})
+            db.mongo.settings.update_one({"user_name": self.user}, {"$set": {"save_images": self.save_images}})
         elif event == "image":
             if not self.save_images:
-                for n in db.mongo.images.find({"user_name": self.user_name}):
-                    print("removing {}".format(n["filename"]))
-                    os.remove("./images/" + n["filename"])
+                for n in db.mongo.images.find({"user_name": self.user}):
+                    if os.path.isfile("./images/" + n["filename"]):
+                        print("removing {}".format(n["filename"]))
+                        os.remove("./images/" + n["filename"])
 
     def execute(self):
         return []

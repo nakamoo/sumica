@@ -17,7 +17,7 @@ def post_image_data():
     request.files['image'].save("./images/" + filename)
     data = request.form.to_dict()
     data['filename'] = filename
-    mongo.db.images.insert_one(data)
+    mongo.images.insert_one(data)
     data.pop("_id")
 
     if request.args.get('execute') == 'True':

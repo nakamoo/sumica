@@ -37,8 +37,8 @@ class Manager:
         while True:
             ret, frame = self.cap.read()
 
-            if not ret:
-                self.enabled = False
+            #if not ret:
+            #    self.enabled = False
 
             self.image = frame
 
@@ -53,7 +53,7 @@ class Manager:
         thread_stream.daemon = True
         thread_stream.start()
    
-        cv2.namedWindow("capture", cv2.WINDOW_NORMAL)
+        #cv2.namedWindow("capture", cv2.WINDOW_NORMAL)
         last_img = None
         diff_thres = 0.5
 
@@ -76,7 +76,7 @@ class Manager:
                 #    skip = True
                 
                 if not skip:
-                    cv2.imshow("capture", self.image)
+                    #cv2.imshow("capture", self.image)
                     last_img = gray
                     k = cv2.waitKey(1)
 
@@ -84,10 +84,10 @@ class Manager:
                         break
                         
                     try:
-                        #if self.detect_only:
-                        #    self.show(self.image, self.server_ip)
-                        #else:
-                        #    self.send(self.image, self.server_ip)
+                        if self.detect_only:
+                            self.show(self.image, self.server_ip)
+                        else:
+                            self.send(self.image, self.server_ip)
                         pass
                     except Exception as e:
                         print("unable to send image to server.")
@@ -107,8 +107,8 @@ class Manager:
     def send(self, image, ip):
         cv2.imwrite("image.png", image)
         
-        data = {}
-        r = requests.post("{}/data/image".format(ip), files={'image': open("image.png", "rb")}, data=data)
+        data = {"user_name": "sean", "time": time.time()}
+        r = requests.post("{}/data/images?execute=True".format(ip), files={'image': open("image.png", "rb")}, data=data)
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)

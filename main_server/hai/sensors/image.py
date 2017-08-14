@@ -3,6 +3,7 @@ import uuid
 from flask import Blueprint, request, jsonify
 
 from database import mongo
+import database as db
 
 app = Blueprint("images", __name__)
 
@@ -20,8 +21,6 @@ def post_image_data():
     data.pop("_id")
 
     if request.args.get('execute') == 'True':
-        import hai
-        from database import controllers_objects
-        hai.trigger_controllers(data['user_name'], "image", data)
+        db.trigger_controllers(data['user_name'], "image", data)
 
     return jsonify(data), 201

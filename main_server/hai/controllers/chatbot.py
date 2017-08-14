@@ -17,7 +17,7 @@ class Chatbot(Controller):
         if event == "chat" and self.fb_id:
             msg = data["message"]["text"]
 
-            if msg == "sudo reset fb":
+            if msg == "delete id":
               db.mongo.fb_users.delete_one({"fb_id": self.fb_id})
               chatbot.send_fb_message(self.fb_id, "データベースから削除しました")
             elif msg == "help":

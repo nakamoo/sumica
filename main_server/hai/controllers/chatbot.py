@@ -1,6 +1,7 @@
 from .controller import Controller
 from server_actors import chatbot
 import database as db
+import json
 
 class Chatbot(Controller):
     def __init__(self, user):
@@ -35,7 +36,7 @@ class Chatbot(Controller):
             l = self.lights
             self.lights = None
 
-            return [{"platform": "hue", "data": '{"on": {}}'.format(str(l).lower())}]
+            return [{"platform": "hue", "data": json.dumps({"on": l})}]
         else:
             return []
 

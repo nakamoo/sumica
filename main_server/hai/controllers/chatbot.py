@@ -6,6 +6,7 @@ import json
 class Chatbot(Controller):
     def __init__(self, user):
         self.fb_id = None
+        self.user = user
         
         n = db.mongo.fb_users.find_one({"id": user})
         if n:
@@ -28,6 +29,18 @@ class Chatbot(Controller):
             elif msg == "hue off":
               chatbot.send_fb_message(self.fb_id, "では電気を消します")
               self.lights = False
+            elif msg == "am i here":
+              n = db.mongo.detections.find({"user_name": self.user}).sort([("time",-1)]).limit(1)
+              here = False
+              for obj in n.next()["detections"]["objects"]:
+                  if obj["label"] == "person":
+                      here = True
+                      break
+              if here:
+                  chatbot.send_fb_message(self.fb_id, "yes")
+              else:
+                  chatbot.send_fb_message(self.fb_id, "no")
+
             else:
               chatbot.send_fb_message(self.fb_id, "どうも！")
 

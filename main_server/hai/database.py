@@ -9,6 +9,7 @@ from controllers.detection import Detection
 from controllers.chatbot import Chatbot
 from controllers.hello import HelloController
 from controllers.settings import Settings
+from controllers.pose import Pose
 
 def load_controller_modules():
     fs = ['controllers.{}'.format(f[:-3]) for f in os.listdir('controllers') if f.endswith('.py')]
@@ -27,7 +28,7 @@ def load_controller_modules():
 control_mods = load_controller_modules()
 
 def standard_controllers(user_name):
-    return [Detection(), Chatbot(user_name), HelloController(user_name), Settings(user_name)]
+    return [Pose(), Detection(), Chatbot(user_name), Settings(user_name)]
 
 # TODO: use DB
 controllers_objects = {}

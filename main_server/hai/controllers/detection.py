@@ -27,7 +27,7 @@ class Detection(Controller):
             det_data = {"detections": dets}
             det_data.update(data)
             print(det_data)
-            db.mongo.detection.insert_one(det_data)
+            db.mongo.detections.insert_one(det_data)
 
     def execute(self):
         response = []

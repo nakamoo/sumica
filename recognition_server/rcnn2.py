@@ -11,6 +11,8 @@ from io import StringIO
 from matplotlib import pyplot as plt
 from PIL import Image
 
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1"
+
 # This is needed to display the images.
 #%matplotlib inline
 

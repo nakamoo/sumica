@@ -26,7 +26,7 @@ class Detection(Controller):
             dets = json.loads(state_json.text)
             det_data = {"detections": dets}
             det_data.update(data)
-            print(det_data)
+            #print(det_data)
             db.mongo.detections.insert_one(det_data)
 
     def execute(self):

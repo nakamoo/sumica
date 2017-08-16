@@ -1,4 +1,5 @@
 from .controller import Controller
+import database as db
 
 def draw(path, dets, pose):
     print(path)
@@ -15,13 +16,13 @@ class Snapshot(Controller):
             #msg = data["message"]["text"]
 
             #if msg == "snapshot":
-        n = db.mongo.detections.find({"user_name": self.user}).sort([("time",-1)]).limit(1)
-        dets = n["detections"]["objects"]
-        path = n["path"]
-
-        n = db.mongo.pose.find_one({"path": path})
+        n = db.mongo.pose.find({"user_name": self.user}).sort([("time",-1)]).limit(1).next()
         pose = n["keypoints"]
-
+        fn = n["filename"]
+        n = db.mongo.detections.find_one({"filename": fn})
+        dets = n["detections"]["objects"]
+        path = n["filename"]
+         
         img = draw(path, dets, pose)
         pass
 

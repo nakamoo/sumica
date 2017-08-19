@@ -16,3 +16,10 @@ key = base64.urlsafe_b64encode(kdf.derive(password))
 cryptographic_key = Fernet(key)
 
 
+def open_encrypted_img(path):
+    with open(path, 'rb') as f:
+        token = f.read()
+    byte_data = cryptographic_key.decrypt(token)
+    return byte_data
+
+

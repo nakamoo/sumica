@@ -1,6 +1,7 @@
 from .controller import Controller
 import numpy as np
 import requests
+from utils import encryption
 
 class Detection(Controller):
     def __init__(self):
@@ -13,11 +14,11 @@ class Detection(Controller):
 
 
             from hai import app
-            image_path = './images/' + data['filename']
+            image_path = './images/encrypted_image/' + data['filename']
             state_json = requests.post("http://" +
                                        app.config['RECOGNITION_SERVER_URL'] +
                                        "/detect",
-                                       files={'image': open(image_path, "rb")})
+                                       files={'image': encryption.open_encrypted_img(image_path)})
 
             print("image analyzed.")
             #print("detections: {}".format(r.text))

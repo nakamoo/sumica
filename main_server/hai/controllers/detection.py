@@ -13,7 +13,7 @@ class Detection(Controller):
 
 
             from hai import app
-            image_path = '../images/' + data['filename']
+            image_path = './images/' + data['filename']
             state_json = requests.post("http://" +
                                        app.config['RECOGNITION_SERVER_URL'] +
                                        "/detect",

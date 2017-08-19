@@ -17,18 +17,21 @@ def get_image_data():
 def post_image_data():
     data = request.form.to_dict()
 
-    byte_data = request.files['image'].read()
-    token = cryptographic_key.encrypt(byte_data)
-    filename = str(uuid.uuid4()) + ".dat"
-    with open("./images/encrypted_image/" + filename, 'wb') as f:
-        f.write(token)
-    data['encryption'] = True
-
-    # filename = str(uuid.uuid4()) + ".png"
-    # request.files['image'].save("./images/" + filename)
+    import hai
+    if hai.app.config['ENCRYPTION']:
+        byte_data = request.files['image'].read()
+        token = cryptographic_key.encrypt(byte_data)
+        filename = str(uuid.uuid4()) + ".dat"
+        with open(hai.app.config['ENCRYPTED_IMG_DIR'] + filename, 'wb') as f:
+            f.write(token)
+        data['encryption'] = True
+    else:
+        filename = str(uuid.uuid4()) + ".png"
+        request.files['image'].save(hai.app.config['RAW_IMG_DIR'] + filename)
+        data['encryption'] = False
 
     data['filename'] = filename
-    mongo.db.images.insert_one(data)
+    mongo.images.insert_one(data)
     data.pop("_id")
 
     if request.args.get('execute') == 'True':

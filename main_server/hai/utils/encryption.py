@@ -13,6 +13,6 @@ password = input().encode(encoding='UTF-8')
 kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
                  salt=salt, iterations=100000, backend=default_backend())
 key = base64.urlsafe_b64encode(kdf.derive(password))
-encrypter = Fernet(key)
+cryptographic_key = Fernet(key)
 
 

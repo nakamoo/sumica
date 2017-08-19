@@ -1,6 +1,6 @@
-!.gitkeep
 main_server/hai/images/*
 main_server/images/*
+!.gitkeep
 
 hai_server/images/*
 hai_server2/images/*

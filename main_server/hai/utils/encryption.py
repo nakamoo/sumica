@@ -1,5 +1,6 @@
 import base64
 import os
+from getpass import getpass
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -9,7 +10,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 salt = "It is desirable to　use different value in each user " \
        "against rainbow table attack".encode(encoding='UTF-8')
 print("Input password for image encryption.")
-password = input().encode(encoding='UTF-8')
+password = getpass().encode(encoding='UTF-8')
 kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
                  salt=salt, iterations=100000, backend=default_backend())
 key = base64.urlsafe_b64encode(kdf.derive(password))

@@ -30,14 +30,17 @@ def update_loop():
 
             json_files = glob.glob("./pose_data/*")
             for f in json_files:
-                pts = json.load(open(f, "r"))
-                #print(f)
-                name = f[:-15].split("/")[-1] + ".png"
-                #print(name)
-                data = {"keypoints": pts}
-                image_info = db.mongo.images.find_one({"filename": name})
-                data.update(image_info)
-                db.mongo.pose.insert_one(data)
+                try:
+                  pts = json.load(open(f, "r"))
+                  #print(f)
+                  name = f[:-15].split("/")[-1] + ".png"
+                  #print(name)
+                  data = {"keypoints": pts}
+                  image_info = db.mongo.images.find_one({"filename": name})
+                  data.update(image_info)
+                  db.mongo.pose.insert_one(data)
+                except Exception as e:
+                  print(e)
                 os.remove(f)
         else:
             time.sleep(1)

@@ -1,6 +1,7 @@
 from .controller import Controller
 import database as db
 import os
+import time
 
 class Settings(Controller):
     def __init__(self, user):
@@ -26,7 +27,7 @@ class Settings(Controller):
             db.mongo.settings.update_one({"user_name": self.user}, {"$set": {"save_images": self.save_images}})
         elif event == "image":
             if not self.save_images:
-                for n in db.mongo.images.find({"user_name": self.user}):
+                for n in db.mongo.images.find({"user_name": self.user, "time": {"$lt": time.time() - 30000}}):
                     if os.path.isfile("./images/" + n["filename"]):
                         print("removing {}".format(n["filename"]))
                         os.remove("./images/" + n["filename"])

@@ -7,3 +7,10 @@ def send_fb_message(id, text):
     data2 = {"recipient": {"id": id}, "message": {"text": text}}
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=data, json=data2)
     print(r.text)
+
+def send_fb_image(id, imurl):
+    data = {"access_token": fb_token}
+    data2 = {"recipient": {"id": id}, "message": {"attachment": {"type":"image",
+     "payload": {"url": imurl}}}}
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=data, json=data2)
+    print(r.text)

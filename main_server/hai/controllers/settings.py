@@ -9,9 +9,9 @@ class Settings(Controller):
         if not n:
             db.mongo.settings.insert_one({"user_name": user, "save_images": True})
 
-        self.load_settings()
+        self.load_settings(user)
 
-    def load_settings(self):
+    def load_settings(self, user):
         n = db.mongo.settings.find_one({"user_name": user})
         self.save_images = n["save_images"]
 

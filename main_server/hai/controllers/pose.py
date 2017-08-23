@@ -23,7 +23,7 @@ def update_loop():
         files = glob.glob("./pose_tmp/*")
         if len(files) > 0:
             print("executing subprocess")
-            subprocess_cmd('cd ~/openpose; ./build/examples/openpose/openpose.bin --no_display --image_dir ~/HAI/main_server/hai/pose_tmp --write_keypoint_json ~/HAI/main_server/hai/pose_data --num_gpu 2 --num_gpu_start 2 --face --hand')
+            subprocess_cmd('cd ~/openpose; ./build/examples/openpose/openpose.bin --no_display --image_dir ~/HAI/main_server/hai/pose_tmp --write_keypoint_json ~/HAI/main_server/hai/pose_data --num_gpu 1 --num_gpu_start 1 --face --hand')
             print("clearing pose_tmp")
             for f in files:
                 os.remove(f)

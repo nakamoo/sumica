@@ -34,6 +34,7 @@ def visualize(frame, dets, pts):
     return frame
 
 def chunker(seq, size):
+  print(seq)
   return (seq[pos:pos+size] for pos in range(0, len(seq), size))
 
 def to_list(pose):
@@ -41,7 +42,8 @@ def to_list(pose):
     for person in pose["people"]:
       def get_points(pts):
         for x, y, c in chunker(pts, 3):
-          print(x, y, c)
+          #print(x, y, c)
+          #print(type(c))
           if c > 0.05:
             pts.append([int(x), int(y)])
 
@@ -53,16 +55,21 @@ def to_list(pose):
 def draw(path, dets, pose):
     #print(path)
     #print(dets)
-    print(pose)
+    #print(pose)
 
     img = cv2.imread("./images/" + path)
     img = visualize(img, dets, to_list(pose))
 
     for person in pose["people"]:
+      print(person)
       def draw_points(pts):
-        for x, y, c in chunker(pts, 3):
-          if c > 0.05:
-            cv2.circle(img, (int(x), int(y)), 3, (0, 255, 0), -1)
+        try:
+          for x, y, c in chunker(pts, 3):
+            #print(x, y, c)
+            if c > 0.05:
+              cv2.circle(img, (int(x), int(y)), 3, (0, 255, 0), -1)
+        except:
+          pass
 
       draw_points(person["pose_keypoints"])
       draw_points(person["hand_left_keypoints"])

@@ -61,10 +61,10 @@ def on_global_event(event, data):
         if msg.startswith("私は"):
             _id = msg.split("私は")[-1]
 
-            if _id in hai.controllers_objects:
+            if _id in db.controllers_objects:
                 data = {"fb_id": fb_id, "id": _id}
                 db.mongo.fb_users.insert_one(data)
-                db.controllers_objects[_id]["chatbot"].fb_id = fb_id
+                db.controllers_objects[_id][2].fb_id = fb_id
                 chatbot.send_fb_message(fb_id, _id + "さんこんにちは！")
             else:
                 chatbot.send_fb_message(fb_id, _id + " はデータベースに入っていません")

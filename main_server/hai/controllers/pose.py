@@ -62,7 +62,7 @@ class Pose(Controller):
                 image_path = hai.app.config['ENCRYPTED_IMG_DIR'] + data['filename']
             else:
                 image_path = hai.app.config['RAW_IMG_DIR'] + data['filename']
-            copyfile(image_path, './images/pose_tmp/' + data['filename'])
+            copyfile(image_path, './pose_tmp/' + data['filename'])
 
     def execute(self):
         return []

@@ -27,16 +27,16 @@ class Detection(Controller):
                                        "/detect",
                                        files={'image': image}, json={'threshold': 0.5})
 
-            print("image analyzed.")
             #print("detections: {}".format(r.text))
             dets = json.loads(state_json.text)
             det_data = {"detections": dets}
             det_data.update(data)
             #print(det_data)
+
             db.mongo.detections.insert_one(det_data)
 
             print("image analyzed.")
-            # print("detections: {}".format(state_json.text))
+            print("detections: {}".format(state_json.text))
 
     def execute(self):
         response = []

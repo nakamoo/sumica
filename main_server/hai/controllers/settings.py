@@ -24,13 +24,20 @@ class Settings(Controller):
             elif data["message"]["text"] == "save images off":
                 self.save_images = False
 
+            print("changed settings: save images", self.save_images)
             db.mongo.settings.update_one({"user_name": self.user}, {"$set": {"save_images": self.save_images}})
         elif event == "image":
+            import hai
             if not self.save_images:
                 for n in db.mongo.images.find({"user_name": self.user, "time": {"$lt": time.time() - 30000}}):
-                    if os.path.isfile("./images/" + n["filename"]):
+                    #if os.path.isfile("./images/" + n["filename"]):
+                    try:
                         print("removing {}".format(n["filename"]))
-                        os.remove("./images/" + n["filename"])
+                        os.remove(hai.app.config["RAW_IMG_DIR"] + n["filename"])
+                    except:
+                        print("could not delete")
+            else:
+                print("preserving image", self.user)
 
     def execute(self):
         return []

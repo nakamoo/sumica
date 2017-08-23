@@ -57,7 +57,11 @@ def draw(path, dets, pose):
     #print(dets)
     #print(pose)
 
-    img = cv2.imread("./images/" + path)
+    import hai
+
+    print(os.path.join(hai.app.config["RAW_IMG_DIR"], path))
+
+    img = cv2.imread(hai.app.config["RAW_IMG_DIR"] + path)
     img = visualize(img, dets, to_list(pose))
 
     for person in pose["people"]:
@@ -97,11 +101,13 @@ class Snapshot(Controller):
               img = draw(path, dets, pose)
               #print("sending: ", "http://153.120.159.210:5000/static/" + path)
               #img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
+              print(img)
+              print("writing to: ", path)
               cv2.imwrite("./static/" + path, img)
               chatbot.send_fb_message(data["sender"]["id"], "here's your image")
-              chatbot.send_fb_image(data["sender"]["id"], "http://153.120.159.210:5000/static/" + path)
+              chatbot.send_fb_image(data["sender"]["id"], "http://homeai.ml:5001/static/" + path)
              
-              os.remove("./static/" + path)
+              #os.remove("./static/" + path)
               #def rem(path):
               #  os.remove(path)
               #Timer(30.0, rem, ("./static/" + path,)).start()

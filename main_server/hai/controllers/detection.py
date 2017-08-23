@@ -3,6 +3,7 @@ import numpy as np
 import requests
 import database as db
 import json
+from utils import encryption
 
 class Detection(Controller):
     def __init__(self):
@@ -13,11 +14,16 @@ class Detection(Controller):
             #print("image received")
             #print(data)
 
+            import hai
+            if hai.app.config['ENCRYPTION']:
+                image_path = hai.app.config['ENCRYPTED_IMG_DIR'] + data['filename']
+                image = encryption.open_encrypted_img(image_path)
+            else:
+                image_path = hai.app.config['RAW_IMG_DIR'] + data['filename']
+                image = open(image_path, 'rb')
 
-            from hai import app
-            image_path = './images/' + data['filename']
             state_json = requests.post("http://" +
-                                       app.config['RECOGNITION_SERVER_URL'] +
+                                       hai.app.config['RECOGNITION_SERVER_URL'] +
                                        "/detect",
                                        files={'image': open(image_path, "rb")}, json={'threshold': 0.5})
 
@@ -29,7 +35,11 @@ class Detection(Controller):
             #print(det_data)
             db.mongo.detections.insert_one(det_data)
 
+            print("image analyzed.")
+            # print("detections: {}".format(state_json.text))
+
     def execute(self):
         response = []
         response.append({"app": "hue", "cmd": "turn on", "controller": "Detection"})
         return response
+

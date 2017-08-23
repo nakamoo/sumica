@@ -11,6 +11,8 @@ from io import StringIO
 from matplotlib import pyplot as plt
 from PIL import Image
 
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 # This is needed to display the images.
 #%matplotlib inline
 
@@ -130,3 +132,4 @@ def detect(image, thres, only_img_feats):
     #outputs = {"features": img_feats.tolist(), "objects": all_boxes}
 
     return img_feats, all_boxes, obj_feats
+

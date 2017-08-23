@@ -1,4 +1,5 @@
-from flask import Blueprint
+from flask import Blueprint, request, jsonify
+from database import mongo
 
 app = Blueprint("hue", __name__)
 
@@ -8,7 +9,7 @@ def get_hue_data():
 
 @app.route('/data/hue', methods=['POST'])
 def post_hue_data():
-    data = request.form.to_dict()
-    mongo.db.hue.insert_one(data)
+    data = request.json
+    mongo.hue.insert_one(data)
     data.pop("_id")
     return jsonify(data), 201

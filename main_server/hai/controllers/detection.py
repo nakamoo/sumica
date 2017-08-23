@@ -1,6 +1,8 @@
 from .controller import Controller
 import numpy as np
 import requests
+import database as db
+import json
 from utils import encryption
 
 class Detection(Controller):
@@ -9,7 +11,7 @@ class Detection(Controller):
 
     def on_event(self, event, data):
         if event == "image":
-            print("image received")
+            #print("image received")
             #print(data)
 
             import hai
@@ -23,10 +25,18 @@ class Detection(Controller):
             state_json = requests.post("http://" +
                                        hai.app.config['RECOGNITION_SERVER_URL'] +
                                        "/detect",
-                                       files={'image': image})
+                                       files={'image': image}, json={'threshold': 0.5})
+
+            #print("detections: {}".format(r.text))
+            dets = json.loads(state_json.text)
+            det_data = {"detections": dets}
+            det_data.update(data)
+            #print(det_data)
+
+            db.mongo.detections.insert_one(det_data)
 
             print("image analyzed.")
-            # print("detections: {}".format(state_json.text))
+            print("detections: {}".format(state_json.text))
 
     def execute(self):
         response = []

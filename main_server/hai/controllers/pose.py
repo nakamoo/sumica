@@ -57,7 +57,8 @@ class Pose(Controller):
 
     def on_event(self, event, data):
         if event == "image":
-            image_path = './images/' + data['filename']
+            import hai
+            image_path = os.path.join(hai.app.config["RAW_IMG_DIR"], data['filename'])
             copyfile(image_path, './pose_tmp/' + data['filename'])
 
     def execute(self):

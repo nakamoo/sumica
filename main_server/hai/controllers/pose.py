@@ -23,7 +23,7 @@ def update_loop():
         files = glob.glob("./pose_tmp/*")
         if len(files) > 0:
             print("executing subprocess")
-            subprocess_cmd('cd ~/openpose; ./build/examples/openpose/openpose.bin --no_display --image_dir ~/HAI/main_server/hai/pose_tmp --write_keypoint_json ~/HAI/main_server/hai/pose_data --num_gpu 1 --num_gpu_start 1 --face --hand')
+            subprocess_cmd('cd ~/openpose; ./build/examples/openpose/openpose.bin --no_display --image_dir ~/HAI/main_server/hai/pose_tmp --write_keypoint_json ~/HAI/main_server/hai/pose_data --num_gpu 2 --num_gpu_start 1 --face --hand')
             print("clearing pose_tmp")
             for f in files:
                 os.remove(f)
@@ -45,11 +45,11 @@ def update_loop():
         else:
             time.sleep(1)
 
-if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-    print("starting pose estimation thread...")
-    thread_stream = threading.Thread(target=update_loop)
-    thread_stream.daemon = True
-    thread_stream.start()
+#if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+print("starting pose estimation thread...")
+thread_stream = threading.Thread(target=update_loop)
+thread_stream.daemon = True
+thread_stream.start()
 
 class Pose(Controller):
     def __init__(self):
@@ -62,6 +62,7 @@ class Pose(Controller):
                 image_path = hai.app.config['ENCRYPTED_IMG_DIR'] + data['filename']
             else:
                 image_path = hai.app.config['RAW_IMG_DIR'] + data['filename']
+            print("copying to pose_tmp")
             copyfile(image_path, './pose_tmp/' + data['filename'])
 
     def execute(self):

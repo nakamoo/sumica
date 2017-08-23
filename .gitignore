@@ -4,6 +4,7 @@ main_server/hai/application.cfg
 main_server/hai/pose_tmp/*
 main_server/hai/static/*.png
 # ^^?
+main_server/hai/pose_data/*
 !.gitkeep
 
 client/*.png

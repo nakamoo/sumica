@@ -93,7 +93,7 @@ class Snapshot(Controller):
               n = db.mongo.pose.find({"user_name": self.user}).sort([("time",-1)]).limit(1).next()
               pose = n["keypoints"]
               fn = n["filename"]
-              #print(fn, n["time"])
+              print(fn, n["time"])
               n = db.mongo.detections.find_one({"user_name": self.user, "filename": fn})
               dets = n["detections"]["objects"]
               path = n["filename"]
@@ -101,16 +101,18 @@ class Snapshot(Controller):
               img = draw(path, dets, pose)
               #print("sending: ", "http://153.120.159.210:5000/static/" + path)
               #img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
-              print(img)
+              #print(img)
               print("writing to: ", path)
               cv2.imwrite("./static/" + path, img)
               chatbot.send_fb_message(data["sender"]["id"], "here's your image")
-              chatbot.send_fb_image(data["sender"]["id"], "http://homeai.ml:5001/static/" + path)
+              url = "http://homeai.ml:5001/static/" + path
+              print("snapshot url:", url)
+              chatbot.send_fb_image(data["sender"]["id"], url)
              
               #os.remove("./static/" + path)
-              #def rem(path):
-              #  os.remove(path)
-              #Timer(30.0, rem, ("./static/" + path,)).start()
+              def rem(path):
+                os.remove(path)
+              Timer(30.0, rem, ("./static/" + path,)).start()
 
 
     def execute(self):

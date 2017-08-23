@@ -19,10 +19,11 @@ def visualize(frame, all_boxes, win_name="frame"):
     return frame
 
 class Manager:
-    def __init__(self, server_ip, detect_only=False):
+    def __init__(self, user, server_ip, detect_only=False):
         self.server_ip = server_ip
         self.enabled = True
         self.detect_only = detect_only
+        self.user = user
 
         try:
             self.cap = cv2.VideoCapture(0)
@@ -107,14 +108,17 @@ class Manager:
     def send(self, image, ip):
         cv2.imwrite("image.png", image)
         
-        data = {"user_name": "koki", "time": time.time()}
-        r = requests.post("{}/data/images".format(ip), files={'image': open("image.png", "rb")}, data=data)
+        data = {"user_name": self.user, "time": time.time()}
+        addr = "{}/data/images".format(ip)
+        print("sending image to:", addr)
+        r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data)
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)
 
         data = {"threshold": "0.5"}
-        r = requests.post("{}/detect".format(ip), files={'image': open("image.png", "rb")}, data=data)
+        addr = "{}/detect".format(ip)
+        r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data)
 
         print(r.text)
 

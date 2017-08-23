@@ -7,17 +7,22 @@ import requests
 SERVER_IP = "https://homeai.ml:5001"
 
 class Manager:
-    def __init__(self, server_ip):
+    def __init__(self, user, server_ip):
         print("connecting to any Hue devices...")
         out = subprocess.check_output(['node', './utils/hue.js', 'connect'])
         out = out.decode('utf-8')
 
         if out.split("\n")[-2] != "ok":
+            self.connected = False
             print("failed to connect Hue; internet connection or press button?")
         else:
+            self.connected = True
             print("connected to Hue.")
 
     def start(self):
+        if not self.connected:
+            return        
+
         while True:
             out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
             state = json.loads(out.decode('utf-8').split("\n")[-2])

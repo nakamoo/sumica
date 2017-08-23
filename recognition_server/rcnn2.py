@@ -132,3 +132,4 @@ def detect(image, thres, only_img_feats):
     #outputs = {"features": img_feats.tolist(), "objects": all_boxes}
 
     return img_feats, all_boxes, obj_feats
+

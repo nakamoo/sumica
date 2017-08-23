@@ -107,8 +107,8 @@ class Manager:
     def send(self, image, ip):
         cv2.imwrite("image.png", image)
         
-        data = {"user_name": "sean", "time": time.time()}
-        r = requests.post("{}/data/images?execute=True".format(ip), files={'image': open("image.png", "rb")}, data=data)
+        data = {"user_name": "koki", "time": time.time()}
+        r = requests.post("{}/data/images".format(ip), files={'image': open("image.png", "rb")}, data=data)
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)

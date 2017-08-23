@@ -58,8 +58,11 @@ class Pose(Controller):
     def on_event(self, event, data):
         if event == "image":
             import hai
-            image_path = os.path.join(hai.app.config["RAW_IMG_DIR"], data['filename'])
-            copyfile(image_path, './pose_tmp/' + data['filename'])
+            if hai.app.config['ENCRYPTION']:
+                image_path = hai.app.config['ENCRYPTED_IMG_DIR'] + data['filename']
+            else:
+                image_path = hai.app.config['RAW_IMG_DIR'] + data['filename']
+            copyfile(image_path, './images/pose_tmp/' + data['filename'])
 
     def execute(self):
         return []

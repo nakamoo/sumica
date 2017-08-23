@@ -25,7 +25,7 @@ class Detection(Controller):
             state_json = requests.post("http://" +
                                        hai.app.config['RECOGNITION_SERVER_URL'] +
                                        "/detect",
-                                       files={'image': open(image_path, "rb")}, json={'threshold': 0.5})
+                                       files={'image': image}, json={'threshold': 0.5})
 
             print("image analyzed.")
             #print("detections: {}".format(r.text))

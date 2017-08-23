@@ -1,18 +1,16 @@
 main_server/hai/images/*
 main_server/images/*
+main_server/hai/application.cfg
 !.gitkeep
 
-hai_server/images/*
-hai_server2/images/*
-nn_server/*.png
 client/*.png
 image.png
 .DS_Store
-image_handler/actions/node_modules
 *node_modules*
 .idea
 captures/*
 ### https://raw.github.com/github/gitignore/8512c772d731ce256f81da49e627d293274fab8a/Global/vim.gitignore
+client/utils/hue_user.txt
 
 # swap
 [._]*.s[a-w][a-z]

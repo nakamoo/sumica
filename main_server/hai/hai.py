@@ -50,4 +50,4 @@ def execute_specific_controller():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001,
-            debug=False, ssl_context=app.config['CONTEXT'])
+            debug=False, ssl_context=app.config['CONTEXT'], threaded=True)

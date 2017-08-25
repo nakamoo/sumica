@@ -5,9 +5,12 @@ import uuid
 import os
 import importlib
 from database import mongo, controllers_objects
+import sys
 
 app = Flask(__name__)
 app.config.from_pyfile(filename="application.cfg")
+
+port = sys.argv[1]
 
 # load sensor modules as blueprints
 fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
@@ -49,5 +52,5 @@ def execute_specific_controller():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001,
+    app.run(host='0.0.0.0', port=int(port),
             debug=False, ssl_context=app.config['CONTEXT'], threaded=True)

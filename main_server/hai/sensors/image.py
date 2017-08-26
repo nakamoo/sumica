@@ -32,9 +32,9 @@ def post_image_data():
 
     data['filename'] = filename
     mongo.images.insert_one(data)
-    data.pop("_id")
-
+    
     #if request.args.get('execute') == 'True': # what is this?
     db.trigger_controllers(data['user_name'], "image", data)
 
+    data.pop("_id")
     return jsonify(data), 201

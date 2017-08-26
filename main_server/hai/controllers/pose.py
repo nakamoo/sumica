@@ -35,10 +35,12 @@ def update_loop():
                   #print(f)
                   name = f[:-15].split("/")[-1] + ".png"
                   #print(name)
-                  data = {"keypoints": pts}
+                  pose_data = {"keypoints": pts}
                   image_info = db.mongo.images.find_one({"filename": name})
-                  data.update(image_info)
-                  db.mongo.pose.insert_one(data)
+                  pose_data.update(image_info)
+                  db.mongo.pose.insert_one(data_data)
+
+                  db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': data}}, upsert=False)
                 except Exception as e:
                   print(e)
                 os.remove(f)

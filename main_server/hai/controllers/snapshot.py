@@ -102,12 +102,14 @@ class Snapshot(Controller):
             msg = data["message"]["text"]
 
             if msg == "snapshot":
-              n = db.mongo.pose.find({"user_name": self.user}).sort([("time",-1)]).limit(1).next()
+              n = db.mongo.images.find({"user_name": self.user, "keypoints":{"$exists": True},
+                "detections":{"$exists": True}}).sort([("time",-1)]).limit(1).next()
               pose = n["keypoints"]
-              fn = n["filename"]
-              n = db.mongo.detections.find_one({"user_name": self.user, "filename": fn})
-              dets = n["detections"]["objects"]
-              path = n["filename"]
+              paht = n["filename"]
+              dets = n["detections"]
+              #n = db.mongo.detections.find_one({"user_name": self.user, "filename": fn})
+              #dets = n["detections"]["objects"]
+              #path = n["filename"]
          
               img = draw(path, dets, pose)
               #print("sending: ", "http://153.120.159.210:5000/static/" + path)

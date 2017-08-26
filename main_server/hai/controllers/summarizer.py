@@ -28,7 +28,7 @@ def overlap(box, poses):
         poses["people"].remove(person)
         return person, poses
 
-    return None, poses
+  return None, poses
 
 def filter(path, dets, poses):
   beds = []

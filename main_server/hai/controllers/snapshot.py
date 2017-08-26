@@ -16,9 +16,14 @@ def visualize(frame, summ):
         det = result["box"]
  
         if result["label"] == "person" and result["keypoints"] is not None:
-          for x, y, c in chunker(list(itertools.chain.from_iterable(result["keypoints"].values())), 3):
-            if c > 0.05:
-              cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+          def draw_pts(pts, col):
+            for x, y, c in chunker(pts, 3):
+              if c > 0.05:
+                cv2.circle(frame, (int(x), int(y)), 3, col, -1)
+          
+          draw_pts(result["keypoints"]["pose_keypoints"], (0, 255, 0))
+          draw_pts(result["keypoints"]["hand_left_keypoints"], (255, 0, 0))
+          draw_pts(result["keypoints"]["hand_right_keypoints"], (255, 0, 0))
 
         name = result["label"] + ": " + "%.2f" % result["confidence"]
 
@@ -30,12 +35,20 @@ def visualize(frame, summ):
 
     return frame
 
-def draw(path, summ):
+def draw(data):
     import hai
+
+    path = data["filename"]
+    summ = data["summary"]
 
     print(os.path.join(hai.app.config["RAW_IMG_DIR"], path))
 
     img = cv2.imread(hai.app.config["RAW_IMG_DIR"] + path)
+    diff = cv2.imread(hai.app.config["RAW_IMG_DIR"] + data["diff_filename"])
+    #print(img.shape, diff.shape)
+    diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
+    print(img.shape, diff.shape)
+    img += diff
     img = visualize(img, summ)
 
     return img
@@ -51,10 +64,8 @@ class Snapshot(Controller):
             if msg == "snapshot":
               n = db.mongo.images.find({"user_name": self.user, "summary":{"$exists": True}
                 }).sort([("time",-1)]).limit(1).next()
+              img = draw(n)
               path = n["filename"]
-              summ = n["summary"]
-              print(summ) 
-              img = draw(path, summ)
 
               import hai
 

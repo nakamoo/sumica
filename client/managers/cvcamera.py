@@ -4,6 +4,9 @@ import threading
 import time
 import json
 import colorsys
+import managers.flow as flow
+import skimage.measure
+import numpy as np
 
 def visualize(frame, all_boxes, win_name="frame"):
     for result in all_boxes:
@@ -17,6 +20,8 @@ def visualize(frame, all_boxes, win_name="frame"):
         cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
     
     return frame
+
+cv2.namedWindow("diff", cv2.WINDOW_NORMAL)
 
 class Manager:
     def __init__(self, user, server_ip, detect_only=False):
@@ -33,6 +38,8 @@ class Manager:
             self.enabled = False
 
         self.image = None
+        self.image1, self.image2 = None, None
+        self.thresh = None
 
     def capture_loop(self):
         while True:
@@ -42,6 +49,17 @@ class Manager:
             #    self.enabled = False
 
             self.image = frame
+
+            def update_image():
+                gray1 = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+                gray1 = cv2.GaussianBlur(gray1, (7, 7), 0)
+                self.image1 = [self.image, gray1]
+
+            if self.image1 is None:
+                update_image()
+            else:
+                self.image2 = self.image1
+                update_image()
 
     def start(self):
         if not self.enabled:
@@ -62,39 +80,46 @@ class Manager:
             if self.image is not None:
                 skip = False
 
-                frame = cv2.resize(self.image, (500, 500))
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                gray = cv2.GaussianBlur(gray, (21, 21), 0)
+                if self.image2 is not None:
+                    frameDelta = cv2.absdiff(self.image1[1], self.image2[1])
+                    thresh = cv2.threshold(frameDelta, 10, 255, cv2.THRESH_BINARY)[1]
+                    thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
+                    #cv2.imshow("diff", self.image * np.expand_dims(cv2.resize(thresh, (640, 480)), 2) / 255.0)
+                    #cv2.waitKey(1)
+            #    flow_img = flow.flow(self.image1, self.image2)
 
-                if last_img is None:
-                    last_img = gray
+            #frame = cv2.resize(self.image, (500, 500))
+            #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            #gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
-                frameDelta = cv2.absdiff(last_img, gray)
-                thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
-                #cv2.imshow("diff", thresh)
+            #if last_img is None:
+            #    last_img = gray
 
-                #if np.sum(thresh) <= 0:
-                #    skip = True
-                
-                if not skip:
-                    #cv2.imshow("capture", self.image)
-                    last_img = gray
-                    k = cv2.waitKey(1)
+            #frameDelta = cv2.absdiff(last_img, gray)
+            #thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
 
-                    if k == 27:
-                        break
-                        
-                    try:
-                        if self.detect_only:
-                            self.show(self.image, self.server_ip)
-                        else:
-                            self.send(self.image, self.server_ip)
-                        pass
-                    except Exception as e:
-                        print("unable to send image to server.")
-                        print(e)
+            #if np.sum(thresh) <= 0:
+            #    skip = True
             
-                time.sleep(0.1)
+            if not skip:
+                #cv2.imshow("capture", self.image)
+                #last_img = gray
+                k = cv2.waitKey(1)
+
+                if k == 27:
+                    break
+                    
+                try:
+                    if self.detect_only:
+                        self.show(self.image, self.server_ip)
+                    else:
+                        self.send(self.image, self.server_ip)
+                    pass
+                except Exception as e:
+                    print("unable to send image to server.")
+                    print(e)
+        
+            time.sleep(0.1)
             else:
                 print("image not captured.")
                 time.sleep(1)

@@ -17,7 +17,12 @@ ID = sys.argv[1]
 print("id:", ID)
 
 fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith('.py')]
-sensor_mods = [m.Manager(ID, SERVER_IP) for m in map(importlib.import_module, fs)]
+sensor_mods = []
+for m in map(importlib.import_module, fs):
+	try:
+		sensor_mods.append(m.Manager(ID, SERVER_IP))
+	except:
+		pass
 
 print(fs)
 print('---')

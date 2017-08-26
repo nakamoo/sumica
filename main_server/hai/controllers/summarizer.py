@@ -23,7 +23,7 @@ def overlap(box, poses):
     get_points(person["hand_left_keypoints"])
     get_points(person["hand_right_keypoints"])
 
-    for x, y in pts:
+    for x, y in all_pts:
       if x > box[0] and x < box[2] and y > box[1] and y < box[2]:
         poses["people"].remove(person)
         return person, poses
@@ -49,7 +49,7 @@ def filter(path, dets, poses):
 
       if result["label"] == "person":
          match, poses = overlap(box, poses)
-
+ 
          if result["confidence"] > 0.7 or match is not None:
             result["keypoints"] = match
             summary.append(result)

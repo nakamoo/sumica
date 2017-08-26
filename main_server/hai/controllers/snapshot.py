@@ -6,13 +6,19 @@ from server_actors import chatbot
 from threading import Timer
 import os
 import time
+import itertools
+
+def chunker(seq, size):
+  return (seq[pos:pos+size] for pos in range(0, len(seq), size))
 
 def visualize(frame, summ):
     for result in summ:
         det = result["box"]
  
-        if result["label"] == "person":
-          pass
+        if result["label"] == "person" and result["keypoints"] is not None:
+          for x, y, c in chunker(list(itertools.chain.from_iterable(result["keypoints"].values())), 3):
+            if c > 0.05:
+              cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
 
         name = result["label"] + ": " + "%.2f" % result["confidence"]
 
@@ -47,7 +53,7 @@ class Snapshot(Controller):
                 }).sort([("time",-1)]).limit(1).next()
               path = n["filename"]
               summ = n["summary"]
-         
+              print(summ) 
               img = draw(path, summ)
 
               import hai

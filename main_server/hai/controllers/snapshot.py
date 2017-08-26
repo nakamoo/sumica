@@ -5,6 +5,7 @@ import colorsys
 from server_actors import chatbot
 from threading import Timer
 import os
+import time
 
 def overlap(box, pts):
     for x, y in pts:
@@ -14,6 +15,17 @@ def overlap(box, pts):
     return False
 
 def visualize(frame, dets, pts):
+    beds = []
+    for result in dets:
+        if result["label"] == "bed":
+           beds.append((result, result["confidence"]))
+
+    beds = sorted(beds, key=lambda tup: tup[1], reverse=True)
+    max_beds = 1
+    if len(beds) > max_beds:
+        for b, conf in beds[max_beds:]:
+            dets.remove(b)
+
     for result in dets:
         det = result["box"]
  
@@ -25,7 +37,7 @@ def visualize(frame, dets, pts):
 
         name = result["label"] + ": " + "%.2f" % result["confidence"]
 
-        i = sum([ord(x) for x in name])
+        i = sum([ord(x) for x in result["label"]])
         c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
         c = tuple([int(x * 255.0) for x in c])
         cv2.putText(frame, name, (det[0], det[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, c, 2)
@@ -105,7 +117,8 @@ class Snapshot(Controller):
 
               print("writing to: ", path)
               cv2.imwrite("./static/" + path, img)
-              chatbot.send_fb_message(data["sender"]["id"], "here's your image")
+              age = time.time() - float(n["time"])
+              chatbot.send_fb_message(data["sender"]["id"], "here's your image ({} secs ago)".format(age))
               url = "http://homeai.ml:{}/static/".format(hai.port) + path
               print("snapshot url:", url)
               chatbot.send_fb_image(data["sender"]["id"], url)

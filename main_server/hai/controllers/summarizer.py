@@ -75,5 +75,7 @@ class Summarizer(Controller):
             summary = filter(path, dets, pose)
             db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary}}, upsert=False)
 
+            db.trigger_controllers(data['user_name'], "summary", summary)
+
     def execute(self):
         return []

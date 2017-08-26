@@ -7,9 +7,7 @@ from threading import Timer
 import os
 import time
 import itertools
-
-def chunker(seq, size):
-  return (seq[pos:pos+size] for pos in range(0, len(seq), size))
+import utils.chunker as chunker
 
 def visualize(frame, summ):
     for result in summ:
@@ -47,7 +45,7 @@ def draw(data):
     diff = cv2.imread(hai.app.config["RAW_IMG_DIR"] + data["diff_filename"])
     #print(img.shape, diff.shape)
     diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
-    print(img.shape, diff.shape)
+
     img += diff
     img = visualize(img, summ)
 

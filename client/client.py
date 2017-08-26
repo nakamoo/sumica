@@ -11,7 +11,7 @@ import time
 from utils import actions
 import sys
 
-SERVER_IP = "http://homeai.ml:5001"
+SERVER_IP = "http://homeai.ml:{}".format(sys.argv[2])
 
 ID = sys.argv[1]
 print("id:", ID)

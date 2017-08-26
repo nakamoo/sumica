@@ -112,6 +112,7 @@ class Manager:
         addr = "{}/data/images".format(ip)
         print("sending image to:", addr)
         r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data)
+        print(r.text)
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)

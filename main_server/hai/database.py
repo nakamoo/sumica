@@ -11,6 +11,7 @@ from controllers.hello import HelloController
 from controllers.settings import Settings
 from controllers.pose import Pose
 from controllers.snapshot import Snapshot
+from controllers.summarizer import Summarizer
 
 def load_controller_modules():
     fs = ['controllers.{}'.format(f[:-3]) for f in os.listdir('controllers') if f.endswith('.py')]
@@ -29,7 +30,7 @@ def load_controller_modules():
 control_mods = load_controller_modules()
 
 def standard_controllers(user_name):
-    return [Pose(), Detection(), Chatbot(user_name), Snapshot(user_name), Settings(user_name)]
+    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), Settings(user_name)]
 
 # TODO: use DB
 controllers_objects = {}

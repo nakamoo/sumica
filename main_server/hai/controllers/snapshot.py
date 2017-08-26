@@ -7,33 +7,12 @@ from threading import Timer
 import os
 import time
 
-def overlap(box, pts):
-    for x, y in pts:
-      if x > box[0] and x < box[2] and y > box[1] and y < box[2]:
-        return True
-
-    return False
-
-def visualize(frame, dets, pts):
-    beds = []
-    for result in dets:
-        if result["label"] == "bed":
-           beds.append((result, result["confidence"]))
-
-    beds = sorted(beds, key=lambda tup: tup[1], reverse=True)
-    max_beds = 1
-    if len(beds) > max_beds:
-        for b, conf in beds[max_beds:]:
-            dets.remove(b)
-
-    for result in dets:
+def visualize(frame, summ):
+    for result in summ:
         det = result["box"]
  
         if result["label"] == "person":
-           if result["confidence"] > 0.7 or overlap(det, pts):
-              pass
-           else:
-              continue
+          pass
 
         name = result["label"] + ": " + "%.2f" % result["confidence"]
 
@@ -45,51 +24,13 @@ def visualize(frame, dets, pts):
 
     return frame
 
-def chunker(seq, size):
-  print(seq)
-  return (seq[pos:pos+size] for pos in range(0, len(seq), size))
-
-def to_list(pose):
-    pts = []
-    for person in pose["people"]:
-      def get_points(pts):
-        for x, y, c in chunker(pts, 3):
-          #print(x, y, c)
-          #print(type(c))
-          if c > 0.05:
-            pts.append([int(x), int(y)])
-
-      get_points(person["pose_keypoints"])
-      get_points(person["hand_left_keypoints"])
-      get_points(person["hand_right_keypoints"])
-    return pts
-
-def draw(path, dets, pose):
-    #print(path)
-    #print(dets)
-    #print(pose)
-
+def draw(path, summ):
     import hai
 
     print(os.path.join(hai.app.config["RAW_IMG_DIR"], path))
 
     img = cv2.imread(hai.app.config["RAW_IMG_DIR"] + path)
-    img = visualize(img, dets, to_list(pose))
-
-    for person in pose["people"]:
-      print(person)
-      def draw_points(pts):
-        try:
-          for x, y, c in chunker(pts, 3):
-            #print(x, y, c)
-            if c > 0.05:
-              cv2.circle(img, (int(x), int(y)), 3, (0, 255, 0), -1)
-        except:
-          pass
-
-      draw_points(person["pose_keypoints"])
-      draw_points(person["hand_left_keypoints"])
-      draw_points(person["hand_right_keypoints"])
+    img = visualize(img, summ)
 
     return img
 
@@ -102,19 +43,13 @@ class Snapshot(Controller):
             msg = data["message"]["text"]
 
             if msg == "snapshot":
-              n = db.mongo.images.find({"user_name": self.user, "keypoints":{"$exists": True},
-                "detections":{"$exists": True}}).sort([("time",-1)]).limit(1).next()
-              pose = n["keypoints"]
+              n = db.mongo.images.find({"user_name": self.user, "summary":{"$exists": True}
+                }).sort([("time",-1)]).limit(1).next()
               path = n["filename"]
-              dets = n["detections"]["objects"]
-              #n = db.mongo.detections.find_one({"user_name": self.user, "filename": fn})
-              #dets = n["detections"]["objects"]
-              #path = n["filename"]
+              summ = n["summary"]
          
-              img = draw(path, dets, pose)
-              #print("sending: ", "http://153.120.159.210:5000/static/" + path)
-              #img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
-              #print(img)
+              img = draw(path, summ)
+
               import hai
 
               print("writing to: ", path)

@@ -48,10 +48,13 @@ def update_loop():
             time.sleep(1)
 
 #if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-print("starting pose estimation thread...")
-thread_stream = threading.Thread(target=update_loop)
-thread_stream.daemon = True
-thread_stream.start()
+#print("starting pose estimation thread...")
+#thread_stream = threading.Thread(target=update_loop)
+#thread_stream.daemon = True
+#thread_stream.start()
+
+print("starting pose estimation subprocess...")
+subprocess.call(['cd ~/openpose; ./build/examples/user_code/mytest.bin --image_dir ~/HAI/main_server/hai/pose_tmp --write_keypoint_json ~/HAI/main_server/hai/pose_data --num_gpu 2 --num_gpu_start 1 --face --hand'], shell=True)
 
 class Pose(Controller):
     def __init__(self):

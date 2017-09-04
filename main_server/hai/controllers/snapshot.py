@@ -7,7 +7,7 @@ from threading import Timer
 import os
 import time
 import itertools
-import utils.chunker as chunker
+import controllers.utils as utils
 
 def visualize(frame, summ):
     for result in summ:
@@ -15,7 +15,7 @@ def visualize(frame, summ):
  
         if result["label"] == "person" and result["keypoints"] is not None:
           def draw_pts(pts, col):
-            for x, y, c in chunker(pts, 3):
+            for x, y, c in utils.chunker(pts, 3):
               if c > 0.05:
                 cv2.circle(frame, (int(x), int(y)), 3, col, -1)
           
@@ -57,11 +57,19 @@ class Snapshot(Controller):
 
     def on_event(self, event, data):
         if event == "chat":
-            msg = data["message"]["text"]
-
-            if msg == "snapshot":
-              n = db.mongo.images.find({"user_name": self.user, "summary":{"$exists": True}
-                }).sort([("time",-1)]).limit(1).next()
+            msg = data["message"]["text"].strip()
+            cam = 0
+            
+            if msg.startswith("snapshot"):
+              if msg.split()[-1].isdigit():
+                 cam = int(msg.split()[-1])
+              n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
+                }).sort([("time",-1)]).limit(1)
+              if n.count() <= 0:
+                 chatbot.send_fb_message(data["sender"]["id"], "no image, sorry")
+                 return
+              else:
+                 n = n.next()
               img = draw(n)
               path = n["filename"]
 

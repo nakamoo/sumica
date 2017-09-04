@@ -33,7 +33,7 @@ def get_avg_pt(seq):
         mx /= n
         my /= n
 
-        return mx, my
+        return [mx, my]
     else:
         return None
 

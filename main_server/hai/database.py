@@ -14,6 +14,9 @@ from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
 from controllers.activity_test import ActivityTest
 
+import time
+from _thread import start_new_thread
+
 def load_controller_modules():
     fs = ['controllers.{}'.format(f[:-3]) for f in os.listdir('controllers') if f.endswith('.py')]
     mods = []
@@ -45,3 +48,11 @@ def trigger_controllers(user, event, data):
     else:
         for c in controllers_objects[user]:
             c.on_event(event, data)
+
+def timer_loop():
+    while True:
+        for user in controllers_objects.keys():
+            trigger_controllers(user, "timer", None)
+        time.sleep(0.1)
+
+start_new_thread(timer_loop, ())

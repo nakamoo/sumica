@@ -7,18 +7,21 @@ from threading import Timer
 import os
 import time
 import itertools
-
-def chunker(seq, size):
-  return (seq[pos:pos+size] for pos in range(0, len(seq), size))
+import controllers.utils as utils
 
 def visualize(frame, summ):
     for result in summ:
         det = result["box"]
  
         if result["label"] == "person" and result["keypoints"] is not None:
-          for x, y, c in chunker(list(itertools.chain.from_iterable(result["keypoints"].values())), 3):
-            if c > 0.05:
-              cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+          def draw_pts(pts, col):
+            for x, y, c in utils.chunker(pts, 3):
+              if c > 0.05:
+                cv2.circle(frame, (int(x), int(y)), 3, col, -1)
+          
+          draw_pts(result["keypoints"]["pose_keypoints"], (0, 255, 0))
+          draw_pts(result["keypoints"]["hand_left_keypoints"], (255, 0, 0))
+          draw_pts(result["keypoints"]["hand_right_keypoints"], (255, 0, 0))
 
         name = result["label"] + ": " + "%.2f" % result["confidence"]
 
@@ -30,12 +33,20 @@ def visualize(frame, summ):
 
     return frame
 
-def draw(path, summ):
+def draw(data):
     import hai
+
+    path = data["filename"]
+    summ = data["summary"]
 
     print(os.path.join(hai.app.config["RAW_IMG_DIR"], path))
 
     img = cv2.imread(hai.app.config["RAW_IMG_DIR"] + path)
+    diff = cv2.imread(hai.app.config["RAW_IMG_DIR"] + data["diff_filename"])
+    #print(img.shape, diff.shape)
+    diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
+
+    img += diff
     img = visualize(img, summ)
 
     return img
@@ -46,15 +57,21 @@ class Snapshot(Controller):
 
     def on_event(self, event, data):
         if event == "chat":
-            msg = data["message"]["text"]
-
-            if msg == "snapshot":
-              n = db.mongo.images.find({"user_name": self.user, "summary":{"$exists": True}
-                }).sort([("time",-1)]).limit(1).next()
+            msg = data["message"]["text"].strip()
+            cam = 0
+            
+            if msg.startswith("snapshot"):
+              if msg.split()[-1].isdigit():
+                 cam = int(msg.split()[-1])
+              n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
+                }).sort([("time",-1)]).limit(1)
+              if n.count() <= 0:
+                 chatbot.send_fb_message(data["sender"]["id"], "no image, sorry")
+                 return
+              else:
+                 n = n.next()
+              img = draw(n)
               path = n["filename"]
-              summ = n["summary"]
-              print(summ) 
-              img = draw(path, summ)
 
               import hai
 

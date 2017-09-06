@@ -12,6 +12,10 @@ from controllers.settings import Settings
 from controllers.pose import Pose
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
+from controllers.activity_test import ActivityTest
+
+import time
+from _thread import start_new_thread
 
 def load_controller_modules():
     fs = ['controllers.{}'.format(f[:-3]) for f in os.listdir('controllers') if f.endswith('.py')]
@@ -30,7 +34,7 @@ def load_controller_modules():
 control_mods = load_controller_modules()
 
 def standard_controllers(user_name):
-    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), Settings(user_name)]
+    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), Settings(user_name)]
 
 # TODO: use DB
 controllers_objects = {}
@@ -44,3 +48,11 @@ def trigger_controllers(user, event, data):
     else:
         for c in controllers_objects[user]:
             c.on_event(event, data)
+
+def timer_loop():
+    while True:
+        for user in controllers_objects.keys():
+            trigger_controllers(user, "timer", None)
+        time.sleep(0.1)
+
+start_new_thread(timer_loop, ())

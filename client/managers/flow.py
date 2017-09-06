@@ -15,7 +15,7 @@ import argparse
 import pyflow
 from scipy.misc import imresize
 import cv2
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 # Flow Options:
 alpha = 0.012

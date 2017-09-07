@@ -6,34 +6,22 @@ from server_actors import chatbot
 from threading import Timer
 import os
 import time
+import itertools
+import controllers.utils as utils
 
-def overlap(box, pts):
-    for x, y in pts:
-      if x > box[0] and x < box[2] and y > box[1] and y < box[2]:
-        return True
-
-    return False
-
-def visualize(frame, dets, pts):
-    beds = []
-    for result in dets:
-        if result["label"] == "bed":
-           beds.append((result, result["confidence"]))
-
-    beds = sorted(beds, key=lambda tup: tup[1], reverse=True)
-    max_beds = 1
-    if len(beds) > max_beds:
-        for b, conf in beds[max_beds:]:
-            dets.remove(b)
-
-    for result in dets:
+def visualize(frame, summ):
+    for result in summ:
         det = result["box"]
  
-        if result["label"] == "person":
-           if result["confidence"] > 0.7 or overlap(det, pts):
-              pass
-           else:
-              continue
+        if result["label"] == "person" and result["keypoints"] is not None:
+          def draw_pts(pts, col):
+            for x, y, c in utils.chunker(pts, 3):
+              if c > 0.05:
+                cv2.circle(frame, (int(x), int(y)), 3, col, -1)
+          
+          draw_pts(result["keypoints"]["pose_keypoints"], (0, 255, 0))
+          draw_pts(result["keypoints"]["hand_left_keypoints"], (255, 0, 0))
+          draw_pts(result["keypoints"]["hand_right_keypoints"], (255, 0, 0))
 
         name = result["label"] + ": " + "%.2f" % result["confidence"]
 
@@ -45,51 +33,21 @@ def visualize(frame, dets, pts):
 
     return frame
 
-def chunker(seq, size):
-  print(seq)
-  return (seq[pos:pos+size] for pos in range(0, len(seq), size))
-
-def to_list(pose):
-    pts = []
-    for person in pose["people"]:
-      def get_points(pts):
-        for x, y, c in chunker(pts, 3):
-          #print(x, y, c)
-          #print(type(c))
-          if c > 0.05:
-            pts.append([int(x), int(y)])
-
-      get_points(person["pose_keypoints"])
-      get_points(person["hand_left_keypoints"])
-      get_points(person["hand_right_keypoints"])
-    return pts
-
-def draw(path, dets, pose):
-    #print(path)
-    #print(dets)
-    #print(pose)
-
+def draw(data):
     import hai
+
+    path = data["filename"]
+    summ = data["summary"]
 
     print(os.path.join(hai.app.config["RAW_IMG_DIR"], path))
 
     img = cv2.imread(hai.app.config["RAW_IMG_DIR"] + path)
-    img = visualize(img, dets, to_list(pose))
+    diff = cv2.imread(hai.app.config["RAW_IMG_DIR"] + data["diff_filename"])
+    #print(img.shape, diff.shape)
+    diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
 
-    for person in pose["people"]:
-      print(person)
-      def draw_points(pts):
-        try:
-          for x, y, c in chunker(pts, 3):
-            #print(x, y, c)
-            if c > 0.05:
-              cv2.circle(img, (int(x), int(y)), 3, (0, 255, 0), -1)
-        except:
-          pass
-
-      draw_points(person["pose_keypoints"])
-      draw_points(person["hand_left_keypoints"])
-      draw_points(person["hand_right_keypoints"])
+    img += diff
+    img = visualize(img, summ)
 
     return img
 
@@ -99,20 +57,22 @@ class Snapshot(Controller):
 
     def on_event(self, event, data):
         if event == "chat":
-            msg = data["message"]["text"]
-
-            if msg == "snapshot":
-              n = db.mongo.pose.find({"user_name": self.user}).sort([("time",-1)]).limit(1).next()
-              pose = n["keypoints"]
-              fn = n["filename"]
-              n = db.mongo.detections.find_one({"user_name": self.user, "filename": fn})
-              dets = n["detections"]["objects"]
+            msg = data["message"]["text"].strip()
+            cam = 0
+            
+            if msg.startswith("snapshot"):
+              if msg.split()[-1].isdigit():
+                 cam = int(msg.split()[-1])
+              n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
+                }).sort([("time",-1)]).limit(1)
+              if n.count() <= 0:
+                 chatbot.send_fb_message(data["sender"]["id"], "no image, sorry")
+                 return
+              else:
+                 n = n.next()
+              img = draw(n)
               path = n["filename"]
-         
-              img = draw(path, dets, pose)
-              #print("sending: ", "http://153.120.159.210:5000/static/" + path)
-              #img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
-              #print(img)
+
               import hai
 
               print("writing to: ", path)

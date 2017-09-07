@@ -34,6 +34,7 @@ class Detection(Controller):
             #print(det_data)
 
             db.mongo.detections.insert_one(det_data)
+            db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'detections': dets}}, upsert=False)
 
             print("image analyzed.")
             print("detections: {}".format(state_json.text))

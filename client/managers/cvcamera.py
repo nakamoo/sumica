@@ -4,7 +4,7 @@ import threading
 import time
 import json
 import colorsys
-import managers.flow as flow
+#import managers.flow as flow
 import skimage.measure
 import numpy as np
 
@@ -21,7 +21,7 @@ def visualize(frame, all_boxes, win_name="frame"):
     
     return frame
 
-cv2.namedWindow("diff", cv2.WINDOW_NORMAL)
+#cv2.namedWindow("diff", cv2.WINDOW_NORMAL)
 
 class Manager:
     def __init__(self, user, server_ip, detect_only=False):
@@ -119,7 +119,7 @@ class Manager:
                     print("unable to send image to server.")
                     print(e)
         
-            time.sleep(0.1)
+                time.sleep(0.1)
             else:
                 print("image not captured.")
                 time.sleep(1)

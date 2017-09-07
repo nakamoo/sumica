@@ -4,7 +4,7 @@ import threading
 import time
 import json
 import colorsys
-import managers.flow as flow
+#import managers.flow as flow
 import skimage.measure
 import numpy as np
 
@@ -21,18 +21,39 @@ def visualize(frame, all_boxes, win_name="frame"):
     
     return frame
 
-cv2.namedWindow("diff", cv2.WINDOW_NORMAL)
+#cv2.namedWindow("diff", cv2.WINDOW_NORMAL)
 
 class Manager:
-    def __init__(self, user, server_ip, detect_only=False):
+    def __init__(self, user, server_ip):
+        self.mans = []
+        for i in range(0, 10):
+            self.mans.append(CamManager(user, server_ip, i))
+        
+    def start(self):
+        for man in self.mans:
+            if man.enabled:
+                thread_stream = threading.Thread(target=man.start)
+                thread_stream.daemon = True
+                thread_stream.start()
+
+    def close(self):
+        for man in self.mans:
+            man.cap.release()
+            print("releasing", man.cam_id)
+
+class CamManager:
+    def __init__(self, user, server_ip, cam_id, detect_only=False):
         self.server_ip = server_ip
         self.enabled = True
         self.detect_only = detect_only
         self.user = user
+        self.cam_id = cam_id
 
         try:
-            self.cap = cv2.VideoCapture(0)
-            print("webcam detected.")
+            self.cap = cv2.VideoCapture(cam_id)
+            print("webcam detected:", cam_id, self.cap.isOpened())
+            time.sleep(1)
+            self.enabled = self.cap.isOpened()
         except:
             print("no webcam detected.")
             self.enabled = False
@@ -47,6 +68,10 @@ class Manager:
 
             #if not ret:
             #    self.enabled = False
+
+            if frame is None:
+                print(self.cam_id, ": frame is none")
+                continue
 
             self.image = frame
 
@@ -77,15 +102,17 @@ class Manager:
         diff_thres = 0.5
 
         while True:
-            if self.image is not None:
-                skip = False
+            if self.image is None or self.image1 is None or self.image2 is None:
+                time.sleep(1)
+                continue
 
-                if self.image2 is not None:
-                    frameDelta = cv2.absdiff(self.image1[1], self.image2[1])
-                    thresh = cv2.threshold(frameDelta, 10, 255, cv2.THRESH_BINARY)[1]
-                    thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
-                    #cv2.imshow("diff", self.image * np.expand_dims(cv2.resize(thresh, (640, 480)), 2) / 255.0)
-                    #cv2.waitKey(1)
+            skip = False
+	
+            frameDelta = cv2.absdiff(self.image1[1], self.image2[1])
+            thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
+            thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
+            #cv2.imshow("diff", self.image * np.expand_dims(cv2.resize(thresh, (640, 480)), 2) / 255.0)
+            #cv2.waitKey(1)
             #    flow_img = flow.flow(self.image1, self.image2)
 
             #frame = cv2.resize(self.image, (500, 500))
@@ -100,7 +127,7 @@ class Manager:
 
             #if np.sum(thresh) <= 0:
             #    skip = True
-            
+	    
             if not skip:
                 #cv2.imshow("capture", self.image)
                 #last_img = gray
@@ -108,18 +135,17 @@ class Manager:
 
                 if k == 27:
                     break
-                    
+		    
                 try:
                     if self.detect_only:
                         self.show(self.image, self.server_ip)
                     else:
-                        self.send(self.image, self.server_ip)
-                    pass
+                        self.send(self.image, thresh, self.server_ip)
                 except Exception as e:
                     print("unable to send image to server.")
                     print(e)
-        
-            time.sleep(0.1)
+	
+                time.sleep(0.1)
             else:
                 print("image not captured.")
                 time.sleep(1)
@@ -130,14 +156,18 @@ class Manager:
 
         cv2.destroyAllWindows()
 
-    def send(self, image, ip):
+    def send(self, image, thresh, ip):
         cv2.imwrite("image.png", image)
-        
-        data = {"user_name": self.user, "time": time.time()}
+        cv2.imwrite("diff.png", thresh)        
+
+        data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_id}
         addr = "{}/data/images".format(ip)
         print("sending image to:", addr)
-        r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data)
-        print(r.text)
+        files = {}
+        files['image'] = open("image.png", "rb")
+        files["diff"] = open("diff.png", "rb")
+        r = requests.post(addr, files=files, data=data)
+        print("cam", self.cam_id, ": ", r.text)
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)

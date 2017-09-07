@@ -30,7 +30,7 @@ def overlap(box, poses):
 
   return None, poses
 
-def filter(path, dets, poses):
+def summarize(path, dets, poses):
   beds = []
   for result in dets:
       if result["label"] == "bed":
@@ -75,10 +75,9 @@ class Summarizer(Controller):
             path = n["filename"]
             dets = n["detections"]["objects"]
 
-            summary = filter(path, dets, pose)
+            summary = summarize(path, dets, pose)
             db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary}}, upsert=False)
-
-            db.trigger_controllers(self.user, "summary", summary)
+            db.trigger_controllers(self.user, "summary", {"_id": n["_id"], "summary": summary})
 
     def execute(self):
         return []

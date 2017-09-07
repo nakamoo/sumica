@@ -4,13 +4,12 @@ import json
 import datetime
 import requests
 
-SERVER_IP = "https://homeai.ml:5001"
-
 class Manager:
     def __init__(self, user, server_ip):
         print("connecting to any Hue devices...")
         out = subprocess.check_output(['node', './utils/hue.js', 'connect'])
         out = out.decode('utf-8')
+        self.server_ip = server_ip
 
         if out.split("\n")[-2] != "ok":
             self.connected = False
@@ -33,7 +32,7 @@ class Manager:
                     data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time()).strftime('%Y/%m/%d %H:%M:%S')
                     data["user_id"] = 'koki'
                     try:
-                        r = requests.post(SERVER_IP + "/data/hue",
+                        r = requests.post(self.server_ip + "/data/hue",
                                 json.dumps(data),
                                 headers={'Content-Type': 'application/json'})
                     except Exception as e:

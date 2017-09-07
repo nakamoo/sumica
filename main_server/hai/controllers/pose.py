@@ -30,7 +30,7 @@ def manage_data():
                   pose_data = {"keypoints": pts}
                   image_info = db.mongo.images.find_one({"filename": name})
                   pose_data.update(image_info)
-                  db.mongo.pose.insert_one(pose_data)
+                  #db.mongo.pose.insert_one(pose_data)
 
                   db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts}}, upsert=False)
                   os.remove(f)

@@ -28,6 +28,8 @@ class Detection(Controller):
                                        files={'image': image}, json={'threshold': 0.5})
 
             #print("detections: {}".format(r.text))
+            
+            print(state_json.text)
             dets = json.loads(state_json.text)
             det_data = {"detections": dets}
             det_data.update(data)
@@ -37,8 +39,7 @@ class Detection(Controller):
             db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'detections': dets}}, upsert=False)
 
             print("image analyzed.")
-            print("detections: {}".format(state_json.text))
-
+    
     def execute(self):
         response = []
         response.append({"app": "hue", "cmd": "turn on", "controller": "Detection"})

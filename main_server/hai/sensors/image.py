@@ -16,6 +16,8 @@ def get_image_data():
 @app.route('/data/images', methods=['POST'])
 def post_image_data():
     data = request.form.to_dict()
+    print(data)
+    data["time"] = float(data["time"])
 
     import hai
     if hai.app.config['ENCRYPTION']:
@@ -32,6 +34,7 @@ def post_image_data():
         request.files['diff'].save(hai.app.config['RAW_IMG_DIR'] + m_filename)
         data['encryption'] = False
 
+    print(filename)
     data['filename'] = filename
     data['diff_filename'] = m_filename
     mongo.images.insert_one(data)

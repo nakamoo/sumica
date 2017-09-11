@@ -9,7 +9,9 @@ def get_hue_data():
 
 @app.route('/data/hue', methods=['POST'])
 def post_hue_data():
-    data = request.json
+    data = request.form.to_dict()
+    print("HUE>> ", data)
+    data["time"] = float(data["time"])
     mongo.hue.insert_one(data)
     data.pop("_id")
     return jsonify(data), 201

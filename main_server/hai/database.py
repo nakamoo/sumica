@@ -1,5 +1,6 @@
 from pymongo import MongoClient
-client = MongoClient()
+from _app import app
+client = MongoClient('localhost', app.config['PORT_DB'])
 mongo = client.hai
 
 import os

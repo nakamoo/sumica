@@ -10,6 +10,7 @@ class Manager:
         out = subprocess.check_output(['node', './utils/hue.js', 'connect'])
         out = out.decode('utf-8')
         self.server_ip = server_ip
+        self.user = user
 
         if out.split("\n")[-2] != "ok":
             self.connected = False
@@ -23,23 +24,35 @@ class Manager:
             return        
 
         while True:
-            out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
-            state = json.loads(out.decode('utf-8').split("\n")[-2])
+            try:
+                out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
+                state = out.decode('utf-8').split("\n")[-2]
+                state = json.loads(state)
+                data = {}
+                data["lights"] = json.dumps(state["lights"])
+                data["time"] = time.time()
+                data["user_name"] = self.user
+                print(data)
+                requests.post(self.server_ip + "/data/hue", data=data)
 
-            for light in state["lights"]:
-                if light["state"]["reachable"]:
-                    data = light
-                    data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time()).strftime('%Y/%m/%d %H:%M:%S')
-                    data["user_id"] = 'koki'
-                    try:
-                        r = requests.post(self.server_ip + "/data/hue",
-                                json.dumps(data),
-                                headers={'Content-Type': 'application/json'})
-                    except Exception as e:
-                        time.sleep(1)
-                        print(e)
+                """
+                for light in state["lights"]:
+                    if light["state"]["reachable"]:
+                        data = light
+                        data["time"] = time.time()
+                        #data["utc_time"] = datetime.datetime.utcfromtimestamp(time.time()).strftime('%Y/%m/%d %H:%M:%S')
+                        data["user_name"] = self.user
+                        try:
+                            r = requests.post(self.server_ip + "/data/hue",
+                                data=data)
+                        except Exception as e:
+                            time.sleep(1)
+                            print(e)
+                 """
 
-            time.sleep(10)
+                time.sleep(10)
+            except:
+                pass
 
 if __name__ == "__main__":
     cam = Manager(SERVER_IP)

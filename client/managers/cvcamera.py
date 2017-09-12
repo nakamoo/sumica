@@ -7,6 +7,7 @@ import colorsys
 #import managers.flow as flow
 import skimage.measure
 import numpy as np
+from imutils.video import VideoStream
 
 def visualize(frame, all_boxes, win_name="frame"):
     for result in all_boxes:
@@ -26,7 +27,7 @@ def visualize(frame, all_boxes, win_name="frame"):
 class Manager:
     def __init__(self, user, server_ip):
         self.mans = []
-        for i in range(0, 10):
+        for i in range(0, 1):
             self.mans.append(CamManager(user, server_ip, i))
         
     def start(self):
@@ -38,23 +39,31 @@ class Manager:
 
     def close(self):
         for man in self.mans:
-            man.cap.release()
+            man.cap.stop()
+            #man.cap.release()
             print("releasing", man.cam_id)
 
 class CamManager:
     def __init__(self, user, server_ip, cam_id, detect_only=False):
         self.server_ip = server_ip
-        self.enabled = True
+        self.enabled = False
         self.detect_only = detect_only
         self.user = user
         self.cam_id = cam_id
 
         try:
-            self.cap = cv2.VideoCapture(cam_id)
-            print("webcam detected:", cam_id, self.cap.isOpened())
-            time.sleep(1)
-            self.enabled = self.cap.isOpened()
-        except:
+            for _ in range(1):
+              self.cap = VideoStream(src=cam_id, resolution=(320,240)).start()#cv2.VideoCapture(cam_id)
+              print("webcam detected:", cam_id)#, self.cap.isOpened())
+              self.enabled = True
+              #self.enabled = self.cap.isOpened()
+              #if not self.enabled:
+              #    self.cap.release()
+              #else:
+              #    self.enabled = True
+              #    break
+        except Exception as e:
+            print(e)
             print("no webcam detected.")
             self.enabled = False
 
@@ -63,15 +72,26 @@ class CamManager:
         self.thresh = None
 
     def capture_loop(self):
+        try:
+            self.cap.read()
+        except Exception as e:
+            print(self.cam_id, e)
+            return
+
         while True:
-            ret, frame = self.cap.read()
+            #print(self.cam_id, "running")
+            frame = self.cap.read()
+            #ret, frame = self.cap.read()
 
             #if not ret:
             #    self.enabled = False
 
             if frame is None:
                 print(self.cam_id, ": frame is none")
-                continue
+                time.sleep(5)
+                frame = self.cap.read()
+                if frame is None:
+                    break
 
             self.image = frame
 
@@ -85,13 +105,15 @@ class CamManager:
             else:
                 self.image2 = self.image1
                 update_image()
+            
+            time.sleep(0.1)
 
     def start(self):
         if not self.enabled:
             return
 
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640);
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480);
+        #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1024);
+        #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 768);
 
         thread_stream = threading.Thread(target=self.capture_loop)
         thread_stream.daemon = True
@@ -144,7 +166,7 @@ class CamManager:
                 except Exception as e:
                     print("unable to send image to server.")
                     print(e)
-	
+        
                 time.sleep(0.1)
             else:
                 print("image not captured.")

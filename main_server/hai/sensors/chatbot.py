@@ -3,7 +3,7 @@ from server_actors import chatbot
 import json
 import database as db
 
-app = Blueprint("chatbot", __name__)
+bp = Blueprint("chatbot", __name__)
 
 # temporary
 fb2user = {}
@@ -11,7 +11,7 @@ fb2user = {}
 bot_id = "318910425200757"
 
 # messenger
-@app.route('/data/fb', methods=['POST'])
+@bp.route('/data/fb', methods=['POST'])
 def post_fb_data():
     data = request.form.to_dict()
     event = json.loads(data["event"])

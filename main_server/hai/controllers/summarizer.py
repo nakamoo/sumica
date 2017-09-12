@@ -30,7 +30,7 @@ def overlap(box, poses):
 
   return None, poses
 
-def filter(path, dets, poses):
+def summarize(path, dets, poses):
   beds = []
   for result in dets:
       if result["label"] == "bed":
@@ -65,20 +65,20 @@ class Summarizer(Controller):
         self.user = user
 
     def on_event(self, event, data):
-        if event == "timer":
-            n = db.mongo.images.find({"user_name": self.user, "keypoints":{"$exists": True},
-              "detections":{"$exists": True}}).sort([("time",-1)]).limit(1)
-            if n.count() <= 0:
+        if event == "image":
+            results = db.mongo.images.find({"user_name": self.user, "keypoints":{"$exists": True},
+              "detections":{"$exists": True}}).sort([("time",-1)]).limit(5)
+            if results.count() <= 0:
                 return
-            n = n.next()
-            pose = n["keypoints"]
-            path = n["filename"]
-            dets = n["detections"]["objects"]
+            
+            for n in results:
+                pose = n["keypoints"]
+                path = n["filename"]
+                dets = n["detections"]["objects"]
 
-            summary = filter(path, dets, pose)
-            db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary}}, upsert=False)
-
-            db.trigger_controllers(self.user, "summary", summary)
+                summary = summarize(path, dets, pose)
+                db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary}}, upsert=False)
+                db.trigger_controllers(self.user, "summary", {"_id": n["_id"], "summary": summary})
 
     def execute(self):
         return []

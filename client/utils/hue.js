@@ -4,7 +4,7 @@ var fs = require('fs');
 
 cmd = process.argv[2];
 
-console.log("searching for Hues");
+//console.log("searching for Hues");
 hue.nupnpSearch(function(err, result) {
 	if (err) throw err;
 	console.log("Hue Bridges Found: " + JSON.stringify(result));

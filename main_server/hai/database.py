@@ -1,5 +1,6 @@
 from pymongo import MongoClient
-client = MongoClient()
+from _app import app
+client = MongoClient('localhost', app.config['PORT_DB'])
 mongo = client.hai
 
 import os
@@ -13,6 +14,7 @@ from controllers.pose import Pose
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
 from controllers.activity_test import ActivityTest
+#from controllers.learner import Learner
 
 import time
 from _thread import start_new_thread

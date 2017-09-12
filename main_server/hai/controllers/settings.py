@@ -27,13 +27,13 @@ class Settings(Controller):
             print("changed settings: save images", self.save_images)
             db.mongo.settings.update_one({"user_name": self.user}, {"$set": {"save_images": self.save_images}})
         elif event == "image":
-            import hai
+            from _app import app
             if not self.save_images:
                 for n in db.mongo.images.find({"user_name": self.user, "time": {"$lt": time.time() - 30000}}):
                     #if os.path.isfile("./images/" + n["filename"]):
                     try:
                         print("removing {}".format(n["filename"]))
-                        os.remove(hai.app.config["RAW_IMG_DIR"] + n["filename"])
+                        os.remove(app.config["RAW_IMG_DIR"] + n["filename"])
                     except:
                         print("could not delete")
             else:

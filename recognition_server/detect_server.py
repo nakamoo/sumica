@@ -73,6 +73,7 @@ def visualize(frame, all_boxes, win_name="frame"):
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
 
 def preprocess(img):
+    print(img.shape)
     img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
     img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
     img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)

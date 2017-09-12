@@ -17,6 +17,8 @@ def get_image_data():
 @bp.route('/data/images', methods=['POST'])
 def post_image_data():
     data = request.form.to_dict()
+    print(data)
+    data["time"] = float(data["time"])
 
     if app.config['ENCRYPTION']:
         byte_data = request.files['image'].read()
@@ -32,6 +34,7 @@ def post_image_data():
         request.files['diff'].save(app.config['RAW_IMG_DIR'] + m_filename)
         data['encryption'] = False
 
+    print(filename)
     data['filename'] = filename
     data['diff_filename'] = m_filename
     mongo.images.insert_one(data)

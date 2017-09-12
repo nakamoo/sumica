@@ -9,6 +9,9 @@ import threading
 import json
 import database as db
 
+for f in glob.glob("./pose_data/*"):
+    os.remove(f)
+
 def subprocess_cmd(command):
     proc = subprocess.Popen([command],
                         stdout=subprocess.PIPE,
@@ -22,11 +25,9 @@ def manage_data():
     json_files = glob.glob("./pose_data/*")
     for f in json_files:
                 try:
-                  #print(open(f, "r").readlines())
+                  #print(open(f, "r").readlinesi())
                   pts = json.load(open(f, "r"))
-                  #print(f)
                   name = f[:-15].split("/")[-1] + ".png"
-                  #print(name)
                   pose_data = {"keypoints": pts}
                   image_info = db.mongo.images.find_one({"filename": name})
                   pose_data.update(image_info)
@@ -35,7 +36,8 @@ def manage_data():
                   db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts}}, upsert=False)
                   os.remove(f)
                 except Exception as e:
-                  print(e)
+                  #pass
+                  print("missing file", f)
     #time.sleep(0.1)
 
 def update_loop():
@@ -75,7 +77,7 @@ class Pose(Controller):
                 image_path = app.config['RAW_IMG_DIR'] + data['filename']
             print("copying to pose_tmp")
             copyfile(image_path, './pose_tmp/' + data['filename'])
-        elif event == "timer":    
+        elif event == "timer": 
             manage_data()
 
     def execute(self):

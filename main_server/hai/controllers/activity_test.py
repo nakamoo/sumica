@@ -7,10 +7,15 @@ from threading import Timer
 import os
 import time
 import controllers.utils as utils
+import json
+import numpy as np
 
 def extract_features(summary):
     for obj in summary:
                 if obj["label"] == "person":
+                  looked_obj = None
+                  touched_obj = []
+                    
                   if "keypoints" in obj and obj["keypoints"] is not None:
                     # get objects touched by hand
                     pose_pts = obj["keypoints"]["pose_keypoints"]
@@ -53,7 +58,7 @@ def extract_features(summary):
                             touched_objects.append(obj2["label"])
                       return touched_objects
 
-                    touched_obj = []
+                    
                     for pt in touch_pts:
                       touched_obj.extend(check_touch(pt))
 
@@ -81,7 +86,7 @@ def extract_features(summary):
                             return obj2["label"]
                       return None
    
-                    looked_obj = None
+                    
                     if origin is not None:
                           #chatbot.send_fb_message(data["sender"]["id"], "looking from {} to {}".format(str(origin), str(nose)))
                           step = [nose[0] - origin[0], nose[1] - origin[1]]
@@ -92,12 +97,72 @@ def extract_features(summary):
                               break
                             
                     #return set(touched_obj), looked_obj
-                    obj["touching"] = list(set(touched_obj))
-                    obj["looking"] = str(looked_obj)
+                  obj["touching"] = list(set(touched_obj))
+                  obj["looking"] = str(looked_obj)
+                  
 
 class ActivityTest(Controller):
     def __init__(self, user):
         self.user = user
+        self.re = []
+        self.history = []
+        self.msg = ""
+        
+    def control_hue(self, summary):
+        hue = 10000
+        bri = 255
+        msg = "NONE"
+        vec = [0, 0, 0, 0, 0]
+        act_id = 0
+        alpha = 1
+
+        for obj in summary:
+            if obj["label"] == "person":
+                act_id = 1
+
+                if "laptop" in obj["touching"]:
+                    print("laptop")
+                    act_id = 2
+                    #alpha = 2
+                    break
+                elif  "book" in obj["touching"]:
+                    print("book")
+                    act_id = 3
+                    #alpha = 2
+                    break
+                elif "cell phone" in obj["touching"]:
+                    print("phone")
+                    act_id = 4
+                    #alpha = 2
+                    break
+                else:
+                    print("just person")
+                    
+        labels = ["no person", "person", "laptop", "book", "phone"]
+        vec[act_id] = alpha
+    
+        self.history.append(vec)
+        
+        if len(self.history) >= 2:
+            data = self.history[-2:]
+            
+            weights = np.mean(data, axis=0)
+            decision = np.argmax(weights)
+            print(labels[decision], [label + ": " + str(weight) for label, weight in zip(labels, weights)])
+
+            if decision == 0:
+                bri = 100
+                hue = 10000
+            elif decision == 1:
+                bri = 255
+            elif decision == 2 or decision == 4:
+                bri = 255
+                hue = 20000
+            elif decision == 3:
+                bri = 255
+                hue = 50000
+        
+        self.re =  [{"platform": "hue", "data": json.dumps({"on": True, "hue":hue, "brightness":bri})}]
 
     def on_event(self, event, data):
         if event == "chat":
@@ -113,6 +178,10 @@ class ActivityTest(Controller):
             summ = data["summary"]
             extract_features(summ)
             db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'summary': summ}}, upsert=False)
+            
+            self.control_hue(summ)
 
     def execute(self):
-        return []
+        re = self.re
+        self.re = []
+        return re

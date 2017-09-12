@@ -14,16 +14,16 @@ class Detection(Controller):
             #print("image received")
             #print(data)
 
-            import hai
-            if hai.app.config['ENCRYPTION']:
-                image_path = hai.app.config['ENCRYPTED_IMG_DIR'] + data['filename']
+            from _app import app
+            if app.config['ENCRYPTION']:
+                image_path = app.config['ENCRYPTED_IMG_DIR'] + data['filename']
                 image = encryption.open_encrypted_img(image_path)
             else:
-                image_path = hai.app.config['RAW_IMG_DIR'] + data['filename']
+                image_path = app.config['RAW_IMG_DIR'] + data['filename']
                 image = open(image_path, 'rb')
 
             state_json = requests.post("http://" +
-                                       hai.app.config['RECOGNITION_SERVER_URL'] +
+                                       app.config['RECOGNITION_SERVER_URL'] +
                                        "/detect",
                                        files={'image': image}, json={'threshold': 0.5})
 

@@ -1,22 +1,12 @@
 from _app import app
 from flask import Flask, render_template, request, jsonify
-import json
-import requests
-import uuid
-import os
-import importlib
 from database import mongo, controllers_objects
 import sys
 
 
 port = sys.argv[1]
+app.config["PORT"] = port
 
-# load sensor modules as blueprints
-fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('.py')]
-sensor_mods = map(importlib.import_module, fs)
-
-for sensor in sensor_mods:
-    app.register_blueprint(sensor.bp)
 
 @app.route('/')
 def home_page():

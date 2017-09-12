@@ -1,3 +1,4 @@
+from _app import app
 from flask import Flask, render_template, request, jsonify
 import json
 import requests
@@ -7,8 +8,6 @@ import importlib
 from database import mongo, controllers_objects
 import sys
 
-app = Flask(__name__)
-app.config.from_pyfile(filename="application.cfg")
 
 port = sys.argv[1]
 
@@ -17,7 +16,7 @@ fs = ['sensors.{}'.format(f[:-3]) for f in os.listdir('sensors') if f.endswith('
 sensor_mods = map(importlib.import_module, fs)
 
 for sensor in sensor_mods:
-    app.register_blueprint(sensor.app)
+    app.register_blueprint(sensor.bp)
 
 @app.route('/')
 def home_page():
@@ -53,4 +52,4 @@ def execute_specific_controller():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(port),
-            debug=False, ssl_context=app.config['CONTEXT'], threaded=True)
+            debug=app.config['DEBUG'], ssl_context=app.config['CONTEXT'], threaded=True)

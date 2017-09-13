@@ -4,6 +4,7 @@ import requests
 import database as db
 import json
 from utils import encryption
+import os
 
 class Detection(Controller):
     def __init__(self):
@@ -22,10 +23,13 @@ class Detection(Controller):
                 image_path = hai.app.config['RAW_IMG_DIR'] + data['filename']
                 image = open(image_path, 'rb')
 
-            state_json = requests.post("http://" +
-                                       hai.app.config['RECOGNITION_SERVER_URL'] +
-                                       "/detect",
-                                       files={'image': image}, json={'threshold': 0.5})
+            #state_json = requests.post("http://" +
+            #                           hai.app.config['RECOGNITION_SERVER_URL'] +
+            #                           "/detect",
+            #                           files={'image': image}, json={'threshold': 0.5})
+            
+            print("sending image for detection...")
+            state_json = requests.post("http://" + hai.app.config['RECOGNITION_SERVER_URL'] + "/detect_path", data={'path': os.path.abspath(image_path)}, json={'threshold': 0.5})
 
             #print("detections: {}".format(r.text))
             

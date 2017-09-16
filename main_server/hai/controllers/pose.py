@@ -8,6 +8,7 @@ import os
 import threading
 import json
 import database as db
+import time
 
 for f in glob.glob("./pose_data/*"):
     os.remove(f)
@@ -30,14 +31,16 @@ def manage_data():
                   name = f[:-15].split("/")[-1] + ".png"
                   pose_data = {"keypoints": pts}
                   image_info = db.mongo.images.find_one({"filename": name})
-                  pose_data.update(image_info)
+                  #pose_data.update(image_info)
                   #db.mongo.pose.insert_one(pose_data)
 
-                  db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts}}, upsert=False)
+                  pose_done = time.time()
+                  n = db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts, "history.second_loop_done": pose_done}}, upsert=False)
+                  print("POSE:", pose_done, pose_done-image_info["history"]["first_loop_done"])
                   os.remove(f)
                 except Exception as e:
                   #pass
-                  print("missing file", f)
+                  print("missing file", f, e)
     #time.sleep(0.1)
 
 def update_loop():

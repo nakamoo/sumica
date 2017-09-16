@@ -31,29 +31,42 @@ def load_controller_modules():
 
     return mods
 
-# controller modules for global events
-control_mods = load_controller_modules()
-
 def standard_controllers(user_name):
     return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), Settings(user_name)]
 
+#!!!!!!!
+"""
+# controller modules for global events
+control_mods = load_controller_modules()
 # TODO: use DB
 controllers_objects = {}
 controllers_objects['koki'] = standard_controllers('koki')
 controllers_objects['sean'] = standard_controllers('sean')
+"""
 
 def trigger_controllers(user, event, data):
     if user is None:
         for c in control_mods:
             c.on_global_event(event, data)
     else:
+        start_t = time.time()
         for c in controllers_objects[user]:
-            c.on_event(event, data)
+            mid_t = time.time()
+            try:
+                c.on_event(event, data)
+            except Exception as e:
+                print("error;", e, str(c))
+            last_t = time.time()
+            #if event == "image":
+            #    print(str(c), "time taken:", last_t-mid_t)
+        #if event == "image":
+        #    print("total time taken:", last_t - start_t)
 
 def timer_loop():
     while True:
         for user in controllers_objects.keys():
             trigger_controllers(user, "timer", None)
-        time.sleep(0.1)
+        #time.sleep(0.1)
 
-start_new_thread(timer_loop, ())
+#!!!!!!!
+#start_new_thread(timer_loop, ())

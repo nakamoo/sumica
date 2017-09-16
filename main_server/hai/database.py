@@ -35,14 +35,14 @@ def standard_controllers(user_name):
     return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), Settings(user_name)]
 
 #!!!!!!!
-"""
+
 # controller modules for global events
 control_mods = load_controller_modules()
 # TODO: use DB
 controllers_objects = {}
 controllers_objects['koki'] = standard_controllers('koki')
 controllers_objects['sean'] = standard_controllers('sean')
-"""
+
 
 def trigger_controllers(user, event, data):
     if user is None:
@@ -69,4 +69,4 @@ def timer_loop():
         #time.sleep(0.1)
 
 #!!!!!!!
-#start_new_thread(timer_loop, ())
+start_new_thread(timer_loop, ())

@@ -25,22 +25,23 @@ def subprocess_cmd(command):
 def manage_data():
     json_files = glob.glob("./pose_data/*")
     for f in json_files:
-                try:
-                  #print(open(f, "r").readlinesi())
-                  pts = json.load(open(f, "r"))
-                  name = f[:-15].split("/")[-1] + ".png"
-                  pose_data = {"keypoints": pts}
-                  image_info = db.mongo.images.find_one({"filename": name})
-                  #pose_data.update(image_info)
-                  #db.mongo.pose.insert_one(pose_data)
+        try:
+            #print(open(f, "r").readlinesi())
+            pts = json.load(open(f, "r"))
+            name = f[:-15].split("/")[-1] + ".png"
+            pose_data = {"keypoints": pts}
+            image_info = db.mongo.images.find_one({"filename": name})
+            #pose_data.update(image_info)
+            #db.mongo.pose.insert_one(pose_data)
 
-                  pose_done = time.time()
-                  n = db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts, "history.second_loop_done": pose_done}}, upsert=False)
-                  print("POSE:", pose_done, pose_done-image_info["history"]["first_loop_done"])
-                  os.remove(f)
-                except Exception as e:
-                  #pass
-                  print("missing file", f, e)
+            pose_done = time.time()
+            n = db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts, "history.second_loop_done": pose_done}}, upsert=False)
+            print("POSE:", pose_done, pose_done-image_info["history"]["first_loop_done"])
+            os.remove(f)
+        except Exception as e:
+            #pass
+            print("missing file", f, e)
+            os.remove(f)
     #time.sleep(0.1)
 
 def update_loop():

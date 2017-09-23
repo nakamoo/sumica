@@ -1,6 +1,7 @@
 import flask
 import scipy.misc
 import sys
+import uuid
 
 from flask import Flask, render_template, request
 app = Flask(__name__)
@@ -113,19 +114,23 @@ def process_image(imgmat, data):
     print("detected")
 
     out_data = {}
-    if only_img_feats:
-        out_data["features"] = out.tolist()
-    elif get_obj_feats or get_obj_dets:
-        img_feats, obj_dets, obj_feats = out
-        objs = [{} for _ in range(len(obj_dets))]
+    img_feats, obj_dets, obj_feats = out
+    objs = [{} for _ in range(len(obj_dets))]
 
-        if get_obj_feats:
-            for i, feat in enumerate(obj_feats):
-                objs[i]["features"] = feat.tolist()
-        if get_obj_dets:
-            for i, det in enumerate(obj_dets):
-                objs[i].update(det)
+    if get_img_feats:
+        fn = str(uuid.uuid4()) + ".npy"
+        np.save("../main_server/hai/image_features/" + fn, img_feats)
+        out_data["image_features_file"] = fn
 
+    if get_obj_feats:
+        fn = str(uuid.uuid4()) + ".npy"
+        np.save("../main_server/hai/object_features/" + fn, np.array(obj_feats))
+        out_data["object_features_file"] = fn
+
+    if get_obj_dets:
+        for i, det in enumerate(obj_dets):
+            det["list_index"] = i
+            objs[i].update(det)
         out_data["objects"] = objs
     
     return out_data

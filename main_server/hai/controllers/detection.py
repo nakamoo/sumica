@@ -29,7 +29,7 @@ class Detection(Controller):
             #                           files={'image': image}, json={'threshold': 0.5})
             
             print("sending image for detection...")
-            state_json = requests.post("http://" + hai.app.config['RECOGNITION_SERVER_URL'] + "/detect_path", data={'path': os.path.abspath(image_path)}, json={'threshold': 0.5})
+            state_json = requests.post("http://" + app.config['RECOGNITION_SERVER_URL'] + "/detect_path", data={'path': os.path.abspath(image_path), 'threshold': 0.5, 'get_image_features': 'true', 'get_object_features': 'true'})
 
             #print("detections: {}".format(r.text))
             

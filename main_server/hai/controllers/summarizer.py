@@ -62,8 +62,8 @@ def summarize(path, dets, poses):
   return summary
 
 def save_summary_img(filename, summ):
-    import hai
-    img = cv2.imread(hai.app.config["RAW_IMG_DIR"] + filename)
+    from _app import app
+    img = cv2.imread(app.config["RAW_IMG_DIR"] + filename)
 
     img = utils.visualize(img, summ)
     cv2.imwrite("summary.png", img)

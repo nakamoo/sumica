@@ -73,11 +73,11 @@ class Pose(Controller):
 
     def on_event(self, event, data):
         if event == "image":
-            import hai
-            if hai.app.config['ENCRYPTION']:
-                image_path = hai.app.config['ENCRYPTED_IMG_DIR'] + data['filename']
+            from _app import app
+            if app.config['ENCRYPTION']:
+                image_path = app.config['ENCRYPTED_IMG_DIR'] + data['filename']
             else:
-                image_path = hai.app.config['RAW_IMG_DIR'] + data['filename']
+                image_path = app.config['RAW_IMG_DIR'] + data['filename']
             print("copying to pose_tmp")
             copyfile(image_path, './pose_tmp/' + data['filename'])
         elif event == "timer": 

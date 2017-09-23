@@ -10,15 +10,15 @@ import itertools
 from controllers import utils
 
 def draw(data):
-    import hai
+    from _app import app
 
     path = data["filename"]
     summ = data["summary"]
 
-    print(os.path.join(hai.app.config["RAW_IMG_DIR"], path))
+    print(os.path.join(app.config["RAW_IMG_DIR"], path))
 
-    img = cv2.imread(hai.app.config["RAW_IMG_DIR"] + path)
-    diff = cv2.imread(hai.app.config["RAW_IMG_DIR"] + data["diff_filename"])
+    img = cv2.imread(app.config["RAW_IMG_DIR"] + path)
+    diff = cv2.imread(app.config["RAW_IMG_DIR"] + data["diff_filename"])
     #print(img.shape, diff.shape)
     diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
 
@@ -51,13 +51,13 @@ class Snapshot(Controller):
               img = draw(n)
               path = n["filename"]
 
-              import hai
+              from _app import app
 
               print("writing to: ", path)
               cv2.imwrite("./static/" + path, img)
               age = time.time() - float(n["time"])
               chatbot.send_fb_message(data["sender"]["id"], "here's your image ({} secs ago)".format(age))
-              url = "http://homeai.ml:{}/static/".format(hai.port) + path
+              url = "http://homeai.ml:{}/static/".format(app.config["PORT"]) + path
               print("snapshot url:", url)
               chatbot.send_fb_image(data["sender"]["id"], url)
              

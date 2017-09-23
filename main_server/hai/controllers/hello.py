@@ -26,7 +26,7 @@ class HelloController(Controller):
                                      sort=[("_id", pymongo.DESCENDING)])
             image_path = './images/' + data['filename']
 
-        from hai import app
+        from _app import app
         state_json = requests.post("http://" +
                                    app.config['RECOGNITION_SERVER_URL'] +
                                    "/detect",

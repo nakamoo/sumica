@@ -88,20 +88,20 @@ def summary2vec(touch_classes, look_classes, summary, incl_touch=True, incl_look
                 if obj["looking"] in look_classes and obj["looking"] and obj["looking"] != "None":
                     look_vec[look_classes.index(obj["looking"])] = 1
                     
-    dist_vec = np.zeros([len(touch_classes), 2])
-    if main_person[0] is not None:
-        main_person = main_person[0]
-        pb = main_person["box"]
-        main_pt = np.array([(pb[0]+pb[2])/2.0, (pb[1]+pb[3])/2.0])
+    dist_vec = np.zeros([len(touch_classes), 3])
+    #if main_person[0] is not None:
+    #    main_person = main_person[0]
+    #    pb = main_person["box"]
+    #    main_pt = np.array([(pb[0]+pb[2])/2.0, (pb[1]+pb[3])/2.0])
         
-        for obj in summary:
+    for obj in summary:
             if obj != main_person:
                 if obj["label"] in touch_classes:
                     b = obj["box"]
                     obj_pt = np.array([(b[0]+b[2])/2.0, (b[1]+b[3])/2.0])
                     #dist = np.sum((main_pt-obj_pt)**2.0)
-                    dist = main_pt - obj_pt
-                    dist_vec[touch_classes.index(obj["label"])] = dist
+                    dist = obj_pt#main_pt - obj_pt
+                    dist_vec[touch_classes.index(obj["label"])] = np.concatenate([np.array([1]), dist])
     
     dist_vec = dist_vec.flatten()
         
@@ -134,7 +134,7 @@ def get_objects(data):
 
 def filter_tags(rawDataX, tags, y_classes=None):
     if y_classes is None:
-        y_classes = ["phone", "nothing", "laptop"]
+        y_classes = ["phone", "nothing", "laptop", "noone"]
     #    y_classes = list(set(tags))
         
     #if "?" in y_classes: y_classes.remove("?")

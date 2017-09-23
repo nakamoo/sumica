@@ -13,6 +13,7 @@ from controllers.pose import Pose
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
 from controllers.activity_test import ActivityTest
+from controllers.activity_test2 import ActivityTest2
 #from controllers.learner import Learner
 
 import time
@@ -32,7 +33,7 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), Settings(user_name)]
+    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), ActivityTest2(user_name), Settings(user_name)]
 
 #!!!!!!!
 

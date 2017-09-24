@@ -1,6 +1,22 @@
 import numpy as np
 import json
 from pymongo import MongoClient
+import time
+
+def get_image_data(username, start_time=None, end_time=None, cam_id=0):
+    client = MongoClient()
+    mongo = client.hai
+    
+    if start_time is None:
+        start_time = time.time() - 600 #10 min
+    if end_time is None:
+        end_time = time.time()
+    
+    query = {"user_name": username, "cam_id": str(cam_id), "summary":{"$exists": True}, "time": {"$gt": start_time, "$lt": end_time}}
+    n = mongo.images.find(query).sort([("time",-1)])
+    image_data = list(n)
+    
+    return image_data
 
 # x depends on summaries
 # y is hue state

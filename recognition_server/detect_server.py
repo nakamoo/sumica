@@ -120,18 +120,18 @@ def process_image(imgmat, data):
     if get_img_feats:
         fn = str(uuid.uuid4()) + ".npy"
         np.save("../main_server/hai/image_features/" + fn, img_feats)
-        out_data["image_features_file"] = fn
+        out_data["image_features_filename"] = fn
 
     if get_obj_feats:
         fn = str(uuid.uuid4()) + ".npy"
         np.save("../main_server/hai/object_features/" + fn, np.array(obj_feats))
-        out_data["object_features_file"] = fn
+        out_data["object_features_filename"] = fn
 
     if get_obj_dets:
         for i, det in enumerate(obj_dets):
             det["list_index"] = i
             objs[i].update(det)
-        out_data["objects"] = objs
+        out_data["detections"] = objs
     
     return out_data
 

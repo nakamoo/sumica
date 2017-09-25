@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify
 
 from database import mongo
 import database as db
+import time
 
 from utils.encryption import cryptographic_key
 from _app import app
@@ -34,13 +35,19 @@ def post_image_data():
         request.files['diff'].save(app.config['RAW_IMG_DIR'] + m_filename)
         data['encryption'] = False
 
-    print(filename)
+    print(filename, "latency:", time.time()-data["time"])
     data['filename'] = filename
     data['diff_filename'] = m_filename
     mongo.images.insert_one(data)
     
     #if request.args.get('execute') == 'True': # what is this?
     db.trigger_controllers(data['user_name'], "image", data)
+    
+    return_time = time.time()
+    db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'history.first_loop_done': return_time}}, upsert=False)
+
+    data["detections"] = db.mongo.images.find_one({"_id": data["_id"]})["detections"]
+    data["return_time"] = return_time
 
     data.pop("_id")
     return jsonify(data), 201

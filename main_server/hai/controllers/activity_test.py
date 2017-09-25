@@ -179,7 +179,7 @@ class ActivityTest(Controller):
             extract_features(summ)
             db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'summary': summ}}, upsert=False)
             
-            self.control_hue(summ)
+            #self.control_hue(summ)
 
     def execute(self):
         re = self.re

@@ -89,24 +89,13 @@ track = tracker.Tracker()
 # tracker remove and add threshold
 # detector confidence and nms threshold
 
-@app.route('/detect', methods=["POST"])
-#@cross_origin()
-def process_image():
-    f = request.files["image"]
-
-    fname = "/tmp/{}.png".format(random.randint(0,10000000))
-
-    f.save(fname)
-
-    imgmat = preprocess(cv2.imread(fname))
-
+def process_image(imgmat, data):
     thres = 0.3
     get_img_feats = False
     get_obj_feats = False
     get_obj_dets = True
-
-    data = request.form.to_dict()
-
+    
+    imgmat = preprocess(imgmat)
     if "threshold" in data:
         thres = float(data["threshold"])
     if "get_image_features" in data:
@@ -138,12 +127,37 @@ def process_image():
                 objs[i].update(det)
 
         out_data["objects"] = objs
+    
+    return out_data
+
+@app.route('/detect', methods=["POST"])
+#@cross_origin()
+def detect_send_image():
+    f = request.files["image"]
+
+    fname = "/tmp/{}.png".format(random.randint(0,10000000))
+
+    f.save(fname)
+
+    imgmat = cv2.imread(fname)
+
+    data = request.form.to_dict()
+
+    out_data = process_image(imgmat, data)
 
     #visualize(imgmat, dets)
 
     os.remove(fname)
 
     #visualize(cv2.imread('image.png'), clean_dets, "clean")
+
+    return json.dumps(out_data)
+
+@app.route('/detect_path', methods=["POST"])
+def detect_path_image():
+    data = request.form.to_dict()
+    imgmat = cv2.imread(data["path"])
+    out_data = process_image(imgmat, data)
 
     return json.dumps(out_data)
 

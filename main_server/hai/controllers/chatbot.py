@@ -13,6 +13,7 @@ class Chatbot(Controller):
             self.fb_id = n["fb_id"]
 
         self.lights = None
+        self.tag = ""
 
     def on_event(self, event, data):
         if event == "chat" and self.fb_id:
@@ -29,6 +30,8 @@ class Chatbot(Controller):
             elif msg == "hue off":
               chatbot.send_fb_message(self.fb_id, "では電気を消します")
               self.lights = False
+            elif msg.startswith("tag"):
+              self.tag = msg.split()[-1]
             elif msg == "am i here":
               n = db.mongo.detections.find({"user_name": self.user}).sort([("time",-1)]).limit(1)
               here = False
@@ -43,6 +46,8 @@ class Chatbot(Controller):
 
             else:
               chatbot.send_fb_message(self.fb_id, "どうも！")
+        elif event == "image":
+            db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'tag': self.tag}}, upsert=False)
 
     def execute(self):
         if self.lights is not None:

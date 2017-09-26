@@ -6,6 +6,7 @@ from server_actors import chatbot
 from threading import Timer
 import os
 import time
+import controllers.utils as utils
 
 def chunker(seq, size):
   return (seq[pos:pos+size] for pos in range(0, len(seq), size))
@@ -60,24 +61,36 @@ def summarize(path, dets, poses):
   
   return summary
 
+def save_summary_img(filename, summ):
+    from _app import app
+    img = cv2.imread(app.config["RAW_IMG_DIR"] + filename)
+
+    img = utils.visualize(img, summ)
+    cv2.imwrite("summary.png", img)
+
 class Summarizer(Controller):
     def __init__(self, user):
         self.user = user
 
     def on_event(self, event, data):
-        if event == "image":
-            results = db.mongo.images.find({"user_name": self.user, "keypoints":{"$exists": True},
-              "detections":{"$exists": True}}).sort([("time",-1)]).limit(5)
+        if event == "timer":
+            results = db.mongo.images.find({"user_name": self.user, "version": "0.2", "keypoints":{"$exists": True},
+              "detections":{"$exists": True}, "summary":{"$exists": False}}).sort([("time",-1)]).limit(5)
+            
             if results.count() <= 0:
                 return
             
             for n in results:
                 pose = n["keypoints"]
                 path = n["filename"]
-                dets = n["detections"]["objects"]
+                dets = n["detections"]
 
+                #print(n["time"], n["history"], time.time())
                 summary = summarize(path, dets, pose)
                 db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary}}, upsert=False)
+                print("SUMMARY:", time.time() - n["time"])
+
+                save_summary_img(n["filename"], summary)
                 db.trigger_controllers(self.user, "summary", {"_id": n["_id"], "summary": summary})
 
     def execute(self):

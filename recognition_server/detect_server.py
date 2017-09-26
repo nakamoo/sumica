@@ -1,6 +1,7 @@
 import flask
 import scipy.misc
 import sys
+import uuid
 
 from flask import Flask, render_template, request
 app = Flask(__name__)
@@ -89,24 +90,13 @@ track = tracker.Tracker()
 # tracker remove and add threshold
 # detector confidence and nms threshold
 
-@app.route('/detect', methods=["POST"])
-#@cross_origin()
-def process_image():
-    f = request.files["image"]
-
-    fname = "/tmp/{}.png".format(random.randint(0,10000000))
-
-    f.save(fname)
-
-    imgmat = preprocess(cv2.imread(fname))
-
+def process_image(imgmat, data):
     thres = 0.3
     get_img_feats = False
     get_obj_feats = False
     get_obj_dets = True
-
-    data = request.form.to_dict()
-
+    
+    imgmat = preprocess(imgmat)
     if "threshold" in data:
         thres = float(data["threshold"])
     if "get_image_features" in data:
@@ -124,26 +114,55 @@ def process_image():
     print("detected")
 
     out_data = {}
-    if only_img_feats:
-        out_data["features"] = out.tolist()
-    elif get_obj_feats or get_obj_dets:
-        img_feats, obj_dets, obj_feats = out
-        objs = [{} for _ in range(len(obj_dets))]
+    img_feats, obj_dets, obj_feats = out
+    objs = [{} for _ in range(len(obj_dets))]
 
-        if get_obj_feats:
-            for i, feat in enumerate(obj_feats):
-                objs[i]["features"] = feat.tolist()
-        if get_obj_dets:
-            for i, det in enumerate(obj_dets):
-                objs[i].update(det)
+    if get_img_feats:
+        fn = str(uuid.uuid4()) + ".npy"
+        np.save("../main_server/hai/image_features/" + fn, img_feats)
+        out_data["image_features_filename"] = fn
 
-        out_data["objects"] = objs
+    if get_obj_feats:
+        fn = str(uuid.uuid4()) + ".npy"
+        np.save("../main_server/hai/object_features/" + fn, np.array(obj_feats))
+        out_data["object_features_filename"] = fn
+
+    if get_obj_dets:
+        for i, det in enumerate(obj_dets):
+            det["list_index"] = i
+            objs[i].update(det)
+        out_data["detections"] = objs
+    
+    return out_data
+
+@app.route('/detect', methods=["POST"])
+#@cross_origin()
+def detect_send_image():
+    f = request.files["image"]
+
+    fname = "/tmp/{}.png".format(random.randint(0,10000000))
+
+    f.save(fname)
+
+    imgmat = cv2.imread(fname)
+
+    data = request.form.to_dict()
+
+    out_data = process_image(imgmat, data)
 
     #visualize(imgmat, dets)
 
     os.remove(fname)
 
     #visualize(cv2.imread('image.png'), clean_dets, "clean")
+
+    return json.dumps(out_data)
+
+@app.route('/detect_path', methods=["POST"])
+def detect_path_image():
+    data = request.form.to_dict()
+    imgmat = cv2.imread(data["path"])
+    out_data = process_image(imgmat, data)
 
     return json.dumps(out_data)
 

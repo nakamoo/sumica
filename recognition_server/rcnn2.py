@@ -25,8 +25,8 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 # What model to download.
-MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
-#MODEL_NAME = 'faster_rcnn_resnet101_coco_11_06_2017'
+#MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
+MODEL_NAME = 'faster_rcnn_resnet101_coco_11_06_2017'
 MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
@@ -97,7 +97,7 @@ def detect(image, thres, only_img_feats):
         feed_dict={image_tensor: image_np_expanded})
 
     img_feats = np.squeeze(img_feats)
-    return img_feats
+    return img_feats, None, None
   else:
     # Actual detection.
     (boxes, scores, classes, num_detections, img_feats, obj_feats) = sess.run(

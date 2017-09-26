@@ -15,7 +15,7 @@ class LogisticRegressionHueOperator(Controller):
     def __init__(self, user):
         self.user = user
         self.re = []
-        self.clf = joblib.load('clf.pkl')
+        self.clf = joblib.load('models/logreg_nakamura.pkl')
         self.history = [-1, -1, -1]
 
     def control_hue(self, cmd_hue):

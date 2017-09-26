@@ -10,8 +10,10 @@ import requests
 import time
 from utils import actions
 import sys
+requests.packages.urllib3.disable_warnings()
 
-SERVER_IP = "http://homeai.ml:{}".format(sys.argv[2])
+
+SERVER_IP = "https://homeai.ml:{}".format(sys.argv[2])
 
 ID = sys.argv[1]
 print("id:", ID)
@@ -20,7 +22,7 @@ fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith
 sensor_mods = []
 for m in map(importlib.import_module, fs):
 	try:
-		sensor_mods.append(m.Manager(ID, SERVER_IP))
+	    sensor_mods.append(m.Manager(ID, SERVER_IP))
 	except Exception as e:
             print(e, m)
             pass
@@ -38,7 +40,7 @@ while True:
     try:
       time.sleep(1)
       try:
-         r = requests.post(SERVER_IP + "/controllers/execute", data={'user_name': ID})
+         r = requests.post(SERVER_IP + "/controllers/execute", data={'user_name': ID}, verify=False)
          action_data = json.loads(r.text)
          print(action_data)
          actions.act_list(action_data)

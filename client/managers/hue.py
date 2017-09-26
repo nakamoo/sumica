@@ -33,7 +33,7 @@ class Manager:
                 data["time"] = time.time()
                 data["user_name"] = self.user
                 print(data)
-                requests.post(self.server_ip + "/data/hue", data=data)
+                requests.post(self.server_ip + "/data/hue", data=data, verify=False)
 
                 """
                 for light in state["lights"]:

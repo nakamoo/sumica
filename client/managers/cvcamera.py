@@ -188,7 +188,7 @@ class CamManager:
         files = {}
         files['image'] = open("image.png", "rb")
         files["diff"] = open("diff.png", "rb")
-        r = requests.post(addr, files=files, data=data)
+        r = requests.post(addr, files=files, data=data, verify=False)
         print("cam", self.cam_id, ": ", r.text)
 
     def show(self, image, ip):
@@ -196,7 +196,7 @@ class CamManager:
 
         data = {"threshold": "0.5"}
         addr = "{}/detect".format(ip)
-        r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data)
+        r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data, verify=False)
 
         print(r.text)
 
@@ -205,5 +205,5 @@ class CamManager:
         cv2.waitKey(1)
 
 if __name__ == "__main__":
-    cam = Manager('http://153.120.159.210:5002', detect_only=True)
+    cam = Manager('https://153.120.159.210:5002', detect_only=True)
     cam.start()

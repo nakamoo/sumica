@@ -36,15 +36,17 @@ def post_image_data():
         data['encryption'] = False
 
     print(filename, "latency:", time.time()-data["time"])
+    arrival_time = time.time()
     data['filename'] = filename
     data['diff_filename'] = m_filename
+    data['version'] = '0.2'
     mongo.images.insert_one(data)
     
     #if request.args.get('execute') == 'True': # what is this?
     db.trigger_controllers(data['user_name'], "image", data)
     
     return_time = time.time()
-    db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'history.first_loop_done': return_time}}, upsert=False)
+    db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'history.arrival': arrival_time, 'history.first_loop_done': return_time}}, upsert=False)
 
     data["detections"] = db.mongo.images.find_one({"_id": data["_id"]})["detections"]
     data["return_time"] = return_time

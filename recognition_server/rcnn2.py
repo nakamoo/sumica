@@ -97,7 +97,7 @@ def detect(image, thres, only_img_feats):
         feed_dict={image_tensor: image_np_expanded})
 
     img_feats = np.squeeze(img_feats)
-    return img_feats
+    return img_feats, None, None
   else:
     # Actual detection.
     (boxes, scores, classes, num_detections, img_feats, obj_feats) = sess.run(

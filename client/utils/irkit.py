@@ -4,12 +4,15 @@
 import requests
 import json
 import configparser
+import os
 
 
 class IrkitInternetAPI:
     def __init__(self):
         self.config = configparser.ConfigParser()
-        self.config.read('./irkit.ini')
+        self.config_path = os.path.dirname(os.path.abspath(__file__)) + '/irkit.ini'
+        self.config.read(self.config_path)
+
         self.endpoint = "http://" + self.config['DEFAULT']['ip']
 
     def set_param(self):
@@ -23,7 +26,7 @@ class IrkitInternetAPI:
         param_ac = self.get_messages()
         self.config['AirConditioning']['param'] == param_ac
 
-        with open('irkit.ini', 'w') as configfile:
+        with open(self.config_path, 'w') as configfile:
             self.config.write(configfile)
 
         print("OK")

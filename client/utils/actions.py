@@ -1,8 +1,8 @@
 from subprocess import Popen
 import subprocess
 import json
-from irkit import IrkitInternetAP
-
+from utils.irkit import IrkitInternetAPI
+irkit = IrkitInternetAPI()
 
 def act_list(actions):
     for action in actions:
@@ -26,3 +26,5 @@ def act(platform, data):
 
         out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
         print(out.decode('utf-8'))
+    elif platform == "airconditioning":
+        pass

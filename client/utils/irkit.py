@@ -4,6 +4,7 @@
 import requests
 import json
 import configparser
+import subprocess
 import os
 
 
@@ -19,12 +20,12 @@ class IrkitInternetAPI:
         print("TVリモコンをIRKitに向けて，on/offボダンを押して下さい")
         input("準備ができたらどれかキーを押して下さい")
         param_tv = self.get_messages()
-        self.config['TV']['param'] == param_tv
+        self.config['TV']['param'] = param_tv
 
         print("エアコンのリモコンをIRKitに向けて，on/offボダンを押して下さい")
         input("準備ができたらどれかキーを押して下さい")
         param_ac = self.get_messages()
-        self.config['AirConditioning']['param'] == param_ac
+        self.config['AirConditioning']['param'] = param_ac
 
         with open(self.config_path, 'w') as configfile:
             self.config.write(configfile)
@@ -36,21 +37,23 @@ class IrkitInternetAPI:
         url = self.endpoint + "/messages"
 
         r = requests.get(url, headers=headers)
-        if (r.text == '') or (r.status_code != 200):
-            print("Error. Please retry.")
+        while (r.text == '') or (r.status_code != 200):
+            print("エラー：　もう一度IRKitにむけてリモコンを操作して下さい")
+            input("準備ができたらどれかキーを押して下さい")
+            r = requests.get(url, headers=headers)
 
         return r.text
 
     def post_messages(self, device):
-        message = self.config[device]['param']
-        message = json.dumps(message)
-
-        params = {'message': message}
-
-        url = self.endpoint + "/messages"
-        headers = {'X-Requested-With': "curl"}
-        r = requests.post(url, headers=headers, params=params)
+        # ugry code
+        params = self.config[device]['param']
+        params = "'" + params + "'"
+        cmd = 'curl -i "http://192.168.10.143/messages" -H "X-Requested-With: curl" -d ' + params
+        subprocess.call(cmd, shell=True)
 
 
 if __name__ == '__main__':
-    IrkitInternetAPI().set_param()
+    irkit = IrkitInternetAPI()
+    # irkit.set_param()
+    irkit.post_messages('TV')
+    # irkit.post_messages('AirConditioning')

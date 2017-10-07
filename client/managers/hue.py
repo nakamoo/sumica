@@ -41,9 +41,10 @@ class Manager:
                 data["lights"] = json.dumps(state["lights"])
                 data["time"] = time.time()
                 data["user_name"] = self.user
+
                 if self.send:
                     print(data)
-                    requests.post(self.server_ip + "/data/hue", data=data)
+                    requests.post(self.server_ip + "/data/hue", data=data, verify=False)
                 else:
                     print("NOT SENDING")
 

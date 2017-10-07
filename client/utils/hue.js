@@ -83,8 +83,8 @@ var manage = function(ip, user) {
 		console.log("setting state");
 		var state = JSON.parse(fs.readFileSync(__dirname + '/hue_state.json', 'utf8'))
 
-		for (var i = 0; i < 4; i++) { //for now, control all
-			api.setLightState(i, state, function(err, lights) {
+		for (var i = 0; i < 3; i++) { //for now, control all
+			api.setLightState(i, state[i], function(err, lights) {
 			    if (err) throw err;
 			    displayResult(lights);
 			});

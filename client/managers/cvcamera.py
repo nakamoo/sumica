@@ -189,7 +189,7 @@ class CamManager:
         files['image'] = open("image.png", "rb")
         files["diff"] = open("diff.png", "rb")
         r = requests.post(addr, files=files, data=data)
-        print("cam", self.cam_id, ": ", r.text)
+        #print("cam", self.cam_id, ": ", r.text)
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)

@@ -2,8 +2,53 @@ import numpy as np
 import json
 from pymongo import MongoClient
 import time
+import operator
+import random
 
-def get_image_data(username, start_time=None, end_time=None, cam_id=0):
+def get_hue_dataset2(username, start_time=None, end_time=None, top_classes=5, max_samples=-1,
+                    incl_touch=False, incl_look=False, incl_dist=False, incl_pose=False, incl_hand=False, incl_feats=True):
+    img_data = list(get_image_data(username, start_time, end_time, sort_order=1))
+    hue_data = get_hue_data(username, start_time, end_time, sort_time=1)
+    
+    if max_samples > 0:
+        sample_indices = random.sample(range(len(img_data)), max_samples)
+        sample_indices.sort(reverse=True)
+        img_data = [img_data[i] for i in sample_indices]
+    
+    #image_features = [np.load("./image_features/" + fn["image_features_filename"]) for fn in img_data]
+    #image_features = [summary2vec([], [], data["summary"], False, False, False, True, False, True) for data in img_data]
+    #image_features = [summary2vec([], [], data["summary"], False, False, False, True, False, False) for data in img_data]
+    
+
+    new_img_data, new_hue_data = connect_hue_image(img_data, hue_data)
+    
+    image_features = [data2vec([], [], data,
+                                  incl_touch, incl_look, incl_dist, incl_pose, incl_hand, incl_feats) for data in new_img_data]
+    new_hue_data, n_lights = reshape_hue_data(new_hue_data)
+    hue_classes, labels, counts = get_hue_labels(new_hue_data, top_classes)
+    
+    return image_features, labels, hue_classes, counts
+
+def connect_hue_image(img_data, hue_data):
+    hue_index = 0
+    new_img_data = []
+    new_hue_data = []
+    
+    for img in img_data:
+        while img["time"] >= hue_data[hue_index]["time"]-30:
+            hue_index += 1
+            if hue_index >= len(hue_data):
+                break
+                
+        if hue_index >= len(hue_data):
+                break
+            
+        new_img_data.append(img)
+        new_hue_data.append(hue_data[hue_index])
+    
+    return new_img_data, new_hue_data
+
+def get_image_data(username, start_time=None, end_time=None, cam_id=0, sort_order=-1):
     client = MongoClient()
     mongo = client.hai
     
@@ -13,10 +58,70 @@ def get_image_data(username, start_time=None, end_time=None, cam_id=0):
         end_time = time.time()
     
     query = {"user_name": username, "cam_id": str(cam_id), "summary":{"$exists": True}, "time": {"$gt": start_time, "$lt": end_time}}
-    n = mongo.images.find(query).sort([("time",-1)])
-    image_data = list(n)
+    n = mongo.images.find(query).sort([("time",sort_order)])
     
-    return image_data
+    return n
+
+def reshape_hue_data(data):
+    n_lights = max([len(d["lights"]) for d in data])
+    re = np.zeros([len(data), n_lights*5])
+    for i, d in enumerate(data):
+        for k, light in enumerate(d["lights"]):
+            if light["on"] and light["reachable"]:
+                re[i, k*5:(k+1)*5] = [light["reachable"], light["on"], light["hue"], light["sat"], light["bri"]]
+            else:
+                re[i, k*5:(k+1)*5] = [0, 0, 0, 0, 0]
+            
+    return re, n_lights
+
+def get_hue_labels(data_mat, top_classes=5):
+    classes = list(set([tuple(row) for row in data_mat]))
+    n_classes = len(classes)
+    
+    indices = [classes.index(tuple(row)) for row in data_mat]
+    counts = np.array([indices.count(i) for i in range(n_classes)])
+    
+    count_dict = {index:count for index, count in zip(range(n_classes), counts)}
+    sorted_counts = sorted(count_dict.items(), key=operator.itemgetter(1), reverse=True)
+    top_classes = [classes[i] for i, n in sorted_counts[:top_classes]]
+    sorted_counts = [(classes[i], n) for i, n in sorted_counts]
+    
+    indices = []
+    
+    for row in data_mat:
+        tup = tuple(row)
+        
+        if tup in top_classes:
+            indices.append(top_classes.index(tup))
+        else:
+            indices.append(len(top_classes))
+            
+    return top_classes, indices, sorted_counts
+
+def get_hue_data(username, start_time, end_time, sort_time=-1):
+    client = MongoClient()
+    mongo = client.hai
+    
+    query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}}
+    n = mongo.hue.find(query).sort([("time", sort_time)])
+    
+    re = []
+    
+    for data in n:
+        lights = json.loads(data["lights"])
+        row = {}
+        row_lights = []
+
+        for light in lights:
+            state = light["state"]
+            state = {"reachable": state["reachable"], "on": state["on"], "hue": state["hue"], "sat": state["sat"], "bri": state["bri"]}
+            row_lights.append(state)
+            
+        row["lights"] = row_lights
+        row["time"] = data["time"]
+        re.append(row)
+    
+    return re
 
 # x depends on summaries
 # y is hue state
@@ -48,7 +153,7 @@ def get_hue_dataset1(username, start_time, end_time, cam_id, incl_touch=True, in
     light_ids = get_light_ids(hue_data)
     
     tags = [data["tag"] for data in image_data]
-    dataX = np.array([summary2vec(touch_classes, look_classes, data["summary"], incl_touch, incl_look, incl_dist, incl_pose, incl_hand) for data in image_data])
+    dataX = np.array([data2vec(touch_classes, look_classes, data, incl_touch, incl_look, incl_dist, incl_pose, incl_hand) for data in image_data])
     dataY = np.array([hue2vec(data, light_ids) for data in hue_data])
     
     return dataX, dataY, tags, touch_classes, look_classes
@@ -78,7 +183,7 @@ def hue2vec(data, light_ids):
             
     return vec
 
-def summary2vec(touch_classes, look_classes, summary, incl_touch=True, incl_look=True, incl_dist=True, incl_pose=True, incl_hand=True):
+def data2vec(touch_classes, look_classes, data, incl_touch=True, incl_look=True, incl_dist=True, incl_pose=True, incl_hand=True, incl_feats=False):
     person_exists = 0
     touch_vec = np.zeros(len(touch_classes))
     look_vec = np.zeros(len(look_classes))
@@ -86,6 +191,8 @@ def summary2vec(touch_classes, look_classes, summary, incl_touch=True, incl_look
     hand_vec = np.zeros(126)
     #brightness = data["brightness"]
     main_person = [None, 0]
+    
+    summary = data["summary"]
 
     for obj in summary:
         if obj["label"] == "person":
@@ -132,6 +239,9 @@ def summary2vec(touch_classes, look_classes, summary, incl_touch=True, incl_look
         fin_vec.append(pose_vec)
     if incl_hand:
         fin_vec.append(hand_vec)
+    if incl_feats:
+        feats = np.load("./image_features/" + data["image_features_filename"]) 
+        fin_vec.append(feats)
         
     return np.concatenate(fin_vec)
     

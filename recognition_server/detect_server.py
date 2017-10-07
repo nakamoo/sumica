@@ -119,12 +119,15 @@ def process_image(imgmat, data):
 
     if get_img_feats:
         fn = str(uuid.uuid4()) + ".npy"
-        np.save("../main_server/hai/image_features/" + fn, img_feats)
+        #print("img", img_feats.shape)
+        np.save("../main_server/hai/image_features/" + fn, np.max(img_feats, axis=(0,1)))
         out_data["image_features_filename"] = fn
 
     if get_obj_feats:
         fn = str(uuid.uuid4()) + ".npy"
-        np.save("../main_server/hai/object_features/" + fn, np.array(obj_feats))
+        obj_feats = np.array(obj_feats)
+        #print("obj", obj_feats.shape)
+        np.save("../main_server/hai/object_features/" + fn, obj_feats)
         out_data["object_features_filename"] = fn
 
     if get_obj_dets:

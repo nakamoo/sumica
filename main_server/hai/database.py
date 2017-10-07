@@ -2,6 +2,8 @@ from pymongo import MongoClient
 from _app import app
 client = MongoClient('localhost', app.config['PORT_DB'])
 mongo = client.hai
+mongo.images.ensure_index('time')
+mongo.hue.ensure_index('time')
 
 import os
 import importlib
@@ -14,7 +16,7 @@ from controllers.pose import Pose
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
 from controllers.activity_test import ActivityTest
-from controllers.activity_test2 import ActivityTest2
+from controllers.activity_test3 import ActivityTest3
 #from controllers.learner import Learner
 
 import time
@@ -34,7 +36,7 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), ActivityTest2(user_name), Settings(user_name)]
+    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), ActivityTest3(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()

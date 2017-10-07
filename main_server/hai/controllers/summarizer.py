@@ -91,7 +91,8 @@ class Summarizer(Controller):
                 print("SUMMARY:", time.time() - n["time"])
 
                 save_summary_img(n["filename"], summary)
-                db.trigger_controllers(self.user, "summary", {"_id": n["_id"], "summary": summary})
+                n["summary"] = summary
+                db.trigger_controllers(self.user, "summary", n)
 
     def execute(self):
         return []

@@ -24,17 +24,21 @@ for m in map(importlib.import_module, fs):
 	try:
 	    sensor_mods.append(m.Manager(ID, SERVER_IP))
 	except Exception as e:
-            print(e, m)
+            print("exception", e, m)
             pass
 
-print(fs)
-print('---')
-print(sensor_mods)
 
 for inp in sensor_mods:
     thread_stream = threading.Thread(target=inp.start) 
     thread_stream.daemon = True
     thread_stream.start()
+
+def act_list2(acts):
+    for inp in sensor_mods:
+        try:
+            inp.execute(acts)
+        except:
+            pass
 
 while True:
     try:
@@ -42,18 +46,19 @@ while True:
       try:
          r = requests.post(SERVER_IP + "/controllers/execute", data={'user_name': ID}, verify=False)
          action_data = json.loads(r.text)
-         print(action_data)
+         #print(action_data)
+         act_list2(action_data)
          actions.act_list(action_data)
          time.sleep(0.5)
-      except:
+      except Exception as e:
          time.sleep(1)
-         print("connection error")
+         print("error", e)
 
     except KeyboardInterrupt:
         for inp in sensor_mods:
             try:
                 inp.close()
             except Exception as e:
-                print(e, inp)
+                print("exception", e, inp)
                 exit()
 

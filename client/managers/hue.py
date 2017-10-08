@@ -11,6 +11,7 @@ class Manager:
         out = out.decode('utf-8')
         self.server_ip = server_ip
         self.user = user
+        self.send = True
 
         if out.split("\n")[-2] != "ok":
             self.connected = False
@@ -18,6 +19,14 @@ class Manager:
         else:
             self.connected = True
             print("connected to Hue.")
+
+    def execute(self, acts):
+        for act in acts:
+            try:
+                if act["platform"] == "send_hue":
+                    self.send = act["data"] == "True"
+            except Exception as e:
+                print(e)
 
     def start(self):
         if not self.connected:
@@ -32,8 +41,12 @@ class Manager:
                 data["lights"] = json.dumps(state["lights"])
                 data["time"] = time.time()
                 data["user_name"] = self.user
-                print(data)
-                requests.post(self.server_ip + "/data/hue", data=data, verify=False)
+
+                if self.send:
+                    print(data)
+                    requests.post(self.server_ip + "/data/hue", data=data, verify=False)
+                else:
+                    print("NOT SENDING")
 
                 """
                 for light in state["lights"]:

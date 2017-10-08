@@ -43,6 +43,5 @@ class Detection(Controller):
     
     def execute(self):
         response = []
-        response.append({"app": "hue", "cmd": "turn on", "controller": "Detection"})
         return response
 

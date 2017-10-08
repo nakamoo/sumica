@@ -26,7 +26,6 @@ def act(platform, data):
 
         out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
         print(out.decode('utf-8'))
-    elif platform == "air_conditioning":
-        irkit.post_messages('AirConditioning')
-    elif platform == "TV":
-        irkit.post_messages('TV')
+    elif platform == "irkit":
+        for device in data:
+            irkit.post_messages(device)

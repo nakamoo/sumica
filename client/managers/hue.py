@@ -78,7 +78,10 @@ class Manager:
                     self.last_state = state
 
                 if state_changed:
-                    override = self.check_override(state, self.actions.last_hue_update)
+                    if self.actions.hue_overridden:
+                        override = True
+                    else:
+                        override = self.check_override(state, self.actions.last_hue_update)
                 else:
                     override = False
 
@@ -88,6 +91,7 @@ class Manager:
                     print("MANUAL CHANGE DETECTED")
                     data["last_manual"] = 0
                     self.last_manual_time = time.time()
+                    self.actions.hue_overridden = True
                 else:
                     data["last_manual"] = time.time() - self.last_manual_time
 

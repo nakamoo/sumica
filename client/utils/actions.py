@@ -6,6 +6,7 @@ import time
 class Actions:
 	def __init__(self):
 		self.last_hue_update = {"data": None}
+		self.hue_overridden = False
 
 	def act_list(self, actions):
 		for action in actions:
@@ -34,3 +35,4 @@ class Actions:
 				out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
 				#print("set hue state:", out.decode('utf-8'))
 				self.last_hue_update = {"data":json_data, "time":time.time()}
+				self.hue_overridden = False

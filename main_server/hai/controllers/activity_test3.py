@@ -50,12 +50,11 @@ class ActivityTest3(Controller):
             elif msg == "act off":
                 self.enabled = False
         elif event == "hue":
-            print(data)
-            if int(data["last_manual"]) == 0:
+            if float(data["last_manual"]) == 0:
                 n = db.mongo.fb_users.find_one({"id": self.user})
                 if n:
                     fb_id = n["fb_id"]
-                chatbot.send_fb_message(fb_id, "manual control detected.")
+                chatbot.send_fb_message(fb_id, "hue manual control detected.")
             
     def execute(self):
         if self.enabled:

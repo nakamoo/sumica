@@ -6,6 +6,7 @@ mongo.images.ensure_index('time')
 mongo.hue.ensure_index('time')
 
 import os
+import traceback
 import importlib
 
 from controllers.detection import Detection
@@ -56,7 +57,7 @@ def trigger_controllers(user, event, data):
             try:
                 c.on_event(event, data)
             except Exception as e:
-                print("error;", e, str(c))
+                traceback.print_exc()
             last_t = time.time()
             if event == "image" or event == "timer":
                 time_taken = last_t-mid_t

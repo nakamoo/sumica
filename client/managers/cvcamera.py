@@ -25,7 +25,7 @@ def visualize(frame, all_boxes, win_name="frame"):
 #cv2.namedWindow("diff", cv2.WINDOW_NORMAL)
 
 class Manager:
-    def __init__(self, user, server_ip):
+    def __init__(self, user, server_ip, actions):
         self.mans = []
         for i in range(0, 1):
             self.mans.append(CamManager(user, server_ip, i))
@@ -190,7 +190,7 @@ class CamManager:
         files["diff"] = open("diff.png", "rb")
 
         r = requests.post(addr, files=files, data=data, verify=False)
-        print("cam", self.cam_id, ": ", r.text)
+        #print("cam", self.cam_id, ": ", r.text)
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)

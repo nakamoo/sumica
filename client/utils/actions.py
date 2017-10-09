@@ -1,25 +1,36 @@
 from subprocess import Popen
 import subprocess
 import json
+import time
 
-def act_list(actions):
-	for action in actions:
-		if "platform" in action and "data" in action:
-			act(action["platform"], action["data"])
+class Actions:
+	def __init__(self):
+		self.last_hue_update = {"data": None}
 
-def act(platform, data):
-	if platform == "youtube":
-		print("OPENING YOUTUBE")
-		Popen("node utils/youtube.js {}".format(data), shell=True)
-	elif platform == "shell":
-		Popen("{}".format(data), shell=True)
-	elif platform == "print":
-		print(data)
-	elif platform == "sound":
-		Popen("play ../sounds/{}".format(data), shell=True)
-	elif platform == "hue":
-		with open('utils/hue_state.json', 'w+') as outfile:
-		    json.dump(json.loads(data), outfile)
+	def act_list(self, actions):
+		for action in actions:
+			if "platform" in action and "data" in action:
+				self.act(action["platform"], action["data"])
 
-		out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
-		print(out.decode('utf-8'))
+	def act(self, platform, data):
+		if platform == "youtube":
+			print("OPENING YOUTUBE")
+			Popen("node utils/youtube.js {}".format(data), shell=True)
+		elif platform == "shell":
+			Popen("{}".format(data), shell=True)
+		elif platform == "print":
+			print(data)
+		elif platform == "sound":
+			Popen("play ../sounds/{}".format(data), shell=True)
+		elif platform == "hue":
+			json_data = json.loads(data)
+
+			print(self.last_hue_update["data"], json_data)
+
+			if self.last_hue_update["data"] != json_data:
+				with open('utils/hue_state.json', 'w+') as outfile:
+				    json.dump(json_data, outfile)
+
+				out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
+				#print("set hue state:", out.decode('utf-8'))
+				self.last_hue_update = {"data":json_data, "time":time.time()}

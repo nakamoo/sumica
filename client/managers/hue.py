@@ -91,10 +91,10 @@ class Manager:
                 else:
                     data["last_manual"] = time.time() - self.last_manual_time
 
-                if self.send:
-                    requests.post(self.server_ip + "/data/hue", data=data, verify=False)
-                else:
-                    print("NOT SENDING")
+                #if self.send:
+                requests.post(self.server_ip + "/data/hue", data=data, verify=False)
+                #else:
+                #    print("NOT SENDING")
 
                 """
                 for light in state["lights"]:

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from database import mongo
+import database as db
 
 bp = Blueprint("hue", __name__)
 
@@ -12,6 +12,9 @@ def post_hue_data():
     data = request.form.to_dict()
     print("HUE>> ", data)
     data["time"] = float(data["time"])
-    mongo.hue.insert_one(data)
+    db.mongo.hue.insert_one(data)
+    
+    db.trigger_controllers(data['user_name'], "hue", data)
+    
     data.pop("_id")
     return jsonify(data), 201

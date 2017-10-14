@@ -9,6 +9,10 @@ import time
 from utils.encryption import cryptographic_key
 from _app import app
 
+import coloredlogs, logging
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
+
 bp = Blueprint("images", __name__)
 
 @bp.route('/data/images')
@@ -18,7 +22,7 @@ def get_image_data():
 @bp.route('/data/images', methods=['POST'])
 def post_image_data():
     data = request.form.to_dict()
-    print(data)
+    logger.debug(data)
     data["time"] = float(data["time"])
 
     if app.config['ENCRYPTION']:
@@ -35,7 +39,7 @@ def post_image_data():
         request.files['diff'].save(app.config['RAW_IMG_DIR'] + m_filename)
         data['encryption'] = False
 
-    print(filename, "latency:", time.time()-data["time"])
+    logger.info(filename + " latency: " + str(time.time()-data["time"]))
     arrival_time = time.time()
     data['filename'] = filename
     data['diff_filename'] = m_filename

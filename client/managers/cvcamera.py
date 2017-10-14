@@ -8,6 +8,7 @@ import colorsys
 import skimage.measure
 import numpy as np
 import traceback
+import urllib
 
 def visualize(frame, all_boxes, win_name="frame"):
     for result in all_boxes:
@@ -43,7 +44,7 @@ class Manager:
 
     def close(self):
         for man in self.mans:
-            man.cap.release()
+            man.close()
             print("releasing", man.cam_name)
 
 class CamManager:
@@ -60,15 +61,19 @@ class CamManager:
         try:
             if camtype == "webcam":
                 self.cap = cv2.VideoCapture(int(cam_loc))
-            elif camtype == "vstarcam":
-                print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
-                print(cam_loc + "/videostream.cgi?user=admin&pwd=password")
-                self.cap = cv2.VideoCapture(cam_loc + "/videostream.cgi?user=admin&pwd=password")
 
-            print("cam detected:", cam_loc, self.cap.isOpened())
-            #self.enabled = self.cap.isOpened()
-            #if not self.enabled:
-            #  self.cap.release()
+                print("cam detected:", cam_loc, self.cap.isOpened())
+                self.enabled = self.cap.isOpened()
+                if not self.enabled:
+                    self.cap.release()
+                    print("ERROR opening stream")
+            elif camtype == "vstarcam":
+                #print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
+                print(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                #self.cap = cv2.VideoCapture(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                print(self.stream)
+
         except Exception as e:
             traceback.print_exc()
 
@@ -76,12 +81,33 @@ class CamManager:
         self.image1, self.image2 = None, None
         self.thresh = None
 
+    def close(self):
+        if self.camtype == "webcam":
+            man.cap.release()
+        elif self.camtype == "vstarcam":
+            pass
+
     def capture_loop(self):
+        bytes = b''
         while True:
-            ret, frame = self.cap.read()
+            if self.camtype == "webcam":
+                ret, frame = self.cap.read()
+            elif self.camtype == "vstarcam":
+                try: 
+                    while True:
+                        bytes += self.stream.read(1024)
+                        a = bytes.find(b'\xff\xd8')
+                        b = bytes.find(b'\xff\xd9')
+                        if a!=-1 and b!=-1:
+                            jpg = bytes[a:b+2]
+                            bytes= bytes[b+2:]
+                            frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8).copy(), cv2.IMREAD_COLOR)
+                            break
+                except:
+                    print("frame error")
 
             if frame is None:
-                print(self.cam_name, ": frame is none")
+                print(self.cam_name, ": frame is ", frame, ret)
                 time.sleep(1)
                 continue
                 #ret, frame = self.cap.read()

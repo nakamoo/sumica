@@ -5,6 +5,10 @@ mongo = client.hai
 mongo.images.ensure_index('time')
 mongo.hue.ensure_index('time')
 
+import coloredlogs, logging
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
+
 import os
 import traceback
 import importlib
@@ -64,7 +68,7 @@ def trigger_controllers(user, event, data):
                 #if time_taken >= 0.1:
                     #print(str(c), "time taken:", time_taken)
         if event == "image":
-            print("total time taken:", last_t - start_t)
+            logger.info("total time taken (trigger_controllers): " + str(last_t - start_t))
 
 def timer_loop():
     while True:

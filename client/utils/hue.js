@@ -66,6 +66,7 @@ var manage = function(ip, user) {
 	var HueApi = require("node-hue-api").HueApi;
 
 	var displayResult = function(result) {
+	console.log("result:");
 	    console.log(JSON.stringify(result));
 	};
 
@@ -84,11 +85,13 @@ var manage = function(ip, user) {
 		var state = JSON.parse(fs.readFileSync(__dirname + '/hue_state.json', 'utf8'))
 
 		for (var i = 0; i < state.length; i++) { //for now, control all
+			console.log(state[i]["state"]);
 			api.setLightState(state[i]["id"], state[i]["state"], function(err, lights) {
 				console.log(err);
 			    if (err) throw err;
 			    displayResult(lights);
 			});
+			
 		}
 	}
 }

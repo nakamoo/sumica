@@ -1,1 +1,1 @@
-[{"state": {"on": true, "hue": 33862.0, "bri": 209.0, "sat": 50.0}, "id": "1"}, {"state": {"on": false}, "id": "2"}, {"state": {"on": false}, "id": "3"}]
+[{"id": "1", "state": {"hue": 33862.0, "on": true, "sat": 50.0, "bri": 112.0}}, {"id": "2", "state": {"hue": 0.0, "on": true, "sat": 0.0, "bri": 117.0}}, {"id": "3", "state": {"on": false}}]

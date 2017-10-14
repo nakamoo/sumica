@@ -3,6 +3,10 @@ import database as db
 import os
 import time
 
+import coloredlogs, logging
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
+
 class Settings(Controller):
     def __init__(self, user):
         self.user = user
@@ -37,7 +41,7 @@ class Settings(Controller):
                     except:
                         print("could not delete")
             else:
-                print("preserving image", self.user)
+                logger.info("preserving image " + self.user)
 
     def execute(self):
         return []

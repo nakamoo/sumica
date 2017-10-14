@@ -23,12 +23,18 @@ actions = Actions()
 
 fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith('.py')]
 sensor_mods = []
-for m in map(importlib.import_module, fs):
-	try:
-	    sensor_mods.append(m.Manager(ID, SERVER_IP, actions))
-	except Exception as e:
-            print("exception", e, m)
-            pass
+mods = []
+for f in fs:
+    try:
+        mods.append(importlib.import_module(f))
+    except:
+        print("couldn't import {}".format(f))
+
+for m in mods:
+    try:
+        sensor_mods.append(m.Manager(ID, SERVER_IP, actions))
+    except:
+        traceback.print_exc()
 
 # start all sensor modules
 for inp in sensor_mods:

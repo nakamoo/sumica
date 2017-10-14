@@ -27,8 +27,15 @@ def visualize(frame, all_boxes, win_name="frame"):
 class Manager:
     def __init__(self, user, server_ip, actions):
         self.mans = []
-        for i in range(0, 1):
-            self.mans.append(CamManager(user, server_ip, i))
+
+        with open("cameras.txt", "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                tokens = line.split()
+                if tokens[0] == "webcam":
+                    self.mans.append(CamManager(user, server_ip, int(tokens[1])))
+                elif tokens[0] == "vstarcam":
+                    self.mans.append()
         
     def start(self):
         for man in self.mans:
@@ -52,16 +59,12 @@ class CamManager:
         self.cam_id = cam_id
 
         try:
-            for _ in range(1):
-              self.cap = VideoStream(src=cam_id, resolution=(320,240)).start()#cv2.VideoCapture(cam_id)
-              print("webcam detected:", cam_id)#, self.cap.isOpened())
-              self.enabled = True
-              #self.enabled = self.cap.isOpened()
-              #if not self.enabled:
-              #    self.cap.release()
-              #else:
-              #    self.enabled = True
-              #    break
+            self.cap = cv2.VideoCapture(cam_id)
+            print("webcam detected:", cam_id)#, self.cap.isOpened())
+            self.enabled = True
+            self.enabled = self.cap.isOpened()
+            if not self.enabled:
+              self.cap.release()
         except Exception as e:
             print(e)
             print("no webcam detected.")
@@ -80,11 +83,7 @@ class CamManager:
 
         while True:
             #print(self.cam_id, "running")
-            frame = self.cap.read()
-            #ret, frame = self.cap.read()
-
-            #if not ret:
-            #    self.enabled = False
+            ret, frame = self.cap.read()
 
             if frame is None:
                 print(self.cam_id, ": frame is none")
@@ -112,8 +111,8 @@ class CamManager:
         if not self.enabled:
             return
 
-        #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1024);
-        #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 768);
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800);
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600);
 
         thread_stream = threading.Thread(target=self.capture_loop)
         thread_stream.daemon = True
@@ -180,7 +179,11 @@ class CamManager:
 
     def send(self, image, thresh, ip):
         cv2.imwrite("image.png", image)
-        cv2.imwrite("diff.png", thresh)        
+        cv2.imwrite("diff.png", thresh)
+
+        #print(image)
+        #cv2.imshow("image", image)
+        #cv2.waitKey(1)
 
         data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_id}
         addr = "{}/data/images".format(ip)

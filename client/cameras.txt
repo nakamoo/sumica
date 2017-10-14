@@ -1,1 +1,0 @@
-vstarcam http://192.168.100.251:41726 ipcam0

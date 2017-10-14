@@ -23,7 +23,7 @@ def visualize(frame, all_boxes, win_name="frame"):
     
     return frame
 
-cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+#cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 
 class Manager:
     def __init__(self, user, server_ip, actions):
@@ -188,18 +188,20 @@ class CamManager:
         cv2.imwrite("image.png", image)
         cv2.imwrite("diff.png", thresh)
 
-        #print(image)
-        cv2.imshow("image", image)
+        cv2.imshow(self.cam_name, image)
         cv2.waitKey(1)
 
-        data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
-        addr = "{}/data/images".format(ip)
-        print("sending image to:", addr)
-        files = {}
-        files['image'] = open("image.png", "rb")
-        files["diff"] = open("diff.png", "rb")
+        try:
+            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
+            addr = "{}/data/images".format(ip)
+            #print("sending image to:", addr)
+            files = {}
+            files['image'] = open("image.png", "rb")
+            files["diff"] = open("diff.png", "rb")
 
-        r = requests.post(addr, files=files, data=data, verify=False)
+            r = requests.post(addr, files=files, data=data, verify=False)
+        except:
+            print(self.cam_name, "error in sending image")
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)
@@ -217,5 +219,5 @@ class CamManager:
 if __name__ == "__main__":
     cam = Manager("sean", '', None)
     cam.start()
-    time.sleep(10)
+    time.sleep(30)
     cam.close()

@@ -9,7 +9,9 @@ bp = Blueprint("chatbot", __name__)
 fb2user = {}
 
 bot_id = "318910425200757"
+VERIFY_TOKEN = 'my_voice_is_my_password_verify_me'
 
+"""
 # messenger
 @bp.route('/data/fb', methods=['POST'])
 def post_fb_data():
@@ -27,23 +29,22 @@ def post_fb_data():
         db.trigger_controllers(username, "chat", event)
 
     return "ok", 201
-
 """
-@bp.route('/data/fb/', methods=['GET'])
+
+@bp.route('/data/fb', methods=['GET'])
 def handle_verification():
   print("Handling Verification.")
-  if request.args.get('hub.verify_token', '') == 'my_voice_is_my_password_verify_me':
+  if request.args.get('hub.verify_token', '') == VERIFY_TOKEN:
     print("Verification successful!")
     return request.args.get('hub.challenge', '')
   else:
     print("Verification failed!")
     return 'Error, wrong validation token'
 
-@bp.route('/data/fb/', methods=['POST'])
+@bp.route('/data/fb', methods=['POST'])
 def handle_messages():
-  print("Handling Messages")
-  payload = request.get_data()
-  print(payload)
+  payload = request.get_json()
+
   for event in messaging_events(payload):
     fb_id = event["sender"]["id"]
     
@@ -62,8 +63,7 @@ def messaging_events(payload):
   #Generate tuples of (sender_id, message_text) from the
   #provided payload.
   
-  data = json.loads(payload)
-  messaging_events = data["entry"][0]["messaging"]
+  messaging_events = payload["entry"][0]["messaging"]
   for event in messaging_events:
-    yield event
-"""
+    if "message" in event:
+        yield event

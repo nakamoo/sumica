@@ -37,10 +37,7 @@ class Snapshot(Controller):
             cam = 0
             
             if msg.startswith("snapshot"):
-              try:
-                cam = int(msg.split()[-1])
-              except:
-                return
+              cam = msg.split()[-1]
               n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
                 }).sort([("time",-1)]).limit(1)
               if n.count() <= 0:

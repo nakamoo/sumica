@@ -16,6 +16,7 @@ class Manager:
         self.actions = actions
         self.last_manual_time = 0
         self.last_state = None
+        self.going_back = False
 
         if out.split("\n")[-2] != "ok":
             self.connected = False
@@ -29,6 +30,8 @@ class Manager:
             try:
                 if act["platform"] == "send_hue":
                     self.send = act["data"] == "True"
+                elif act["platform"] == "hue_back":
+                    self.going_back = float(act["data"]) > 0
             except Exception as e:
                 print(e)
 
@@ -78,7 +81,7 @@ class Manager:
                     self.last_state = state
 
                 if state_changed:
-                    if self.actions.hue_overridden:
+                    if self.actions.hue_overridden or self.going_back:
                         override = True
                     else:
                         override = self.check_override(state, self.actions.last_hue_update)

@@ -1,32 +1,32 @@
 import time
 import subprocess
+from subprocess import Popen
 
 class Manager:
     def __init__(self, user, server_ip):
-        pass
+        self.now_playing = None
 
     def start(self):
-        while True:
-            command = "chrome-cli list links | grep www.youtube.com"
-            proc = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE,
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout_data, stderr_data = proc.communicate()
-            links = stdout_data.decode('ascii')
+        pass
 
-            if not links == '':
-                while True:
-                    start = links.find('http')
-                    end = links.find('\n')
-                    if (start != -1) and (end != -1):
-                        link = links[start: end]
-                        data = {}
-                        data["time"] = datetime.datetime.utcfromtimestamp(time.time())
-                        data['app'] = "youtube"
-                        data['link'] = link
-                        print(data)
-                        #db.save_youtube_data(data)
-                        links = links[end + 1:]
-                    else:
-                        break
+    def execute(self, acts):
+        for act in acts:
+            if act["platform"] == "play_youtube":
+                try:
+                    Popen("mpsyt /{}, 1".format(act['data']), shell=True)
+                    self.now_playing = act['data']
+                except:
+                    pass
 
-            time.sleep(10)
+            if act["platform"] == "stop_youtube":
+                try:
+                    Popen('pkill -f mpsyt', shell=True)
+                    Popen('pkill -f omxplayer', shell=True)
+                    self.now_playing = None
+                except:
+                    pass
+
+if __name__ == "__main__":
+    youtubeplayer = Manager('sample', '1.0.0.0')
+    # youtubeplayer.execute([{'platform': 'play_youtube', 'data': 'nujages'}])
+    youtubeplayer.execute([{'platform': 'stop_youtube', 'data': ''}])

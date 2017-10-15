@@ -5,6 +5,7 @@ main_server/images/*
 main_server/hai/application.cfg
 main_server/hai/pose_tmp/*
 main_server/hai/static/*.png
+main_server/hai/classifier.pkl
 # ^^?
 main_server/hai/pose_data/*
 main_server/hai/image_features/*

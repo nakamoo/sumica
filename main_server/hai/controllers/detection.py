@@ -6,6 +6,10 @@ import json
 from utils import encryption
 import os
 
+import coloredlogs, logging
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
+
 class Detection(Controller):
     def __init__(self):
         pass
@@ -28,18 +32,18 @@ class Detection(Controller):
             #                           "/detect",
             #                           files={'image': image}, json={'threshold': 0.5})
             
-            print("sending image for detection...")
+            logger.info("sending image for detection...")
             state_json = requests.post("http://" + app.config['RECOGNITION_SERVER_URL'] + "/detect_path", data={'path': os.path.abspath(image_path), 'threshold': 0.5, 'get_image_features': 'true', 'get_object_features': 'true'})
 
             #print("detections: {}".format(r.text))
             
-            print(state_json.text)
+            #logger.info(state_json.text)
             dets = json.loads(state_json.text)
 
             #db.mongo.detections.insert_one(det_data)
             db.mongo.images.update_one({"_id": data["_id"]}, {'$set': dets}, upsert=False)
 
-            print("image analyzed.")
+            #logger.info("image analyzed.")
     
     def execute(self):
         response = []

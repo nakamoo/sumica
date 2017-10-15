@@ -10,6 +10,8 @@ def get_hue_dataset2(username, start_time=None, end_time=None, top_classes=5, ma
     img_data = list(get_image_data(username, start_time, end_time, sort_order=1))
     hue_data = get_hue_data(username, start_time, end_time, sort_time=1)
     
+    print(len(hue_data))
+    
     if max_samples > 0:
         sample_indices = random.sample(range(len(img_data)), max_samples)
         sample_indices.sort(reverse=True)
@@ -35,7 +37,7 @@ def connect_hue_image(img_data, hue_data):
     new_hue_data = []
     
     for img in img_data:
-        while img["time"] >= hue_data[hue_index]["time"]-30:
+        while img["time"] >= hue_data[hue_index]["time"]:
             hue_index += 1
             if hue_index >= len(hue_data):
                 break
@@ -43,8 +45,9 @@ def connect_hue_image(img_data, hue_data):
         if hue_index >= len(hue_data):
                 break
             
-        new_img_data.append(img)
-        new_hue_data.append(hue_data[hue_index])
+        if hue_data[hue_index]["time"] - img["time"] < 10:
+            new_img_data.append(img)
+            new_hue_data.append(hue_data[hue_index])
     
     return new_img_data, new_hue_data
 
@@ -102,7 +105,7 @@ def get_hue_data(username, start_time, end_time, sort_time=-1):
     client = MongoClient()
     mongo = client.hai
     
-    query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}}
+    query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}, "last_manual": {"$gt": 30, "$lt": 60}}
     n = mongo.hue.find(query).sort([("time", sort_time)])
     
     re = []

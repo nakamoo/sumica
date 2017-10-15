@@ -26,13 +26,12 @@ class Actions:
 		elif platform == "hue":
 			json_data = json.loads(data)
 
-			print(self.last_hue_update["data"], json_data)
-
 			if self.last_hue_update["data"] != json_data:
 				with open('utils/hue_state.json', 'w+') as outfile:
 				    json.dump(json_data, outfile)
 
+				print("setting hue", data)
 				out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
-				#print("set hue state:", out.decode('utf-8'))
+				print(out.decode('utf-8'))
 				self.last_hue_update = {"data":json_data, "time":time.time()}
 				self.hue_overridden = False

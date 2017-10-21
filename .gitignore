@@ -1,8 +1,11 @@
+client/utils/hue_state.json
+
 main_server/hai/images/*
 main_server/images/*
 main_server/hai/application.cfg
 main_server/hai/pose_tmp/*
 main_server/hai/static/*.png
+main_server/hai/classifier.pkl
 # ^^?
 main_server/hai/pose_data/*
 main_server/hai/image_features/*
@@ -14,6 +17,7 @@ main_server/hai/*.png
 client/utils/hue_state.json
 client/utils/hue_user.txt
 client/*.png
+client/cameras.txt
 image.png
 .DS_Store
 *node_modules*

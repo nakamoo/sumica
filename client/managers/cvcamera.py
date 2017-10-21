@@ -7,7 +7,8 @@ import colorsys
 #import managers.flow as flow
 import skimage.measure
 import numpy as np
-from imutils.video import VideoStream
+import traceback
+import urllib
 
 def visualize(frame, all_boxes, win_name="frame"):
     for result in all_boxes:
@@ -22,13 +23,17 @@ def visualize(frame, all_boxes, win_name="frame"):
     
     return frame
 
-#cv2.namedWindow("diff", cv2.WINDOW_NORMAL)
+#cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 
 class Manager:
-    def __init__(self, user, server_ip):
+    def __init__(self, user, server_ip, actions):
         self.mans = []
-        for i in range(0, 1):
-            self.mans.append(CamManager(user, server_ip, i))
+
+        with open("cameras.txt", "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                tokens = line.split()
+                self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0]))
         
     def start(self):
         for man in self.mans:
@@ -39,59 +44,75 @@ class Manager:
 
     def close(self):
         for man in self.mans:
-            man.cap.stop()
-            #man.cap.release()
-            print("releasing", man.cam_id)
+            man.close()
+            print("releasing", man.cam_name)
 
 class CamManager:
-    def __init__(self, user, server_ip, cam_id, detect_only=False):
+    def __init__(self, user, server_ip, cam_loc, cam_name, camtype, detect_only=False):
         self.server_ip = server_ip
-        self.enabled = False
+        self.enabled = True
         self.detect_only = detect_only
         self.user = user
-        self.cam_id = cam_id
+        self.cam_name = cam_name
+        self.camtype = camtype
+
+        print("camera:", camtype, cam_name, cam_loc)
 
         try:
-            for _ in range(1):
-              self.cap = VideoStream(src=cam_id, resolution=(320,240)).start()#cv2.VideoCapture(cam_id)
-              print("webcam detected:", cam_id)#, self.cap.isOpened())
-              self.enabled = True
-              #self.enabled = self.cap.isOpened()
-              #if not self.enabled:
-              #    self.cap.release()
-              #else:
-              #    self.enabled = True
-              #    break
+            if camtype == "webcam":
+                self.cap = cv2.VideoCapture(int(cam_loc))
+
+                print("cam detected:", cam_loc, self.cap.isOpened())
+                self.enabled = self.cap.isOpened()
+                if not self.enabled:
+                    self.cap.release()
+                    print("ERROR opening stream")
+            elif camtype == "vstarcam":
+                #print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
+                print(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                #self.cap = cv2.VideoCapture(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                print(self.stream)
+
         except Exception as e:
-            print(e)
-            print("no webcam detected.")
-            self.enabled = False
+            traceback.print_exc()
 
         self.image = None
         self.image1, self.image2 = None, None
         self.thresh = None
 
+    def close(self):
+        if self.camtype == "webcam":
+            man.cap.release()
+        elif self.camtype == "vstarcam":
+            pass
+
     def capture_loop(self):
-        try:
-            self.cap.read()
-        except Exception as e:
-            print(self.cam_id, e)
-            return
-
+        bytes = b''
         while True:
-            #print(self.cam_id, "running")
-            frame = self.cap.read()
-            #ret, frame = self.cap.read()
-
-            #if not ret:
-            #    self.enabled = False
+            if self.camtype == "webcam":
+                ret, frame = self.cap.read()
+            elif self.camtype == "vstarcam":
+                try: 
+                    while True:
+                        bytes += self.stream.read(1024)
+                        a = bytes.find(b'\xff\xd8')
+                        b = bytes.find(b'\xff\xd9')
+                        if a!=-1 and b!=-1:
+                            jpg = bytes[a:b+2]
+                            bytes= bytes[b+2:]
+                            frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8).copy(), cv2.IMREAD_COLOR)
+                            break
+                except:
+                    print("frame error")
 
             if frame is None:
-                print(self.cam_id, ": frame is none")
-                time.sleep(5)
-                frame = self.cap.read()
-                if frame is None:
-                    break
+                print(self.cam_name, ": frame is ", frame, ret)
+                time.sleep(1)
+                continue
+                #ret, frame = self.cap.read()
+                #if frame is None:
+                #    break
 
             self.image = frame
 
@@ -112,8 +133,9 @@ class CamManager:
         if not self.enabled:
             return
 
-        #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1024);
-        #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 768);
+        if self.camtype == "webcam":
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800);
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600);
 
         thread_stream = threading.Thread(target=self.capture_loop)
         thread_stream.daemon = True
@@ -133,23 +155,7 @@ class CamManager:
             frameDelta = cv2.absdiff(self.image1[1], self.image2[1])
             thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
             thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
-            #cv2.imshow("diff", self.image * np.expand_dims(cv2.resize(thresh, (640, 480)), 2) / 255.0)
-            #cv2.waitKey(1)
-            #    flow_img = flow.flow(self.image1, self.image2)
 
-            #frame = cv2.resize(self.image, (500, 500))
-            #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            #gray = cv2.GaussianBlur(gray, (21, 21), 0)
-
-            #if last_img is None:
-            #    last_img = gray
-
-            #frameDelta = cv2.absdiff(last_img, gray)
-            #thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
-
-            #if np.sum(thresh) <= 0:
-            #    skip = True
-	    
             if not skip:
                 #cv2.imshow("capture", self.image)
                 #last_img = gray
@@ -180,17 +186,22 @@ class CamManager:
 
     def send(self, image, thresh, ip):
         cv2.imwrite("image.png", image)
-        cv2.imwrite("diff.png", thresh)        
+        cv2.imwrite("diff.png", thresh)
 
-        data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_id}
-        addr = "{}/data/images".format(ip)
-        print("sending image to:", addr)
-        files = {}
-        files['image'] = open("image.png", "rb")
-        files["diff"] = open("diff.png", "rb")
+        cv2.imshow(self.cam_name, image)
+        cv2.waitKey(1)
 
-        r = requests.post(addr, files=files, data=data, verify=False)
-        print("cam", self.cam_id, ": ", r.text)
+        try:
+            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
+            addr = "{}/data/images".format(ip)
+            #print("sending image to:", addr)
+            files = {}
+            files['image'] = open("image.png", "rb")
+            files["diff"] = open("diff.png", "rb")
+
+            r = requests.post(addr, files=files, data=data, verify=False)
+        except:
+            print(self.cam_name, "error in sending image")
 
     def show(self, image, ip):
         cv2.imwrite("image.png", image)
@@ -206,5 +217,7 @@ class CamManager:
         cv2.waitKey(1)
 
 if __name__ == "__main__":
-    cam = Manager('https://153.120.159.210:5002', detect_only=True)
+    cam = Manager("sean", '', None)
     cam.start()
+    time.sleep(30)
+    cam.close()

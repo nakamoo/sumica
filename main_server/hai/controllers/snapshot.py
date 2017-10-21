@@ -37,10 +37,7 @@ class Snapshot(Controller):
             cam = 0
             
             if msg.startswith("snapshot"):
-              try:
-                cam = int(msg.split()[-1])
-              except:
-                return
+              cam = msg.split()[-1]
               n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
                 }).sort([("time",-1)]).limit(1)
               if n.count() <= 0:
@@ -57,14 +54,15 @@ class Snapshot(Controller):
               cv2.imwrite("./static/" + path, img)
               age = time.time() - float(n["time"])
               chatbot.send_fb_message(data["sender"]["id"], "here's your image ({} secs ago)".format(age))
-              url = "http://homeai.ml:{}/static/".format(app.config["PORT"]) + path
+              url = "https://homeai.ml:{}/static/".format(app.config["PORT"]) + path
+              chatbot.send_fb_message(data["sender"]["id"], "(url: {})".format(url))
               print("snapshot url:", url)
               chatbot.send_fb_image(data["sender"]["id"], url)
              
               #os.remove("./static/" + path)
               def rem(path):
                 os.remove(path)
-              Timer(30.0, rem, ("./static/" + path,)).start()
+              Timer(300.0, rem, ("./static/" + path,)).start()
 
 
     def execute(self):

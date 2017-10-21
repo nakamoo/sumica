@@ -10,19 +10,12 @@ import json
 import database as db
 import time
 
+import coloredlogs, logging
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
+
 for f in glob.glob("./pose_data/*"):
     os.remove(f)
-
-
-def subprocess_cmd(command):
-    proc = subprocess.Popen([command],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell=True)
-    stdout, stderr = proc.communicate()
-    # out = check_output([command])
-    # proc_stdout = process.communicate()
-    print(stdout, stderr)
-
 
 def manage_data():
     json_files = glob.glob("./pose_data/*")
@@ -42,7 +35,7 @@ def manage_data():
             os.remove(f)
         except Exception as e:
             #pass
-            print("missing file", f, e)
+            logger.warning("missing file", f, e)
             os.remove(f)
     #time.sleep(0.1)
 
@@ -57,7 +50,7 @@ class Pose(Controller):
                 image_path = app.config['ENCRYPTED_IMG_DIR'] + data['filename']
             else:
                 image_path = app.config['RAW_IMG_DIR'] + data['filename']
-            print("copying to pose_tmp")
+
             copyfile(image_path, './pose_tmp/' + data['filename'])
         elif event == "timer":
             manage_data()

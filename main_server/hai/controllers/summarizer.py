@@ -8,6 +8,10 @@ import os
 import time
 import controllers.utils as utils
 
+import coloredlogs, logging
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
+
 def chunker(seq, size):
   return (seq[pos:pos+size] for pos in range(0, len(seq), size))
 
@@ -65,8 +69,9 @@ def save_summary_img(filename, summ):
     from _app import app
     img = cv2.imread(app.config["RAW_IMG_DIR"] + filename)
 
-    img = utils.visualize(img, summ)
-    cv2.imwrite("summary.png", img)
+    if img is not None:
+        img = utils.visualize(img, summ)
+        cv2.imwrite("summary.png", img)
 
 class Summarizer(Controller):
     def __init__(self, user):
@@ -88,7 +93,7 @@ class Summarizer(Controller):
                 #print(n["time"], n["history"], time.time())
                 summary = summarize(path, dets, pose)
                 db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary}}, upsert=False)
-                print("SUMMARY:", time.time() - n["time"])
+                logger.info("time from image capture to summary: " + str(time.time() - n["time"]))
 
                 save_summary_img(n["filename"], summary)
                 n["summary"] = summary

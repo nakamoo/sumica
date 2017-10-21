@@ -2,7 +2,7 @@ import time
 import subprocess
 
 class Manager:
-    def __init__(self, user, server_ip):
+    def __init__(self, user, server_ip, actions):
         pass
 
     def start(self):

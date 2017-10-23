@@ -2,13 +2,14 @@ from flask import Blueprint, request
 from server_actors import chatbot
 import json
 import database as db
+from _app import app
 
 bp = Blueprint("chatbot", __name__)
 
 # temporary
 fb2user = {}
 
-bot_id = "157695071486517"
+bot_id = app.config['FB_BOT_ID']
 VERIFY_TOKEN = 'my_voice_is_my_password_verify_me'
 
 """

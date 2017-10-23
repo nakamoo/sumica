@@ -1,6 +1,8 @@
 import requests
+from _app import app
 
-fb_token = "EAAF0dXCeCJwBANZB6PIdJYHmpsvoRDMj8bZCMZAjZB3eZCosq69BS1yR2cSsFCrkxrsWtvzjgeJZCMaVt73sYz5CP98nBQlrxVxm7QSHMxyUpjCTkn69EZA4xymrEpBmGIVTl7RZAJDJwvoo49CZCvzdMQ0A8hF0vomiQqL3yH9o34t569ZA51nHUn"
+# fb_token = "EAACPbD64AjUBAMhcfZCXbQoYuEmjZCQavHnaoG0MpcZCqo9waS5nXVuzuZBDLS5W9iEgcP3DvMuS92uJG3hlmSWoAyXzVt8wIYtbCdYj0LzAXiZAFv98QxMmoHojU8lrevGZAEBChHHMiq1IgYcpUOzOwpZAAjZCxF3IKO3XUnbiVMOYTdMqvgXJ"
+fb_token = app.config['FB_TOKEN']
 
 def send_fb_message(id, text):
     data = {"access_token": fb_token}

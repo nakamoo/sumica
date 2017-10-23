@@ -188,11 +188,11 @@ class CamManager:
         cv2.imwrite("image.png", image)
         cv2.imwrite("diff.png", thresh)
 
-        cv2.imshow(self.cam_name, image)
+        # cv2.imshow(self.cam_name, image)
         cv2.waitKey(1)
 
         try:
-            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
+            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name, "motion_update": "True"}
             addr = "{}/data/images".format(ip)
             #print("sending image to:", addr)
             files = {}
@@ -213,7 +213,7 @@ class CamManager:
         print(r.text)
 
         frame = visualize(image, json.loads(r.text)["objects"])
-        cv2.imshow("dets", frame)
+        # cv2.imshow("dets", frame)
         cv2.waitKey(1)
 
 if __name__ == "__main__":

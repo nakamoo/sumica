@@ -3,7 +3,7 @@ import subprocess
 from subprocess import Popen
 
 class Manager:
-    def __init__(self, user, server_ip):
+    def __init__(self, user, server_ip, actions):
         self.now_playing = None
 
     def start(self):

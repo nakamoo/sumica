@@ -13,6 +13,7 @@ class Manager:
         for act in acts:
             if act["platform"] == "play_youtube":
                 try:
+                    Popen('pkill -9 mpv', shell=True)
                     Popen("mpv 'https://www.youtube.com/watch?v=KQY9zrjPBjo' --no-video > /dev/null 2>&1", shell=True)
                     self.now_playing = act['data']
                 except:

@@ -3,13 +3,13 @@ from .controller import Controller
 from database import mongo
 
 
-class YoutubePlayer(Controller):
+class IRKit(Controller):
     def __init__(self, user_name):
         self.re = None
         self.user_name = user_name
 
     def on_event(self, event, data):
-        if event == "irkit":
+        if event == "chat":
             msg = data["message"]["text"].split()
             if msg[0] == "irkit":
                 if msg[1] == "TV" or msg[1] == "AirConditioning":

@@ -10,11 +10,9 @@ class YoutubePlayer(Controller):
             msg = data["message"]["text"].split()
             if msg[0] == "music":
                 if msg[1] == "play":
-                    self.re = list()
-                    self.re.append({"platform": "play_youtube", "data": msg[2]})
+                    self.re = [{"platform": "play_youtube", "data": msg[2]}]
                 if msg[1] == "stop":
-                    self.re = list()
-                    self.re.append({"platform": "stop_youtube", "data": ""})
+                    self.re = [{"platform": "stop_youtube", "data": ""}]
 
     def execute(self):
         if self.re is not None:

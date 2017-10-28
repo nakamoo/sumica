@@ -39,5 +39,4 @@ class Actions:
                     self.last_hue_update = {"data":json_data, "time":time.time()}
                     self.hue_overridden = False
         elif platform == "irkit":
-            for device in data:
-                irkit.post_messages(device)
+            irkit.post_messages(data)

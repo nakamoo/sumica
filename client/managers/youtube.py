@@ -13,20 +13,21 @@ class Manager:
         for act in acts:
             if act["platform"] == "play_youtube":
                 try:
-                    Popen("mpsyt /{}, 1".format(act['data']), shell=True)
+                    Popen("mpv 'https://www.youtube.com/watch?v=KQY9zrjPBjo' --no-video > /dev/null 2>&1", shell=True)
                     self.now_playing = act['data']
                 except:
                     pass
 
             if act["platform"] == "stop_youtube":
                 try:
-                    Popen('pkill -f mpsyt', shell=True)
-                    Popen('pkill -f omxplayer', shell=True)
+                    # Popen('pkill -f mpsyt', shell=True)
+                    # Popen('pkill -f omxplayer', shell=True)
+                    Popen('pkill -9 mpv', shell=True)
                     self.now_playing = None
                 except:
                     pass
 
 if __name__ == "__main__":
-    youtubeplayer = Manager('sample', '1.0.0.0')
-    # youtubeplayer.execute([{'platform': 'play_youtube', 'data': 'nujages'}])
-    youtubeplayer.execute([{'platform': 'stop_youtube', 'data': ''}])
+    youtubeplayer = Manager('sample', '1.0.0.0', None)
+    youtubeplayer.execute([{'platform': 'play_youtube', 'data': 'nujabes'}])
+    # youtubeplayer.execute([{'platform': 'stop_youtube', 'data': ''}])

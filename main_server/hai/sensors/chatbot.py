@@ -60,9 +60,6 @@ def handle_messages():
 
         if fb_id != bot_id:
             db.trigger_controllers(username, "chat", event)
-            event['user_name'] = username
-            event['time'] = time.time()
-            db.mongo.chatlog.insert_one(event)
 
     return "ok"
 

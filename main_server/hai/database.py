@@ -22,6 +22,8 @@ from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
 from controllers.activity_test import ActivityTest
 from controllers.activity_test3 import ActivityTest3
+from controllers.youtubeplayer import YoutubePlayer
+from controllers.irkit import IRKit
 #from controllers.learner import Learner
 
 import time
@@ -41,7 +43,8 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [Pose(), Detection(), Chatbot(user_name), Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), ActivityTest3(user_name), Settings(user_name)]
+    return [YoutubePlayer(user_name), IRKit(user_name), Pose(), Detection(), Chatbot(user_name),
+            Summarizer(user_name), Snapshot(user_name), ActivityTest(user_name), ActivityTest3(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()

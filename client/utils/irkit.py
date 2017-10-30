@@ -48,7 +48,8 @@ class IrkitInternetAPI:
 
         return r.text
 
-    def post_messages(self, device):
+    def post_messages(self, data):
+        device = data[0]
         params = self.config[device]['param']
         params = "'" + params + "'"
         cmd = 'curl -i "http://192.168.10.143/messages" -H "X-Requested-With: curl" -d ' + params

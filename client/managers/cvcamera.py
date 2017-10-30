@@ -20,7 +20,7 @@ def visualize(frame, all_boxes, win_name="frame"):
         c = tuple([int(x * 255.0) for x in c])
         cv2.putText(frame, name, (det[0], det[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, c, 2)
         cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
-    
+
     return frame
 
 #cv2.namedWindow("image", cv2.WINDOW_NORMAL)
@@ -33,8 +33,11 @@ class Manager:
             lines = f.readlines()
             for line in lines:
                 tokens = line.split()
-                self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0]))
-        
+                if len(tokens) >= 4:
+                    self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0], password=tokens[3]))
+                else:
+                    self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0]))
+
     def start(self):
         for man in self.mans:
             if man.enabled:
@@ -48,7 +51,7 @@ class Manager:
             print("releasing", man.cam_name)
 
 class CamManager:
-    def __init__(self, user, server_ip, cam_loc, cam_name, camtype, detect_only=False):
+    def __init__(self, user, server_ip, cam_loc, cam_name, camtype, detect_only=False, password=None):
         self.server_ip = server_ip
         self.enabled = True
         self.detect_only = detect_only
@@ -69,9 +72,12 @@ class CamManager:
                     print("ERROR opening stream")
             elif camtype == "vstarcam":
                 #print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
-                print(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                print(cam_loc + "/videostream.cgi?user=admin&pwd=*******")
                 #self.cap = cv2.VideoCapture(cam_loc + "/videostream.cgi?user=admin&pwd=password")
-                self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                if password is not None:
+                    self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=" + password)
+                else:
+                    self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=password")
                 print(self.stream)
 
         except Exception as e:
@@ -93,7 +99,7 @@ class CamManager:
             if self.camtype == "webcam":
                 ret, frame = self.cap.read()
             elif self.camtype == "vstarcam":
-                try: 
+                try:
                     while True:
                         bytes += self.stream.read(1024)
                         a = bytes.find(b'\xff\xd8')
@@ -126,7 +132,7 @@ class CamManager:
             else:
                 self.image2 = self.image1
                 update_image()
-            
+
             time.sleep(0.1)
 
     def start(self):
@@ -140,7 +146,7 @@ class CamManager:
         thread_stream = threading.Thread(target=self.capture_loop)
         thread_stream.daemon = True
         thread_stream.start()
-   
+
         #cv2.namedWindow("capture", cv2.WINDOW_NORMAL)
         last_img = None
         diff_thres = 0.5
@@ -151,7 +157,7 @@ class CamManager:
                 continue
 
             skip = False
-	
+
             frameDelta = cv2.absdiff(self.image1[1], self.image2[1])
             thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
             thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
@@ -163,7 +169,7 @@ class CamManager:
 
                 if k == 27:
                     break
-		    
+
                 try:
                     if self.detect_only:
                         self.show(self.image, self.server_ip)
@@ -172,7 +178,7 @@ class CamManager:
                 except Exception as e:
                     print("unable to send image to server.")
                     print(e)
-        
+
                 time.sleep(0.1)
             else:
                 print("image not captured.")
@@ -188,11 +194,11 @@ class CamManager:
         cv2.imwrite("image.png", image)
         cv2.imwrite("diff.png", thresh)
 
-        cv2.imshow(self.cam_name, image)
+        # cv2.imshow(self.cam_name, image)
         cv2.waitKey(1)
 
         try:
-            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
+            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name, "motion_update": "True"}
             addr = "{}/data/images".format(ip)
             #print("sending image to:", addr)
             files = {}
@@ -213,7 +219,7 @@ class CamManager:
         print(r.text)
 
         frame = visualize(image, json.loads(r.text)["objects"])
-        cv2.imshow("dets", frame)
+        # cv2.imshow("dets", frame)
         cv2.waitKey(1)
 
 if __name__ == "__main__":

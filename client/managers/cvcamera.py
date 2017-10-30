@@ -72,11 +72,13 @@ class CamManager:
                     print("ERROR opening stream")
             elif camtype == "vstarcam":
                 #print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
-                print(cam_loc + "/videostream.cgi?user=admin&pwd=*******")
+                #print(cam_loc + "/videostream.cgi?user=admin&pwd=*******")
                 #self.cap = cv2.VideoCapture(cam_loc + "/videostream.cgi?user=admin&pwd=password")
                 if password is not None:
+                    print(cam_loc + "/videostream.cgi?user=admin&pwd=*******")
                     self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=" + password)
                 else:
+                    print(cam_loc + "/videostream.cgi?user=admin&pwd=password")
                     self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=password")
                 print(self.stream)
 
@@ -200,7 +202,7 @@ class CamManager:
         try:
             data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name, "motion_update": "True"}
             addr = "{}/data/images".format(ip)
-            #print("sending image to:", addr)
+            print("sending image to:", addr)
             files = {}
             files['image'] = open("image.png", "rb")
             files["diff"] = open("diff.png", "rb")

@@ -5,6 +5,10 @@ import time
 import database as db
 from _app import app
 
+import coloredlogs, logging
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
+
 bp = Blueprint("chatbot", __name__)
 
 # temporary
@@ -57,6 +61,9 @@ def handle_messages():
         n = db.mongo.fb_users.find_one({"fb_id": fb_id})
         if n:
             username = n["id"]
+            
+        logger.debug("new message: " + event["message"]["text"])
+        logger.debug(str(fb_id) + " " + str(bot_id))
 
         if fb_id != bot_id:
             db.trigger_controllers(username, "chat", event)

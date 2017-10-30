@@ -29,14 +29,20 @@ class Manager:
     def __init__(self, user, server_ip, actions):
         self.mans = []
 
-        with open("cameras.txt", "r") as f:
-            lines = f.readlines()
-            for line in lines:
-                tokens = line.split()
-                if len(tokens) >= 4:
-                    self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0], password=tokens[3]))
-                else:
-                    self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0]))
+        try:
+            with open("cameras.txt", "r") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if line.startswith("#"):
+                        continue
+
+                    tokens = line.split()
+                    if len(tokens) >= 4:
+                        self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0], password=tokens[3]))
+                    else:
+                        self.mans.append(CamManager(user, server_ip, tokens[1], tokens[2], tokens[0]))
+        except:
+            exit()
 
     def start(self):
         for man in self.mans:
@@ -71,14 +77,13 @@ class CamManager:
                     self.cap.release()
                     print("ERROR opening stream")
             elif camtype == "vstarcam":
-                #print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
-                #print(cam_loc + "/videostream.cgi?user=admin&pwd=*******")
-                #self.cap = cv2.VideoCapture(cam_loc + "/videostream.cgi?user=admin&pwd=password")
                 if password is not None:
                     print(cam_loc + "/videostream.cgi?user=admin&pwd=*******")
                     self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=" + password)
                 else:
                     print(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+                    # resize resolution
+                    print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
                     self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=password")
                 print(self.stream)
 
@@ -101,6 +106,8 @@ class CamManager:
             if self.camtype == "webcam":
                 ret, frame = self.cap.read()
             elif self.camtype == "vstarcam":
+                frame = None
+
                 try:
                     while True:
                         bytes += self.stream.read(1024)
@@ -193,19 +200,29 @@ class CamManager:
         cv2.destroyAllWindows()
 
     def send(self, image, thresh, ip):
-        cv2.imwrite("image.png", image)
-        cv2.imwrite("diff.png", thresh)
+        img_fn = "image_{}.png"
+        diff_fn = "diff_{}.png"
+
+        cv2.imwrite(img_fn, image)
+        cv2.imwrite(diff_fn, thresh)
 
         # cv2.imshow(self.cam_name, image)
-        cv2.waitKey(1)
+        # cv2.waitKey(1)
 
         try:
-            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name, "motion_update": "True"}
-            addr = "{}/data/images".format(ip)
-            print("sending image to:", addr)
             files = {}
-            files['image'] = open("image.png", "rb")
-            files["diff"] = open("diff.png", "rb")
+            data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
+
+            #print(np.mean(thresh))
+            if np.mean(thresh) > 10.0:
+                data["motion_update"] = "True"
+                files['image'] = open(img_fn, "rb")
+                files["diff"] = open(diff_fn, "rb")
+            else:
+                data["motion_update"] = "False"
+
+            addr = "{}/data/images".format(ip)
+            print(self.cam_name, "sending image to:", addr)
 
             r = requests.post(addr, files=files, data=data, verify=False)
         except:

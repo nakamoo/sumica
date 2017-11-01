@@ -62,7 +62,7 @@ def handle_messages():
         if n:
             username = n["id"]
             
-        logger.debug("new message: " + event["message"]["text"])
+        logger.debug("new message: " + str(event))
         logger.debug(str(fb_id) + " " + str(bot_id))
 
         if fb_id != bot_id:

@@ -22,7 +22,7 @@ def draw(data):
     #print(img.shape, diff.shape)
     diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
 
-    img += diff
+    #img += diff
     img = utils.visualize(img, summ)
 
     return img

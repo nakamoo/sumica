@@ -5,6 +5,8 @@ import time
 import operator
 import random
 
+port = 1111
+
 def get_hue_dataset2(username, start_time=None, end_time=None, top_classes=5, max_samples=-1,
                     incl_touch=False, incl_look=False, incl_dist=False, incl_pose=False, incl_hand=False, incl_feats=True):
     img_data = list(get_image_data(username, start_time, end_time, sort_order=1))
@@ -52,7 +54,7 @@ def connect_hue_image(img_data, hue_data):
     return new_img_data, new_hue_data
 
 def get_image_data(username, start_time=None, end_time=None, cam_id=0, sort_order=-1):
-    client = MongoClient()
+    client = MongoClient('localhost', port)
     mongo = client.hai
     
     if start_time is None:
@@ -101,11 +103,14 @@ def get_hue_labels(data_mat, top_classes=5):
             
     return top_classes, indices, sorted_counts
 
-def get_hue_data(username, start_time, end_time, sort_time=-1):
-    client = MongoClient()
+def get_hue_data(username, start_time, end_time, sort_time=-1, manual=None):
+    client = MongoClient('localhost', port)
     mongo = client.hai
     
-    query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}, "last_manual": {"$gt": 30, "$lt": 60}}
+    if manual is None:
+        query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}}
+    else:
+        query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}, "last_manual": {"$gt": manual[0], "$lt": manual[1]}}
     n = mongo.hue.find(query).sort([("time", sort_time)])
     
     re = []

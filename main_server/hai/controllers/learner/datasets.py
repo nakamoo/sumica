@@ -5,9 +5,59 @@ import time
 import operator
 import random
 
+from imgaug import augmenters as iaa
+
 port = 1111
 
-def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=30, interval=5):
+def augment_images(img_batch, times):
+    images = []
+    
+    """
+    seq = iaa.Sequential([
+        iaa.GaussianBlur(sigma=(0, 3.0)), # blur images with a sigma of 0 to 3.0
+        iaa.Add((-10, 10), per_channel=0.5), # change brightness of images (by -10 to 10 of original value)
+        iaa.AddToHueAndSaturation((-20, 20)),
+    ])
+    """
+    seq = iaa.Sequential([
+        iaa.Fliplr(0.5), # horizontal flips
+        iaa.Crop(percent=(0, 0.1)), # random crops
+        # Small gaussian blur with random sigma between 0 and 0.5.
+        # But we only blur about 50% of all images.
+        iaa.Sometimes(0.5,
+            iaa.GaussianBlur(sigma=(0, 0.5))
+        ),
+        # Strengthen or weaken the contrast in each image.
+        iaa.ContrastNormalization((0.75, 1.5)),
+        iaa.Grayscale(alpha=(0.0, 1.0)),
+        # Add gaussian noise.
+        # For 50% of all images, we sample the noise once per pixel.
+        # For the other 50% of all images, we sample the noise per pixel AND
+        # channel. This can change the color (not only brightness) of the
+        # pixels.
+        iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),
+        # Make some images brighter and some darker.
+        # In 20% of all cases, we sample the multiplier once per channel,
+        # which can end up changing the color of the images.
+        iaa.Multiply((0.8, 1.2), per_channel=0.2),
+        # Apply affine transformations to each image.
+        # Scale/zoom them, translate/move them, rotate them and shear them.
+        iaa.Affine(
+            scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
+            translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
+            rotate=(-25, 25),
+            shear=(-8, 8)
+        )
+    ], random_order=True)
+
+    for i in range(times):
+        print("{}/{}".format(i, times))
+        images_aug = seq.augment_images(img_batch)
+        images.extend(images_aug)
+        
+    return images
+
+def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=30, interval=5, skip=False):
     client = MongoClient('localhost', port)
     mongo = client.hai
     
@@ -19,7 +69,7 @@ def get_event_images(username, event_data, cam_names, start_offset=0, end_offset
 
         for s in range(start_time, end_time-interval, interval):
             interval_data = []
-            skip = False
+            incomplete = False
 
             for cam in cam_names:
                 query = {"user_name": username, "summary":{"$exists": True}, "cam_id": cam, "time": {"$gte": s, "$lt": s+interval}}
@@ -29,9 +79,11 @@ def get_event_images(username, event_data, cam_names, start_offset=0, end_offset
                     interval_data.append(n[0])
                 else:
                     interval_data.append(None)
-                    #skip = True
+                    incomplete = True
 
-            if not skip:
+            if skip and incomplete:
+                pass
+            else:
                 data2.append(interval_data)
         image_data.append(data2)
     return image_data

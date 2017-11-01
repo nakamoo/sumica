@@ -52,7 +52,7 @@ def standard_controllers(user_name):
 control_mods = load_controller_modules()
 # TODO: use DB
 controllers_objects = {}
-controllers_objects['koki'] = standard_controllers('koki')
+#controllers_objects['koki'] = standard_controllers('koki')
 controllers_objects['sean'] = standard_controllers('sean')
 
 def trigger_controllers(user, event, data):

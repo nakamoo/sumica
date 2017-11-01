@@ -7,6 +7,35 @@ import random
 
 port = 1111
 
+def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=30, interval=5):
+    client = MongoClient('localhost', port)
+    mongo = client.hai
+    
+    image_data = []
+    for data in event_data:
+        data2 = []
+        start_time = int(data["time"]+start_offset)
+        end_time = int(data["time"]+end_offset)
+
+        for s in range(start_time, end_time-interval, interval):
+            interval_data = []
+            skip = False
+
+            for cam in cam_names:
+                query = {"user_name": username, "summary":{"$exists": True}, "cam_id": cam, "time": {"$gte": s, "$lt": s+interval}}
+                n = mongo.images.find(query)
+
+                if n.count() > 0:
+                    interval_data.append(n[0])
+                else:
+                    interval_data.append(None)
+                    #skip = True
+
+            if not skip:
+                data2.append(interval_data)
+        image_data.append(data2)
+    return image_data
+
 def get_hue_dataset2(username, start_time=None, end_time=None, top_classes=5, max_samples=-1,
                     incl_touch=False, incl_look=False, incl_dist=False, incl_pose=False, incl_hand=False, incl_feats=True):
     img_data = list(get_image_data(username, start_time, end_time, sort_order=1))

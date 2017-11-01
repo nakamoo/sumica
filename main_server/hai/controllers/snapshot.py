@@ -27,6 +27,29 @@ def draw(data):
 
     return img
 
+def show_image_chat(n, fb_id, send_img=True, message=""):
+    img = draw(n)
+    path = n["filename"]
+
+    from _app import app
+
+    print("writing to: ", path)
+    img = cv2.putText(img, message, (0, img.shape[0]-100), cv2.FONT_HERSHEY_SIMPLEX, 2,  (0, 255, 0), 2)
+    cv2.imwrite("./static/" + path, img)
+    age = time.time() - float(n["time"])
+    chatbot.send_fb_message(fb_id, "here's your image ({} secs ago)".format(age))
+    url = "https://homeai.ml:{}/static/".format(app.config["PORT"]) + path
+    chatbot.send_fb_message(fb_id, "(url: {})".format(url))
+    print("snapshot url:", url)
+    
+    if send_img:
+        chatbot.send_fb_image(fb_id, url)
+
+    #os.remove("./static/" + path)
+    def rem(path):
+        os.remove(path)
+    #Timer(3600.0, rem, ("./static/" + path,)).start()
+
 class Snapshot(Controller):
     def __init__(self, user):
         self.user = user
@@ -45,24 +68,7 @@ class Snapshot(Controller):
                  return
               else:
                  n = n.next()
-              img = draw(n)
-              path = n["filename"]
-
-              from _app import app
-
-              print("writing to: ", path)
-              cv2.imwrite("./static/" + path, img)
-              age = time.time() - float(n["time"])
-              chatbot.send_fb_message(data["sender"]["id"], "here's your image ({} secs ago)".format(age))
-              url = "https://homeai.ml:{}/static/".format(app.config["PORT"]) + path
-              chatbot.send_fb_message(data["sender"]["id"], "(url: {})".format(url))
-              print("snapshot url:", url)
-              chatbot.send_fb_image(data["sender"]["id"], url)
-             
-              #os.remove("./static/" + path)
-              def rem(path):
-                os.remove(path)
-              Timer(300.0, rem, ("./static/" + path,)).start()
+              show_image_chat(n, data["sender"]["id"])
 
 
     def execute(self):

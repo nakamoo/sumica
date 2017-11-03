@@ -46,7 +46,9 @@ def post_image_data():
     data['filename'] = filename
     data['diff_filename'] = m_filename
     data['version'] = '0.2'
-    mongo.images.insert_one(data)
+    result = mongo.images.insert_one(data)
+    #logger.debug("inserted into mongo.images " + str(result.inserted_id))
+    #logger.debug(str(mongo.images.find({"_id": result.inserted_id})[0]))
     
     # TODO: differentiate events
     if data["motion_update"]:
@@ -61,4 +63,5 @@ def post_image_data():
     data["return_time"] = return_time
 
     data.pop("_id")
+    logger.debug("image processed.")
     return jsonify(data), 201

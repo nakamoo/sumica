@@ -26,7 +26,8 @@ def visualize(col):
         draw_pts(col["keypoints"]['people'][0]["hand_left_keypoints"], (255, 0, 0))
         draw_pts(col["keypoints"]['people'][0]["hand_right_keypoints"], (255, 0, 0))
 
-    plt.imshow(img)
+    # plt.imshow(img)
+    return img
 
 
 def display_latest_image():
@@ -52,3 +53,42 @@ def epoch_to_strtime(t):
 def strtime_to_epoch(strtime):
     t = datetime.strptime(strtime, '%Y-%m-%d %H:%M:%S')
     return time.mktime(t.timetuple())
+
+
+# TODO: make faster
+def pair_images(images0):
+    data = []
+    for im0 in images0:
+        try:
+            plt.imshow(Image.open(app.config['RAW_IMG_DIR'] + im0['filename']))
+        except:
+            continue
+
+        images1_l = mongo.images.find({'time': {"$gt": im0['time']}, "cam_id": "webcam1"},
+                                      sort=[("_id", pymongo.ASCENDING)])
+        while True:
+            im1_l = images1_l.next()
+            try:
+                plt.imshow(Image.open(app.config['RAW_IMG_DIR'] + im1_l['filename']))
+                break
+            except:
+                continue
+
+        images1_e = mongo.images.find({'time': {"$lt": im0['time']}, "cam_id": "webcam1"},
+                                      sort=[("_id", pymongo.DESCENDING)])
+        while True:
+            im1_e = images1_e.next()
+            try:
+                plt.imshow(Image.open(app.config['RAW_IMG_DIR'] + im1_e['filename']))
+                break
+            except:
+                continue
+
+        if im1_l['time'] - im0['time'] > im0['time'] - im1_e['time']:
+            im1 = im1_e
+        else:
+            im1 = im1_l
+
+        data.append([im0, im1])
+    return data
+

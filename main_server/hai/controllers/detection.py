@@ -42,8 +42,7 @@ class Detection(Controller):
 
             #db.mongo.detections.insert_one(det_data)
             db.mongo.images.update_one({"_id": data["_id"]}, {'$set': dets}, upsert=False)
-
-            #logger.info("image analyzed.")
+            logger.info("DETECTION")
     
     def execute(self):
         response = []

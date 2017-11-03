@@ -4,10 +4,61 @@ from pymongo import MongoClient
 import time
 import operator
 import random
+import scipy.misc
+import cv2
 
 from imgaug import augmenters as iaa
 
 port = 1111
+
+def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, augs=1):
+    dataX, dataY = [], []
+    imagesX = []
+    summs = []
+    classes = list(set([y["text"] for y in print_data]))
+
+    for x, y in zip(image_data, print_data):
+        for imgs in x:
+            row = []
+            row_images = []
+            skip = False
+
+            for cam in imgs:
+                if cam is not None:
+                    test_img = scipy.misc.imread("./images/raw_images/" +  cam["filename"])
+                    if test_img is None or len(test_img.shape) != 3:
+                        skip = True
+                        break
+                        
+                    row_images.append(cam)
+                else:
+                    skip = True
+                    break
+            if not skip:
+                imagesX.append(row_images)
+                dataY.append(classes.index(y["text"]))
+                
+    img_batch = []
+
+    for t in imagesX:
+        for img in t:
+            mat = scipy.misc.imread("./images/raw_images/" +  img["filename"])
+            mat = scipy.misc.imresize(mat, (224, 224))
+            img_batch.append(mat)
+            summs.append(img)
+            
+    from PIL import Image
+    times = augs
+    aug_imgs = augment_images(img_batch, times)
+    aug_imgs_pil = [Image.fromarray(img) for img in aug_imgs]
+
+    vecs = feat_gen(aug_imgs_pil, summs*times)
+    vecs = np.array(vecs)
+    
+    #samples = sum([len(x) for x in image_data])
+    mat = vecs.reshape([-1,vecs.shape[1]*num_cams])
+    
+    return mat, dataY*times, classes
 
 def augment_images(img_batch, times):
     images = []
@@ -57,7 +108,7 @@ def augment_images(img_batch, times):
         
     return images
 
-def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=30, interval=5, skip=False):
+def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=60, stride=5, size=10, skip=False, with_summary=True):
     client = MongoClient('localhost', port)
     mongo = client.hai
     
@@ -67,12 +118,16 @@ def get_event_images(username, event_data, cam_names, start_offset=0, end_offset
         start_time = int(data["time"]+start_offset)
         end_time = int(data["time"]+end_offset)
 
-        for s in range(start_time, end_time-interval, interval):
+        for s in range(start_time, end_time-size, stride):
             interval_data = []
             incomplete = False
 
             for cam in cam_names:
-                query = {"user_name": username, "summary":{"$exists": True}, "cam_id": cam, "time": {"$gte": s, "$lt": s+interval}}
+                
+                query = {"user_name": username, "cam_id": cam, "time": {"$gte": s, "$lt": s+size}}
+                if with_summary:
+                    query["summary"] = {"$exists": with_summary}
+                
                 n = mongo.images.find(query)
 
                 if n.count() > 0:

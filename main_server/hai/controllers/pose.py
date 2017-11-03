@@ -9,6 +9,7 @@ import threading
 import json
 import database as db
 import time
+from _app import app
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
@@ -29,8 +30,7 @@ def manage_data():
             #pose_data.update(image_info)
             #db.mongo.pose.insert_one(pose_data)
 
-            pose_done = time.time()
-            n = db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts, "history.second_loop_done": pose_done}}, upsert=False)
+            n = db.mongo.images.update_one({"filename": name}, {'$set': {'keypoints': pts, "history.pose_recorded": time.time()}}, upsert=False)
             #print("POSE:", pose_done, pose_done-image_info["history"]["first_loop_done"])
             os.remove(f)
         except Exception as e:
@@ -38,6 +38,7 @@ def manage_data():
             logger.warning("missing file", f, e)
             os.remove(f)
     #time.sleep(0.1)
+    
 
 class Pose(Controller):
     def __init__(self):
@@ -45,13 +46,15 @@ class Pose(Controller):
 
     def on_event(self, event, data):
         if event == "image":
-            from _app import app
             if app.config['ENCRYPTION']:
                 image_path = app.config['ENCRYPTED_IMG_DIR'] + data['filename']
             else:
                 image_path = app.config['RAW_IMG_DIR'] + data['filename']
 
             copyfile(image_path, './pose_tmp/' + data['filename'])
+            #time.sleep(1)
+            #manage_data()
+
         elif event == "timer":
             manage_data()
 

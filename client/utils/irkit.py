@@ -58,6 +58,6 @@ class IrkitInternetAPI:
 
 if __name__ == '__main__':
     irkit = IrkitInternetAPI()
-    irkit.set_param()
-    # irkit.post_messages('AirConditioning')
-    # irkit.post_messages('TV')
+    #irkit.set_param()
+    #irkit.post_messages('AirConditioning')
+    irkit.post_messages(['TV'])

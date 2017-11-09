@@ -66,6 +66,7 @@ class Manager:
             try:
                 out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
                 state = out.decode('utf-8').split("\n")[-2]
+                print(state)
                 state = json.loads(state)
                 data = {}
                 data["lights"] = json.dumps(state["lights"])
@@ -88,7 +89,7 @@ class Manager:
                 else:
                     override = False
 
-                print("state change", state_changed, "override", override)
+                print("send hue: state change", state_changed, "override", override)
 
                 if override:
                     print("MANUAL CHANGE DETECTED")

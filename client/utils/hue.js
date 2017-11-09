@@ -81,8 +81,8 @@ var manage = function(ip, user) {
 		    .then(displayResult)
 		    .done();
 	} else if (cmd == "set_state") {
-		console.log("setting state");
-		var state = JSON.parse(fs.readFileSync(__dirname + '/hue_state.json', 'utf8'))
+		var file = fs.readFileSync(__dirname + '/hue_state.json', 'utf8');
+		var state = JSON.parse(file)
 
 		for (var i = 0; i < state.length; i++) { //for now, control all
 			console.log(state[i]["state"]);

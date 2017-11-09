@@ -48,7 +48,7 @@ def act_list2(acts):
         try:
             inp.execute(acts)
         except:
-            pass
+            traceback.print_exc()
 
 while True:
     try:
@@ -58,7 +58,7 @@ while True:
             # fetch actions
             r = requests.post(SERVER_IP + "/controllers/execute", data={'user_name': ID}, verify=False)
             action_data = json.loads(r.text)
-            #print(action_data)
+            print(action_data)
             act_list2(action_data)
             actions.act_list(action_data)
             time.sleep(0.5)

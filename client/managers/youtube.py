@@ -1,6 +1,7 @@
 import time
 import subprocess
 from subprocess import Popen
+import traceback
 
 class Manager:
     def __init__(self, user, server_ip, actions):
@@ -14,10 +15,10 @@ class Manager:
             if act["platform"] == "play_youtube":
                 try:
                     Popen('pkill -9 mpv', shell=True)
-                    Popen("mpv 'https://www.youtube.com/watch?v=KQY9zrjPBjo' --no-video > /dev/null 2>&1", shell=True)
+                    Popen("mpv 'https://www.youtube.com/watch?v=IHoyAB1kzdg' --no-video > /dev/null 2>&1", shell=True)
                     self.now_playing = act['data']
                 except:
-                    pass
+                    traceback.print_exc()
 
             if act["platform"] == "stop_youtube":
                 try:
@@ -26,7 +27,7 @@ class Manager:
                     Popen('pkill -9 mpv', shell=True)
                     self.now_playing = None
                 except:
-                    pass
+                    traceback.print_exc()
 
 if __name__ == "__main__":
     youtubeplayer = Manager('sample', '1.0.0.0', None)

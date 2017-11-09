@@ -20,13 +20,15 @@ for f in glob.glob("./pose_data/*"):
 
 def manage_data():
     json_files = glob.glob("./pose_data/*")
+    logger.debug(str(len(json_files)) + " pose files")
+    
     for f in json_files:
         try:
             # print(open(f, "r").readlinesi())
             pts = json.load(open(f, "r"))
             name = f[:-15].split("/")[-1] + ".png"
             pose_data = {"keypoints": pts}
-            image_info = db.mongo.images.find_one({"filename": name})
+            #image_info = db.mongo.images.find_one({"filename": name})
             #pose_data.update(image_info)
             #db.mongo.pose.insert_one(pose_data)
 
@@ -51,7 +53,11 @@ class Pose(Controller):
             else:
                 image_path = app.config['RAW_IMG_DIR'] + data['filename']
 
+            new_data = {}
+            new_data['history.pose_request'] = time.time()
             copyfile(image_path, './pose_tmp/' + data['filename'])
+            
+            db.mongo.images.update_one({"_id": data["_id"]}, {'$set': new_data}, upsert=False)
             #time.sleep(1)
             #manage_data()
 

@@ -36,18 +36,20 @@ class Detection(Controller):
             logger.info(os.path.exists(image_path))
             logger.info("image shape: {}".format(str(cv2.imread(image_path).shape)))
             
-            db.mongo.images.update_one({"filename": data['filename']}, {'$set': {"history.detection_request": time.time()}}, upsert=False)
+            #db.mongo.images.update_one({"filename": data['filename']}, {'$set': {"history.detection_request": time.time()}}, upsert=False)
+            new_data = {}
+            new_data['history.detection_request'] = time.time()
             
             state_json = requests.post("http://" + app.config['RECOGNITION_SERVER_URL'] + "/detect_path", data={'path': os.path.abspath(image_path), 'threshold': 0.5, 'get_image_features': 'true', 'get_object_features': 'true'})
 
             #print("detections: {}".format(r.text))
             
             logger.info(state_json.text)
-            dets = json.loads(state_json.text)
-            dets["history.detection_recorded"] = time.time()
+            new_data.update(json.loads(state_json.text))
+            new_data["history.detection_recorded"] = time.time()
 
             #db.mongo.detections.insert_one(det_data)
-            db.mongo.images.update_one({"_id": data["_id"]}, {'$set': dets}, upsert=False)
+            db.mongo.images.update_one({"_id": data["_id"]}, {'$set': new_data}, upsert=False)
             logger.info("DETECTION")
     
     def execute(self):

@@ -86,31 +86,37 @@ def trigger_controllers(user, event, data, parallel=False):
         if parallel:
             for c, t in threads:
                 t.join()
+                
+        #logger.error("COMPLETE " + event)
 
 def start_timer_loops():
+    
     """
     def timer_loop(c):
         while True:
             c.on_event("timer", None)
-            time.sleep(1)
+            time.sleep(0.1)
     
     for user in controllers_objects.keys():
         for c in controllers_objects[user]:
             t = threading.Thread(target=timer_loop, args=(c,))
             t.start()
+    
     """
     while True:
         logger.debug("CYCLE")
         for user in controllers_objects.keys():
             for c in controllers_objects[user]:
-                print("start " + str(c))
+                #print("start " + str(c))
                 try:
                     c.on_event("timer", None)
                 except:
                     logger.error("error in " + str(c))
                     traceback.print_exc()
-                print("end " + str(c))
+                #print("end " + str(c))
         time.sleep(0.1)
+    
 
 #if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
 start_new_thread(start_timer_loops, ())
+#start_timer_loops()

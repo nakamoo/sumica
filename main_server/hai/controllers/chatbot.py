@@ -53,8 +53,20 @@ class Chatbot(Controller):
         if self.lights is not None:
             l = self.lights
             self.lights = None
+            
+            def format(hue_state):
+                if hue_state["on"]:
+                    return hue_state
+                else:
+                    return {"on": False}
+            
+            data = json.dumps([
+                    {"id": "1", "state":format({"on": l})},
+                    {"id": "2", "state":format({"on": l})},
+                    {"id": "3", "state":format({"on": l})}
+                ])
 
-            return [{"platform": "hue", "data": json.dumps({"on": l})}]
+            return [{"platform": "hue", "data": data}]
         else:
             return []
 

@@ -71,7 +71,7 @@ def augment_images(img_batch, times):
     ])
     """
     seq = iaa.Sequential([
-        iaa.Fliplr(0.5), # horizontal flips
+        #iaa.Fliplr(0.5), # horizontal flips
         iaa.Crop(percent=(0, 0.1)), # random crops
         # Small gaussian blur with random sigma between 0 and 0.5.
         # But we only blur about 50% of all images.
@@ -327,7 +327,7 @@ def hue2vec(data, light_ids):
             
     return vec
 
-def data2vec(touch_classes, look_classes, data, incl_touch=True, incl_look=True, incl_dist=True, incl_pose=True, incl_hand=True, incl_feats=False):
+def data2vec(touch_classes, look_classes, data, incl_touch=True, incl_look=True, incl_dist=True, incl_pose=True, incl_hand=True, incl_feats=False, incl_bag=False):
     person_exists = 0
     touch_vec = np.zeros(len(touch_classes))
     look_vec = np.zeros(len(look_classes))
@@ -385,6 +385,12 @@ def data2vec(touch_classes, look_classes, data, incl_touch=True, incl_look=True,
         fin_vec.append(hand_vec)
     if incl_feats:
         feats = np.load("./image_features/" + data["image_features_filename"]) 
+        fin_vec.append(feats)
+    if incl_bag:
+        feats = np.load("./object_features/" + data["object_features_filename"]) 
+        feats /= np.sum(feats, 1)[:, np.newaxis] #normalize every row
+        feats = np.sum(feats, 0) # sum rows
+        feats /= np.sum(feats) # normalize vector
         fin_vec.append(feats)
         
     return np.concatenate(fin_vec)

@@ -45,7 +45,7 @@ def post_image_data():
     data['filename'] = filename
     data['diff_filename'] = m_filename
     data['version'] = '0.2'
-    data['processed'] = False
+    data['processing_start'] = False
     data['history'] = {'image_recorded': time.time()}
     result = mongo.images.insert_one(data)
 

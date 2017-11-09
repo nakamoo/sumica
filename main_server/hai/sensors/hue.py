@@ -16,6 +16,9 @@ def post_hue_data():
     #logger.info(data)
     data["time"] = float(data["time"])
     data["last_manual"] = float(data["last_manual"])
+    
+    logger.debug(str(data))
+    
     db.mongo.hue.insert_one(data)
     
     db.trigger_controllers(data['user_name'], "hue", data)

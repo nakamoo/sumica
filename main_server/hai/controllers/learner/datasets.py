@@ -4,6 +4,144 @@ from pymongo import MongoClient
 import time
 import operator
 import random
+import scipy.misc
+import cv2
+
+from imgaug import augmenters as iaa
+
+port = 1111
+
+def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, augs=1):
+    dataX, dataY = [], []
+    imagesX = []
+    summs = []
+    classes = list(set([y["text"] for y in print_data]))
+
+    for x, y in zip(image_data, print_data):
+        for imgs in x:
+            row = []
+            row_images = []
+            skip = False
+
+            for cam in imgs:
+                if cam is not None:
+                    test_img = scipy.misc.imread("./images/raw_images/" +  cam["filename"])
+                    if test_img is None or len(test_img.shape) != 3:
+                        skip = True
+                        break
+                        
+                    row_images.append(cam)
+                else:
+                    skip = True
+                    break
+            if not skip:
+                imagesX.append(row_images)
+                dataY.append(classes.index(y["text"]))
+                
+    img_batch = []
+
+    for t in imagesX:
+        for img in t:
+            mat = scipy.misc.imread("./images/raw_images/" +  img["filename"])
+            mat = scipy.misc.imresize(mat, (224, 224))
+            img_batch.append(mat)
+            summs.append(img)
+            
+    from PIL import Image
+    times = augs
+    aug_imgs = augment_images(img_batch, times)
+    aug_imgs_pil = [Image.fromarray(img) for img in aug_imgs]
+
+    vecs = feat_gen(aug_imgs_pil, summs*times)
+    vecs = np.array(vecs)
+    
+    #samples = sum([len(x) for x in image_data])
+    mat = vecs.reshape([-1,vecs.shape[1]*num_cams])
+    
+    return mat, dataY*times, classes
+
+def augment_images(img_batch, times):
+    images = []
+    
+    """
+    seq = iaa.Sequential([
+        iaa.GaussianBlur(sigma=(0, 3.0)), # blur images with a sigma of 0 to 3.0
+        iaa.Add((-10, 10), per_channel=0.5), # change brightness of images (by -10 to 10 of original value)
+        iaa.AddToHueAndSaturation((-20, 20)),
+    ])
+    """
+    seq = iaa.Sequential([
+        iaa.Fliplr(0.5), # horizontal flips
+        iaa.Crop(percent=(0, 0.1)), # random crops
+        # Small gaussian blur with random sigma between 0 and 0.5.
+        # But we only blur about 50% of all images.
+        iaa.Sometimes(0.5,
+            iaa.GaussianBlur(sigma=(0, 0.5))
+        ),
+        # Strengthen or weaken the contrast in each image.
+        iaa.ContrastNormalization((0.75, 1.5)),
+        iaa.Grayscale(alpha=(0.0, 1.0)),
+        # Add gaussian noise.
+        # For 50% of all images, we sample the noise once per pixel.
+        # For the other 50% of all images, we sample the noise per pixel AND
+        # channel. This can change the color (not only brightness) of the
+        # pixels.
+        iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),
+        # Make some images brighter and some darker.
+        # In 20% of all cases, we sample the multiplier once per channel,
+        # which can end up changing the color of the images.
+        iaa.Multiply((0.8, 1.2), per_channel=0.2),
+        # Apply affine transformations to each image.
+        # Scale/zoom them, translate/move them, rotate them and shear them.
+        iaa.Affine(
+            scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
+            translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
+            rotate=(-25, 25),
+            shear=(-8, 8)
+        )
+    ], random_order=True)
+
+    for i in range(times):
+        print("{}/{}".format(i, times))
+        images_aug = seq.augment_images(img_batch)
+        images.extend(images_aug)
+        
+    return images
+
+def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=60, stride=5, size=10, skip=False, with_summary=True):
+    client = MongoClient('localhost', port)
+    mongo = client.hai
+    
+    image_data = []
+    for data in event_data:
+        data2 = []
+        start_time = int(data["time"]+start_offset)
+        end_time = int(data["time"]+end_offset)
+
+        for s in range(start_time, end_time-size, stride):
+            interval_data = []
+            incomplete = False
+
+            for cam in cam_names:
+                
+                query = {"user_name": username, "cam_id": cam, "time": {"$gte": s, "$lt": s+size}}
+                if with_summary:
+                    query["summary"] = {"$exists": with_summary}
+                
+                n = mongo.images.find(query)
+
+                if n.count() > 0:
+                    interval_data.append(n[0])
+                else:
+                    interval_data.append(None)
+                    incomplete = True
+
+            if skip and incomplete:
+                pass
+            else:
+                data2.append(interval_data)
+        image_data.append(data2)
+    return image_data
 
 def get_hue_dataset2(username, start_time=None, end_time=None, top_classes=5, max_samples=-1,
                     incl_touch=False, incl_look=False, incl_dist=False, incl_pose=False, incl_hand=False, incl_feats=True):
@@ -52,7 +190,7 @@ def connect_hue_image(img_data, hue_data):
     return new_img_data, new_hue_data
 
 def get_image_data(username, start_time=None, end_time=None, cam_id=0, sort_order=-1):
-    client = MongoClient()
+    client = MongoClient('localhost', port)
     mongo = client.hai
     
     if start_time is None:
@@ -101,11 +239,14 @@ def get_hue_labels(data_mat, top_classes=5):
             
     return top_classes, indices, sorted_counts
 
-def get_hue_data(username, start_time, end_time, sort_time=-1):
-    client = MongoClient()
+def get_hue_data(username, start_time, end_time, sort_time=-1, manual=None):
+    client = MongoClient('localhost', port)
     mongo = client.hai
     
-    query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}, "last_manual": {"$gt": 30, "$lt": 60}}
+    if manual is None:
+        query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}}
+    else:
+        query = {"user_name": username, "time": {"$gt": start_time, "$lt": end_time}, "last_manual": {"$gt": manual[0], "$lt": manual[1]}}
     n = mongo.hue.find(query).sort([("time", sort_time)])
     
     re = []

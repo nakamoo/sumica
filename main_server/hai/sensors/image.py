@@ -22,7 +22,7 @@ def get_image_data():
 @bp.route('/data/images', methods=['POST'])
 def post_image_data():
     data = request.form.to_dict()
-    logger.debug(data)
+    #logger.debug(data)
     data["time"] = float(data["time"])
     data["motion_update"] = bool(data["motion_update"])
     
@@ -42,23 +42,15 @@ def post_image_data():
             data['encryption'] = False
 
     logger.info(filename + " latency: " + str(time.time()-data["time"]))
-    arrival_time = time.time()
     data['filename'] = filename
     data['diff_filename'] = m_filename
     data['version'] = '0.2'
-    mongo.images.insert_one(data)
-    
-    # TODO: differentiate events
-    if data["motion_update"]:
-        db.trigger_controllers(data['user_name'], "image", data)
-    
-    return_time = time.time()
-    db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'history.arrival': arrival_time, 'history.first_loop_done': return_time}}, upsert=False)
+    data['processed'] = False
+    data['history'] = {'image_recorded': time.time()}
+    result = mongo.images.insert_one(data)
 
-    if data["motion_update"]:
-        data["detections"] = db.mongo.images.find_one({"_id": data["_id"]})["detections"]
-        
-    data["return_time"] = return_time
+    #db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'history.arrival': arrival_time, 'history.first_loop_done': return_time}}, upsert=False)
 
     data.pop("_id")
+    logger.debug("unprocessed image stored.")
     return jsonify(data), 201

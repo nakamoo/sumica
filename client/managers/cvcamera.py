@@ -96,7 +96,7 @@ class CamManager:
 
     def close(self):
         if self.camtype == "webcam":
-            man.cap.release()
+            self.cap.release()
         elif self.camtype == "vstarcam":
             pass
 
@@ -214,12 +214,12 @@ class CamManager:
             data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
 
             #print(np.mean(thresh))
-            if np.mean(thresh) > 10.0:
-                data["motion_update"] = "True"
-                files['image'] = open(img_fn, "rb")
-                files["diff"] = open(diff_fn, "rb")
-            else:
-                data["motion_update"] = "False"
+            #if np.mean(thresh) > 10.0:
+            data["motion_update"] = "True"
+            files['image'] = open(img_fn, "rb")
+            files["diff"] = open(diff_fn, "rb")
+            #else:
+            #    data["motion_update"] = "False"
 
             addr = "{}/data/images".format(ip)
             print(self.cam_name, "sending image to:", addr)

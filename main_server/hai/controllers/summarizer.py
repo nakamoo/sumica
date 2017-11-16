@@ -80,7 +80,7 @@ class Summarizer(Controller):
     def on_event(self, event, data):
         if event == "timer":
             results = db.mongo.images.find({"user_name": self.user, "version": "0.2", "keypoints":{"$exists": True},
-              "detections":{"$exists": True}, "summary":{"$exists": False}}).sort([("time",-1)]).limit(5)
+              "detections":{"$exists": True}, "summary":{"$exists": False}}).limit(5).sort([("time",-1)])
             
             if results.count() <= 0:
                 return
@@ -92,7 +92,7 @@ class Summarizer(Controller):
 
                 #print(n["time"], n["history"], time.time())
                 summary = summarize(path, dets, pose)
-                db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary}}, upsert=False)
+                db.mongo.images.update_one({"_id": n["_id"]}, {'$set': {'summary': summary, "history.summary_recorded": time.time()}}, upsert=False)
                 logger.info("time from image capture to summary: " + str(time.time() - n["time"]))
 
                 save_summary_img(n["filename"], summary)

@@ -15,15 +15,14 @@ class Manager:
             if act["platform"] == "play_youtube":
                 try:
                     Popen('pkill -9 mpv', shell=True)
-                    Popen("mpv 'https://www.youtube.com/watch?v=IHoyAB1kzdg' --no-video > /dev/null 2>&1", shell=True)
+                    time.sleep(0.3)
+                    Popen("mpv 'https://www.youtube.com/watch?v=3jWRrafhO7M' --no-video > /dev/null 2>&1", shell=True)
                     self.now_playing = act['data']
                 except:
                     traceback.print_exc()
 
             if act["platform"] == "stop_youtube":
                 try:
-                    # Popen('pkill -f mpsyt', shell=True)
-                    # Popen('pkill -f omxplayer', shell=True)
                     Popen('pkill -9 mpv', shell=True)
                     self.now_playing = None
                 except:

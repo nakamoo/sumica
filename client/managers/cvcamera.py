@@ -56,6 +56,10 @@ class Manager:
             man.close()
             print("releasing", man.cam_name)
 
+    def execute(self, acts):
+        pass
+
+
 class CamManager:
     def __init__(self, user, server_ip, cam_loc, cam_name, camtype, detect_only=False, password=None):
         self.server_ip = server_ip

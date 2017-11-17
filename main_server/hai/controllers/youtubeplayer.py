@@ -13,7 +13,7 @@ class YoutubePlayer(Controller):
             msg = data["message"]["text"].split()
             if msg[0] == "music":
                 if msg[1] == "play":
-                    self.re = [{"platform": "play_youtube", "data": ""}]
+                    self.re = [{"platform": "play_youtube", "data": msg[2]}]
                 if msg[1] == "stop":
                     self.re = [{"platform": "stop_youtube", "data": ""}]
 
@@ -27,6 +27,7 @@ class YoutubePlayer(Controller):
         if self.re is not None:
             re = self.re
             self.re = None
+            self.log_operation(re)
             return re
         else:
             return []

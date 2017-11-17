@@ -26,6 +26,7 @@ class IRKit(Controller):
         if self.re is not None:
             re = self.re
             self.re = None
+            self.log_operation(re)
             return re
         else:
             return []

@@ -1,4 +1,6 @@
 from server_actors import actor
+from database import mongo
+import time
 
 class Controller(object):
     def __init__(self):
@@ -9,6 +11,13 @@ class Controller(object):
 
     def execute(self):
         pass
+
+    def log_operation(self, re):
+        inserted_data = dict()
+        inserted_data['operation'] = re
+        inserted_data['time'] = time.time()
+        inserted_data['controller'] = self.__class__.__name__
+        mongo.operation.insert_one(inserted_data)
 
 
 class Sample(Controller):

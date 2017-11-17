@@ -5,6 +5,7 @@ main_server/images/*
 main_server/hai/application.cfg
 main_server/hai/pose_tmp/*
 main_server/hai/static/*.png
+main_server/hai/static/*.jpg
 main_server/hai/classifier.pkl
 # ^^?
 main_server/hai/pose_data/*
@@ -14,11 +15,14 @@ main_server/hai/object_features/*
 main_server/hai/application.cfg
 
 main_server/hai/*.png
+main_server/hai/*.jpg
 client/utils/hue_state.json
 client/utils/hue_user.txt
 client/*.png
+client/*.jpg
 client/cameras.txt
 image.png
+image.jpg
 .DS_Store
 *node_modules*
 .idea

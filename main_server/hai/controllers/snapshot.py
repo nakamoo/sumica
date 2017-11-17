@@ -13,7 +13,7 @@ def draw(data):
     from _app import app
 
     path = data["filename"]
-    summ = data["summary"]
+    #summ = data["summary"]
 
     print(os.path.join(app.config["RAW_IMG_DIR"], path))
 
@@ -23,7 +23,7 @@ def draw(data):
     diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
 
     #img += diff
-    img = utils.visualize(img, summ)
+    img = utils.visualize(img, data)
 
     return img
 
@@ -61,8 +61,10 @@ class Snapshot(Controller):
             
             if msg.startswith("snapshot"):
                 cam = msg.split()[-1]
-                n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
-                                         }).sort([("time",-1)]).limit(1)
+                #n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
+                #                         }).sort([("time",-1)]).limit(1)
+                n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "pose":{"$exists": True}
+                                          , "detections":{"$exists": True}}).sort([("time",-1)]).limit(1)
                 if n.count() <= 0:
                     chatbot.send_fb_message(sender, "no image, sorry")
                     return

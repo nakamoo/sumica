@@ -35,9 +35,9 @@ def post_image_data():
                 f.write(token)
             data['encryption'] = True
         else:
-            filename = str(uuid.uuid4()) + ".png"
+            filename = str(uuid.uuid4()) + ".jpg"
             request.files['image'].save(app.config['RAW_IMG_DIR'] + filename)
-            m_filename = str(uuid.uuid4()) + ".png"
+            m_filename = str(uuid.uuid4()) + ".jpg"
             request.files['diff'].save(app.config['RAW_IMG_DIR'] + m_filename)
             data['encryption'] = False
 

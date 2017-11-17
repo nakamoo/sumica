@@ -18,7 +18,7 @@ from controllers.detection import Detection
 from controllers.chatbot import Chatbot
 from controllers.hello import HelloController
 from controllers.settings import Settings
-from controllers.pose import Pose
+from controllers.pose2 import Pose2
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
 from controllers.activity_test import ActivityTest
@@ -47,8 +47,7 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [ImageProcessor(user_name), YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose(), Detection(), Chatbot(user_name),
-            Summarizer(user_name), ActivityTest4(user_name), Snapshot(user_name), Settings(user_name)]
+    return [ImageProcessor(user_name), YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(), Detection(), Chatbot(user_name), Snapshot(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()

@@ -229,11 +229,11 @@ class CamManager:
             print(self.cam_name, "error in sending image")
 
     def show(self, image, ip):
-        cv2.imwrite("image.png", image)
+        cv2.imwrite("image.jpg", image)
 
         data = {"threshold": "0.5"}
         addr = "{}/detect".format(ip)
-        r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data, verify=False)
+        r = requests.post(addr, files={'image': open("image.jpg", "rb")}, data=data, verify=False)
 
         print(r.text)
 

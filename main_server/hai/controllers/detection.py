@@ -11,7 +11,7 @@ from _app import app
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 class Detection(Controller):
     def __init__(self):
@@ -22,10 +22,8 @@ class Detection(Controller):
             
             if app.config['ENCRYPTION']:
                 image_path = app.config['ENCRYPTED_IMG_DIR'] + data['filename']
-                image = encryption.open_encrypted_img(image_path)
             else:
                 image_path = app.config['RAW_IMG_DIR'] + data['filename']
-                image = open(image_path, 'rb')
 
             #state_json = requests.post("http://" +
             #                           hai.app.config['RECOGNITION_SERVER_URL'] +

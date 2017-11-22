@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 def init_pose():
     OPENPOSE_ROOT = os.environ["OPENPOSE_ROOT"]

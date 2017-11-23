@@ -99,6 +99,8 @@ class Manager:
                 else:
                     data["last_manual"] = time.time() - self.last_manual_time
 
+                data['state_changed'] = state_changed
+                data['override'] = override
                 #if self.send:
                 requests.post(self.server_ip + "/data/hue", data=data, verify=False)
                 #else:

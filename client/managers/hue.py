@@ -36,7 +36,7 @@ class Manager:
                     self.going_back = float(act["data"]) > 0
                 elif act['platform'] == "hue":
                     json_data = json.loads(act['data'])
-                    if self.last_state != json_data:
+                    if self.check_state_change({'lights':json_data}):
                         with open('utils/hue_state.json', 'w+') as outfile:
                             json.dump(json_data, outfile)
 
@@ -87,9 +87,8 @@ class Manager:
                 if self.last_state is None:
                     self.last_state = state
 
-                state_changed = False
-                if self.check_state_change(state):
-                    state_changed = True
+                state_changed = self.check_state_change(state)
+                if state_changed:
                     self.last_state = state
                     if self.program_control:
                         self.program_control_detected = True
@@ -112,7 +111,7 @@ class Manager:
                 # else:
                 #     override = False
 
-                print("send hue: state change", state_changed, "program", self.program_control)
+                print("send hue: state change", state_changed, ",program control", self.program_control)
 
                 if (not self.program_control) and state_changed:
                     print("MANUAL CHANGE DETECTED")

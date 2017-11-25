@@ -18,6 +18,7 @@ class Manager:
         self.now_playing = None
         self.user = user
         self.ip = server_ip
+        self.actions = actions
 
     def start(self):
         interrupted = False
@@ -45,7 +46,8 @@ class Manager:
             if awake <= 0:
                 if ans == 3:
                     print("speech recognition: awake")
-                    awake = 10
+                    self.actions.act("tts", "はい？")
+                    awake = 20
                     said_something = False
                 elif ans == 1:
                     print("speech indication: yes")
@@ -60,7 +62,7 @@ class Manager:
             elif ans == -2:
                 awake -= 1
             
-            if awake > 0:
+            if awake > 0 and awake <= 15:
                 current_buffer.extend(data)
                 if ans == 0:
                     said_something = True
@@ -89,10 +91,12 @@ class Manager:
                             data = {"user_name": self.user, "time": time.time(), "type": "speech", "text": text}
                             requests.post("%s/data/speech" % self.ip, data=data, verify=False)
                         except Exception as e:
+                            self.actions.act("tts", "聞き取れませんでした")
                             print("some error")
                             print(e)
                     else:
                         print("no speech detected")
+                        self.actions.act("tts", "聞き取れませんでした")
 
                 current_buffer = bytearray(b'')
 

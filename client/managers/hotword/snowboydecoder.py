@@ -2,6 +2,10 @@
 
 import collections
 import pyaudio
+
+import sys
+sys.path.insert(0, "../../snowboy/examples/Python3")
+
 import snowboydetect
 import time
 import wave

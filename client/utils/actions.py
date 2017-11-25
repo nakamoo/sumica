@@ -34,10 +34,10 @@ class Actions:
                 with open('utils/hue_state.json', 'w+') as outfile:
                     json.dump(json_data, outfile)
 
+                self.hue_overridden = False
                 print("setting hue", data)
                 out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
                 print(out.decode('utf-8'))
                 self.last_hue_update = {"data":json_data, "time":time.time()}
-                self.hue_overridden = False
         elif platform == "irkit":
             irkit.post_messages(data)

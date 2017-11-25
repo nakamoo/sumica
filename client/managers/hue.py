@@ -13,7 +13,9 @@ class Manager:
         self.server_ip = server_ip
         self.user = user
         self.send = True
-        self.actions = actions
+
+        self.program_control = False
+        self.program_control_detected = False
         self.last_manual_time = 0
         self.last_state = None
         self.going_back = False
@@ -32,19 +34,34 @@ class Manager:
                     self.send = act["data"] == "True"
                 elif act["platform"] == "hue_back":
                     self.going_back = float(act["data"]) > 0
+                elif act['platform'] == "hue":
+                    json_data = json.loads(act['data'])
+                    if self.last_state != json_data:
+                        with open('utils/hue_state.json', 'w+') as outfile:
+                            json.dump(json_data, outfile)
+
+                        self.program_control = True
+                        out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
+
             except Exception as e:
                 print(e)
 
-    def check_override(self, current, last_update):
-        if last_update["data"] is None:
+    def check_state_change(self, current):
+        if self.last_state is None:
             return False
 
-        current = {light["id"]: light["state"] for light in current["lights"]}
-        last_update = {light["id"]: light["state"] for light in last_update["data"]}
-        
-        for i, state in current.items():
-            a = last_update[i]
-            b = state
+        light_ids = {light["id"]: light["state"] for light in current["lights"]}
+
+        for light_id in light_ids:
+            def search_by_id(lights, id):
+                for l in lights:
+                    if l['id'] == id:
+                        return l
+                return None
+            current_light = search_by_id(current['lights'], light_id)
+            last_light = search_by_id(self.last_state['lights'], light_id)
+            a = current_light['state']
+            b = last_light['state']
 
             if not a["on"]:
                 if a["on"] != b["on"]:
@@ -54,57 +71,62 @@ class Manager:
                     pass
                 else:
                     return True
-
         return False
 
     def start(self):
         if not self.connected:
             print("HUE NOT CONNECTED")
-            return        
+            return
 
         while True:
             try:
                 out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
                 state = out.decode('utf-8').split("\n")[-2]
-                print(state)
+                # print(state)
                 state = json.loads(state)
+                if self.last_state is None:
+                    self.last_state = state
+
+                state_changed = False
+                if self.check_state_change(state):
+                    state_changed = True
+                    self.last_state = state
+                    if self.program_control:
+                        self.program_control_detected = True
+                else:
+                    if self.program_control_detected:
+                        self.program_control = False
+                        self.program_control_detected = False
+
                 data = {}
                 data["lights"] = json.dumps(state["lights"])
                 data["time"] = time.time()
                 data["user_name"] = self.user
 
-                state_changed = False
 
-                if not self.last_state:
-                    self.last_state = state
-                elif self.last_state != state:
-                    state_changed = True
-                    self.last_state = state
+                # if state_changed:
+                #     if self.manual_change or self.going_back:
+                #         override = True
+                #     else:
+                #         override = self.check_override(state, self.actions.last_hue_update)
+                # else:
+                #     override = False
 
-                if state_changed:
-                    if self.actions.hue_overridden or self.going_back:
-                        override = True
-                    else:
-                        override = self.check_override(state, self.actions.last_hue_update)
-                else:
-                    override = False
+                print("send hue: state change", state_changed, "program", self.program_control)
 
-                print("send hue: state change", state_changed, "override", override)
-
-                if override:
+                if (not self.program_control) and state_changed:
                     print("MANUAL CHANGE DETECTED")
                     data["last_manual"] = 0
                     self.last_manual_time = time.time()
-                    self.actions.hue_overridden = True
                 else:
                     data["last_manual"] = time.time() - self.last_manual_time
 
+                data["last_manual_time"] =  self.last_manual_time
                 data['state_changed'] = state_changed
-                data['override'] = override
-                #if self.send:
-                requests.post(self.server_ip + "/data/hue", data=data, verify=False)
-                #else:
-                #    print("NOT SENDING")
+                data['program_control'] = self.program_control
+
+                if self.send:
+                    requests.post(self.server_ip + "/data/hue", data=data, verify=False)
 
                 """
                 for light in state["lights"]:

@@ -122,7 +122,7 @@ class CamManager:
                     print("frame error")
 
             if frame is None:
-                print(self.cam_name, ": frame is ", frame, ret)
+                print(self.cam_name, ": frame is ", frame)
                 time.sleep(1)
                 continue
                 #ret, frame = self.cap.read()

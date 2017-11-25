@@ -2,6 +2,7 @@ import time
 import subprocess
 from subprocess import Popen
 import traceback
+import requests
 
 import sys
 sys.path.insert(0, "./")
@@ -15,6 +16,8 @@ import speech_recognition as sr
 class Manager:
     def __init__(self, user, server_ip, actions):
         self.now_playing = None
+        self.user = user
+        self.ip = server_ip
 
     def start(self):
         interrupted = False
@@ -46,8 +49,14 @@ class Manager:
                     said_something = False
                 elif ans == 1:
                     print("speech indication: yes")
+
+                    data = {"user_name": self.user, "time": time.time(), "type": "yes"}
+                    requests.post("%s/data/speech" % self.ip, data=data, verify=False)
                 elif ans == 2:
                     print("speech indication: no")
+
+                    data = {"user_name": self.user, "time": time.time(), "type": "no"}
+                    requests.post("%s/data/speech" % self.ip, data=data, verify=False)
             elif ans == -2:
                 awake -= 1
             
@@ -74,7 +83,11 @@ class Manager:
                     if said_something:
                         try:
                             audiodata = sr.AudioData(current_buffer, detector.detector.SampleRate(), sampwidth)
-                            print("You said: " + r.recognize_google(audiodata, language="ja"))
+                            text = r.recognize_google(audiodata, language="ja")
+                            print("You said: " + text)
+
+                            data = {"user_name": self.user, "time": time.time(), "type": "speech", "text": text}
+                            requests.post("%s/data/speech" % self.ip, data=data, verify=False)
                         except Exception as e:
                             print("some error")
                             print(e)

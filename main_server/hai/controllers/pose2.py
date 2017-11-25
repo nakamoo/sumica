@@ -39,8 +39,8 @@ def extract_keypoints(img):
     return body, hand, face
 
 class Pose2(Controller):
-    def __init__(self):
-        pass
+    def __init__(self, user):
+        self.user = user
 
     def on_event(self, event, data):
         if event == "image":

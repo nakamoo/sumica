@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 class Detection(Controller):
-    def __init__(self):
-        pass
+    def __init__(self, user):
+        self.user = user
 
     def on_event(self, event, data):
         if event == "image":

@@ -4,9 +4,9 @@ from database import mongo
 
 
 class IRKit(Controller):
-    def __init__(self, user_name):
+    def __init__(self, user):
         self.re = None
-        self.user_name = user_name
+        self.user = user
 
     def on_event(self, event, data):
         if event == "chat":
@@ -18,7 +18,7 @@ class IRKit(Controller):
                 inserted_data = dict()
                 inserted_data['message'] = msg
                 inserted_data['device'] = msg[1]
-                inserted_data['user_name'] = self.user_name
+                inserted_data['user'] = self.user
                 inserted_data['time'] = time.time()
                 mongo.irkit.insert_one(inserted_data)
 

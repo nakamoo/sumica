@@ -45,13 +45,14 @@ class Chatbot(Controller):
                   chatbot.send_fb_message(self.fb_id, "no")
 
             elif msg == "No":
-                c = db.mongo.operation.find(sort=[('_id', -1)]).next()['controller']
+                c = db.mongo.operation.find({'user': self.user}, sort=[('_id', -1)]).next()['controller']
                 docs = db.mongo.operation.find({'controller': c}, sort=[('_id', -1)], limit=2)
                 docs.next()
                 previous_operation = docs.next()['operation']
                 for controller in db.controllers_objects[self.user]:
                     if controller.__class__.__name__ == c:
-                        db.controllers_objects['koki'][2].re = previous_operation
+                        # TODO: name
+                        db.controllers_objects[self.user][2].re = previous_operation
                         break
                 chatbot.send_fb_message(self.fb_id, "ごめんなさい．戻します.")
 

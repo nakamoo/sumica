@@ -6,6 +6,8 @@ import time
 from utils.irkit import IrkitInternetAPI
 irkit = IrkitInternetAPI()
 
+import utils.tts as tts
+
 class Actions:
     def __init__(self):
         self.last_hue_update = {"data": None}
@@ -41,3 +43,5 @@ class Actions:
             self.hue_overridden = False
         elif platform == "irkit":
             irkit.post_messages(data)
+        elif platform == "tts":
+            tts.say(data)

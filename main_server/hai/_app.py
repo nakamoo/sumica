@@ -10,3 +10,5 @@ sensor_mods = map(importlib.import_module, fs)
 
 for sensor in sensor_mods:
     app.register_blueprint(sensor.bp)
+
+print("registered blueprints")

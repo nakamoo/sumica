@@ -72,6 +72,20 @@ IMAGE_SIZE = (12, 8)
 #with detection_graph.as_default():
 sess = tf.Session(graph=detection_graph)
 
+image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+# Each box represents a part of the image where a particular object was detected.
+#for n in detection_graph.as_graph_def().node:
+#  if "relu" in n.name.lower() or "pool" in n.name.lower():
+#    print(n.name)
+boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+# Each score represent how level of confidence for each of the objects.
+# Score is shown on the result image, together with the class label.
+scores = detection_graph.get_tensor_by_name('detection_scores:0')
+classes = detection_graph.get_tensor_by_name('detection_classes:0')
+num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+relu6 = detection_graph.get_tensor_by_name('Conv/Relu6:0')
+avgpool = detection_graph.get_tensor_by_name('SecondStageBoxPredictor/AvgPool:0')
+
 def detect(image, thres, only_img_feats):
   # the array based representation of the image will be used later in order to prepare the
   # result image with boxes and labels on it.
@@ -79,43 +93,33 @@ def detect(image, thres, only_img_feats):
   height, width = image.shape[0], image.shape[1]
   # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
   image_np_expanded = np.expand_dims(image_np, axis=0)
-  image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-  # Each box represents a part of the image where a particular object was detected.
-  #for n in detection_graph.as_graph_def().node:
-  #  if "relu" in n.name.lower() or "pool" in n.name.lower():
-  #    print(n.name)
-  boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
-  # Each score represent how level of confidence for each of the objects.
-  # Score is shown on the result image, together with the class label.
-  scores = detection_graph.get_tensor_by_name('detection_scores:0')
-  classes = detection_graph.get_tensor_by_name('detection_classes:0')
-  num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+  ##image_np_expanded = np.stack([image_np] * 8)
 
   if only_img_feats:
     img_feats = sess.run(
-        [detection_graph.get_tensor_by_name('Conv/Relu6:0')],
+        [relu6],
         feed_dict={image_tensor: image_np_expanded})
 
     img_feats = np.squeeze(img_feats)
     return img_feats, None, None
   else:
     # Actual detection.
-    (boxes, scores, classes, num_detections, img_feats, obj_feats) = sess.run(
+    (boxes_out, scores_out, classes_out, num_detections_out, img_feats_out, obj_feats_out) = sess.run(
         [boxes, scores, classes, num_detections,
-         detection_graph.get_tensor_by_name('Conv/Relu6:0'),
-         detection_graph.get_tensor_by_name('SecondStageBoxPredictor/AvgPool:0')],
+         relu6,
+         avgpool],
         feed_dict={image_tensor: image_np_expanded})
 
-    boxes = np.squeeze(boxes)
-    scores = np.squeeze(scores)
-    classes = np.squeeze(classes)
-    img_feats = np.squeeze(img_feats)
-    obj_feats_raw = np.squeeze(obj_feats)
+    boxes_out = np.squeeze(boxes_out)
+    scores_out = np.squeeze(scores_out)
+    classes_out = np.squeeze(classes_out)
+    img_feats_out = np.squeeze(img_feats_out)
+    obj_feats_raw = np.squeeze(obj_feats_out)
 
     all_boxes = []
     obj_feats = []
 
-    for label, box, confidence, feats in zip(classes, boxes, scores, obj_feats_raw):
+    for label, box, confidence, feats in zip(classes_out, boxes_out, scores_out, obj_feats_raw):
         if confidence < thres:
             continue      
 
@@ -131,5 +135,5 @@ def detect(image, thres, only_img_feats):
 
     #outputs = {"features": img_feats.tolist(), "objects": all_boxes}
 
-    return img_feats, all_boxes, obj_feats
+    return img_feats_out, all_boxes, obj_feats
 

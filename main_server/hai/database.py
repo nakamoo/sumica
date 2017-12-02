@@ -7,17 +7,18 @@ mongo.hue.ensure_index('time')
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 import os
 import traceback
 import importlib
+import threading
 
 from controllers.detection import Detection
 from controllers.chatbot import Chatbot
 from controllers.hello import HelloController
 from controllers.settings import Settings
-from controllers.pose import Pose
+from controllers.pose2 import Pose2
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
 from controllers.activity_test import ActivityTest
@@ -26,6 +27,7 @@ from controllers.tests.activity_test4 import ActivityTest4
 from controllers.youtubeplayer import YoutubePlayer
 from controllers.irkit import IRKit
 from controllers.printtest import PrintTest
+from controllers.imageprocessor import ImageProcessor
 #from controllers.learner import Learner
 
 import time
@@ -45,26 +47,31 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose(), Detection(), Chatbot(user_name),
-            Summarizer(user_name), ActivityTest4(user_name), Snapshot(user_name), Settings(user_name)]
+    return [ImageProcessor(user_name), YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(), Detection(), Chatbot(user_name), Snapshot(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()
 # TODO: use DB
 controllers_objects = {}
-#controllers_objects['koki'] = standard_controllers('koki')
+# controllers_objects['koki'] = standard_controllers('koki')
 controllers_objects['sean'] = standard_controllers('sean')
 
-def trigger_controllers(user, event, data):
+def trigger_controllers(user, event, data, parallel=False):
     if user is None:
         for c in control_mods:
             c.on_global_event(event, data)
     else:
         start_t = time.time()
+        threads = []
         for c in controllers_objects[user]:
             mid_t = time.time()
             try:
-                c.on_event(event, data)
+                if parallel:
+                    t = threading.Thread(target=c.on_event, args=(event, data,))
+                    threads.append([c, t])
+                    t.start()
+                else:
+                    c.on_event(event, data)
             except Exception as e:
                 traceback.print_exc()
             last_t = time.time()
@@ -74,12 +81,41 @@ def trigger_controllers(user, event, data):
                     #print(str(c), "time taken:", time_taken)
         if event == "image":
             logger.info("total time taken (trigger_controllers): " + str(last_t - start_t))
+            
+        if parallel:
+            for c, t in threads:
+                t.join()
+                
+        #logger.error("COMPLETE " + event)
 
-def timer_loop():
+def start_timer_loops():
+    
+    """
+    def timer_loop(c):
+        while True:
+            c.on_event("timer", None)
+            time.sleep(0.1)
+    
+    for user in controllers_objects.keys():
+        for c in controllers_objects[user]:
+            t = threading.Thread(target=timer_loop, args=(c,))
+            t.start()
+    
+    """
     while True:
+        logger.debug("CYCLE")
         for user in controllers_objects.keys():
-            trigger_controllers(user, "timer", None)
+            for c in controllers_objects[user]:
+                #print("start " + str(c))
+                try:
+                    c.on_event("timer", None)
+                except:
+                    logger.error("error in " + str(c))
+                    traceback.print_exc()
+                #print("end " + str(c))
         time.sleep(0.1)
+    
 
 #if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-start_new_thread(timer_loop, ())
+start_new_thread(start_timer_loops, ())
+#start_timer_loops()

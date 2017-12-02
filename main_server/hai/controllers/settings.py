@@ -2,10 +2,11 @@ from .controller import Controller
 import database as db
 import os
 import time
+from _app import app
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 class Settings(Controller):
     def __init__(self, user):
@@ -31,7 +32,7 @@ class Settings(Controller):
             print("changed settings: save images", self.save_images)
             db.mongo.settings.update_one({"user_name": self.user}, {"$set": {"save_images": self.save_images}})
         elif event == "image":
-            from _app import app
+            
             if not self.save_images:
                 for n in db.mongo.images.find({"user_name": self.user, "time": {"$lt": time.time() - 30000}}):
                     #if os.path.isfile("./images/" + n["filename"]):

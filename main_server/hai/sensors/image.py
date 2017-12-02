@@ -11,7 +11,7 @@ from _app import app
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 bp = Blueprint("images", __name__)
 
@@ -22,7 +22,7 @@ def get_image_data():
 @bp.route('/data/images', methods=['POST'])
 def post_image_data():
     data = request.form.to_dict()
-    logger.debug(data)
+    #logger.debug(data)
     data["time"] = float(data["time"])
     data["motion_update"] = bool(data["motion_update"])
     
@@ -35,33 +35,22 @@ def post_image_data():
                 f.write(token)
             data['encryption'] = True
         else:
-            filename = str(uuid.uuid4()) + ".png"
+            filename = str(uuid.uuid4()) + ".jpg"
             request.files['image'].save(app.config['RAW_IMG_DIR'] + filename)
-            m_filename = str(uuid.uuid4()) + ".png"
+            m_filename = str(uuid.uuid4()) + ".jpg"
             request.files['diff'].save(app.config['RAW_IMG_DIR'] + m_filename)
             data['encryption'] = False
 
     logger.info(filename + " latency: " + str(time.time()-data["time"]))
-    arrival_time = time.time()
     data['filename'] = filename
     data['diff_filename'] = m_filename
     data['version'] = '0.2'
+    data['processing_start'] = False
+    data['history'] = {'image_recorded': time.time()}
     result = mongo.images.insert_one(data)
-    #logger.debug("inserted into mongo.images " + str(result.inserted_id))
-    #logger.debug(str(mongo.images.find({"_id": result.inserted_id})[0]))
-    
-    # TODO: differentiate events
-    if data["motion_update"]:
-        db.trigger_controllers(data['user_name'], "image", data)
-    
-    return_time = time.time()
-    db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'history.arrival': arrival_time, 'history.first_loop_done': return_time}}, upsert=False)
 
-    if data["motion_update"]:
-        data["detections"] = db.mongo.images.find_one({"_id": data["_id"]})["detections"]
-        
-    data["return_time"] = return_time
+    #db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'history.arrival': arrival_time, 'history.first_loop_done': return_time}}, upsert=False)
 
     data.pop("_id")
-    logger.debug("image processed.")
+    logger.debug("unprocessed image stored.")
     return jsonify(data), 201

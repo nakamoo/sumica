@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify
 import database as db
 import coloredlogs, logging
+from _app import app
 
 bp = Blueprint("hue", __name__)
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 @bp.route('/data/hue')
 def get_hue_data():

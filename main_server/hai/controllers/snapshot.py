@@ -13,7 +13,7 @@ def draw(data):
     from _app import app
 
     path = data["filename"]
-    summ = data["summary"]
+    #summ = data["summary"]
 
     print(os.path.join(app.config["RAW_IMG_DIR"], path))
 
@@ -23,7 +23,7 @@ def draw(data):
     diff = cv2.resize(diff, (img.shape[1], img.shape[0]))
 
     #img += diff
-    img = utils.visualize(img, summ)
+    img = utils.visualize(img, data)
 
     return img
 
@@ -37,7 +37,7 @@ def show_image_chat(n, fb_id, send_img=True, message=""):
     img = cv2.putText(img, message, (0, img.shape[0]-100), cv2.FONT_HERSHEY_SIMPLEX, 2,  (0, 255, 0), 2)
     cv2.imwrite("./static/" + path, img)
     age = time.time() - float(n["time"])
-    chatbot.send_fb_message(fb_id, "here's your image ({} secs ago)".format(age))
+    chatbot.send_fb_message(fb_id, "here's your image ({:.2f} secs ago)".format(age))
     url = "https://homeai.ml:{}/static/".format(app.config["PORT"]) + path
     chatbot.send_fb_message(fb_id, "(url: {})".format(url))
     print("snapshot url:", url)
@@ -57,19 +57,54 @@ class Snapshot(Controller):
     def on_event(self, event, data):
         if event == "chat":
             msg = data["message"]["text"].strip()
-            cam = 0
+            sender = data["sender"]["id"]
             
             if msg.startswith("snapshot"):
-              cam = msg.split()[-1]
-              n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
-                }).sort([("time",-1)]).limit(1)
-              if n.count() <= 0:
-                 chatbot.send_fb_message(data["sender"]["id"], "no image, sorry")
-                 return
-              else:
-                 n = n.next()
-              show_image_chat(n, data["sender"]["id"])
-
+                cam = msg.split()[-1]
+                #n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "summary":{"$exists": True}
+                #                         }).sort([("time",-1)]).limit(1)
+                n = db.mongo.images.find({"user_name": self.user, "cam_id": str(cam), "pose":{"$exists": True}
+                                          , "detections":{"$exists": True}}).sort([("time",-1)]).limit(1)
+                if n.count() <= 0:
+                    chatbot.send_fb_message(sender, "no image, sorry")
+                    return
+                else:
+                    n = n.next()
+                    show_image_chat(n, data["sender"]["id"])
+            elif msg.startswith("speed"):
+                start_time = 1509739849 # !!
+                query = {"user_name": self.user, "summary":{"$exists": True}, "time": {"$gt": start_time, "$lt": time.time()}}
+                cams = db.mongo.images.find(query).distinct("cam_id")
+                
+                
+                
+                for cam in cams:
+                    msg = []
+                    
+                    query = {"user_name": self.user, "cam_id":cam, "summary":{"$exists": True}, "time": {"$gt": start_time, "$lt": time.time()}}
+                    t = db.mongo.images.find(query).limit(1).sort([("time", -1)])[0]["time"]
+                    msg.append("{}: last summary: {:.2f} ({:.2f} secs ago)".format(cam, t, time.time()-t))
+                    
+                    query = {"user_name": self.user, "cam_id":cam, "time": {"$gt": time.time()-60, "$lt": time.time()}}
+                    cnt = db.mongo.images.find(query).count()
+                    msg.append("{}: images received in last minute: {}".format(cam, cnt))
+                    
+                    query = {"user_name": self.user, "cam_id":cam, "history.image_processing_finish":{"$exists": True}, "time": {"$gt": time.time()-60, "$lt": time.time()}}
+                    cnt = db.mongo.images.find(query).count()
+                    msg.append("{}: images processed in last minute: {}".format(cam, cnt))
+                    
+                    query = {"user_name": self.user, "cam_id":cam, "summary":{"$exists": True}, "time": {"$gt": time.time()-60, "$lt": time.time()}}
+                    min_cnt = db.mongo.images.find(query).count()
+                    msg.append("{}: image summaries in last minute: {}".format(cam, min_cnt))
+                    
+                    query = {"user_name": self.user, "cam_id":cam, "summary":{"$exists": True}, "time": {"$gt": time.time()-3600, "$lt": time.time()}}
+                    hr_cnt = db.mongo.images.find(query).count()
+                    msg.append("{}: image summaries in last hour: {} ({:.2f}/min)".format(cam, hr_cnt, hr_cnt/60))
+                    
+                    msg.append("---")
+                
+                    chatbot.send_fb_message(sender, "\n".join(msg))
+                    
 
     def execute(self):
         return []

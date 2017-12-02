@@ -56,6 +56,10 @@ class Manager:
             man.close()
             print("releasing", man.cam_name)
 
+    def execute(self, acts):
+        pass
+
+
 class CamManager:
     def __init__(self, user, server_ip, cam_loc, cam_name, camtype, detect_only=False, password=None):
         self.server_ip = server_ip
@@ -96,7 +100,7 @@ class CamManager:
 
     def close(self):
         if self.camtype == "webcam":
-            man.cap.release()
+            self.cap.release()
         elif self.camtype == "vstarcam":
             pass
 
@@ -161,6 +165,7 @@ class CamManager:
         diff_thres = 0.5
 
         while True:
+            time.sleep(1)
             if self.image is None or self.image1 is None or self.image2 is None:
                 time.sleep(1)
                 continue
@@ -188,7 +193,9 @@ class CamManager:
                     print("unable to send image to server.")
                     print(e)
 
-                time.sleep(0.1)
+                # time.sleep(0.1)
+                # 恐らく早すぎてdetection serverに負荷がかかってエラーが生じている
+                time.sleep(1)
             else:
                 print("image not captured.")
                 time.sleep(1)
@@ -214,12 +221,12 @@ class CamManager:
             data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
 
             #print(np.mean(thresh))
-            if np.mean(thresh) > 10.0:
-                data["motion_update"] = "True"
-                files['image'] = open(img_fn, "rb")
-                files["diff"] = open(diff_fn, "rb")
-            else:
-                data["motion_update"] = "False"
+            #if np.mean(thresh) > 10.0:
+            data["motion_update"] = "True"
+            files['image'] = open(img_fn, "rb")
+            files["diff"] = open(diff_fn, "rb")
+            #else:
+            #    data["motion_update"] = "False"
 
             addr = "{}/data/images".format(ip)
             print(self.cam_name, "sending image to:", addr)
@@ -229,11 +236,11 @@ class CamManager:
             print(self.cam_name, "error in sending image")
 
     def show(self, image, ip):
-        cv2.imwrite("image.png", image)
+        cv2.imwrite("image.jpg", image)
 
         data = {"threshold": "0.5"}
         addr = "{}/detect".format(ip)
-        r = requests.post(addr, files={'image': open("image.png", "rb")}, data=data, verify=False)
+        r = requests.post(addr, files={'image': open("image.jpg", "rb")}, data=data, verify=False)
 
         print(r.text)
 

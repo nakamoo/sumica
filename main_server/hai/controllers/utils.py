@@ -44,18 +44,8 @@ def chunker(seq, size):
   return (seq[pos:pos+size] for pos in range(0, len(seq), size))
 
 def visualize(frame, summ):
-    for result in summ:
+    for result in summ["detections"]:
         det = result["box"]
- 
-        if result["label"] == "person" and result["keypoints"] is not None:
-          def draw_pts(pts, col):
-            for x, y, c in chunker(pts, 3):
-              if c > 0.05:
-                cv2.circle(frame, (int(x), int(y)), 3, col, -1)
-          
-          draw_pts(result["keypoints"]["pose_keypoints"], (0, 255, 0))
-          draw_pts(result["keypoints"]["hand_left_keypoints"], (255, 0, 0))
-          draw_pts(result["keypoints"]["hand_right_keypoints"], (255, 0, 0))
 
         name = result["label"] + ": " + "%.2f" % result["confidence"]
 
@@ -64,5 +54,30 @@ def visualize(frame, summ):
         c = tuple([int(x * 255.0) for x in c])
         cv2.putText(frame, name, (det[0], det[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, c, 2)
         cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+        
+    print(summ["pose"]["body"])
+    for person in summ["pose"]["body"]:
+        for x, y, c in person:
+            if c > 0.05:
+                cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+            #if result["label"] == "person" and result["pose"] is not None:
+            #  def draw_pts(pts, col):
+            #    for x, y, c in chunker(pts, 3):
+            #      if c > 0.05:
+            #        cv2.circle(frame, (int(x), int(y)), 3, col, -1)
+
+            #  #draw_pts(result["pose"]["body"], (0, 255, 0))
+            #  #draw_pts(result["pose"]["hand_left_keypoints"], (255, 0, 0))
+            #  #draw_pts(result["pose"]["hand_right_keypoints"], (255, 0, 0))
+            
+    for person in summ["pose"]["face"]:
+        for x, y, c in person:
+            if c > 0.05:
+                cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+                
+    for person in summ["pose"]["hand"]:
+        for x, y, c in person:
+            if c > 0.05:
+                cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
 
     return frame

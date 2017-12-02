@@ -7,7 +7,7 @@ class NNFeatures:
         model = models.resnet34(pretrained=True).cuda()
         self.model = nn.Sequential(*list(model.children())[:-1])
 
-    def img2vec(self, imgs):
+    def img2vec(self, imgs, progress=10):
         fcs = []
 
         # imgs = (NxWxHxC)
@@ -23,7 +23,8 @@ class NNFeatures:
         ])
 
         for i, img in enumerate(imgs):
-            print("{}/{}".format(i, len(imgs)))
+            if progress > 0 and i % progress == 0:
+                print("{}/{}".format(i, len(imgs)))
             
             img_tensor = preprocess(img)
             img_variable = Variable(img_tensor.unsqueeze(0)).cuda()

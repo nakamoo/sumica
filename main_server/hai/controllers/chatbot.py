@@ -51,7 +51,6 @@ class Chatbot(Controller):
                 previous_operation = docs.next()['operation']
                 for controller in db.controllers_objects[self.user]:
                     if controller.__class__.__name__ == c:
-                        # TODO: name
                         db.controllers_objects[self.user][2].re = previous_operation
                         break
                 chatbot.send_fb_message(self.fb_id, "ごめんなさい．戻します.")
@@ -78,7 +77,9 @@ class Chatbot(Controller):
                     {"id": "3", "state":format({"on": l})}
                 ])
 
-            return [{"platform": "hue", "data": data}]
+            re = [{"platform": "hue", "data": data}]
+            self.log_operation(re)
+            return re
         else:
             return []
 

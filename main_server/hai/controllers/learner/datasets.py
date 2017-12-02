@@ -368,6 +368,44 @@ def get_event_images2(username, event_data, cam_names, start_offset=0, end_offse
     print("skipped:", skipped, "picked:", picked)
     return image_data
 
+def get_event_images3(username, cam_names, start_time, end_time, stride=5, size=10, skip_incomplete=True):
+    client = MongoClient('localhost', port)
+    mongo = client.hai
+    
+    skipped = 0
+    picked = 0
+    image_data = []
+    times = []
+    
+    for s in range(start_time, end_time-size, stride):
+            interval_data = []
+            incomplete = False
+
+            for cam in cam_names:
+                query = {"user_name": username, "cam_id": cam, "time": {"$gte": s, "$lt": s+size}}
+                if skip_incomplete:
+                    query["detections"] = {"$exists": True}
+                    query["pose"] = {"$exists": True}
+                
+                n = mongo.images.find(query)
+
+                if n.count() > 0:
+                    interval_data.append(n[0])
+                else:
+                    interval_data.append(None)
+                    incomplete = True
+
+            if skip_incomplete and incomplete:
+                skipped += 1
+            else:
+                image_data.append(interval_data)
+                times.append(s)
+                picked += 1
+        
+    print("skipped:", skipped, "picked:", picked)
+    print("total:", (end_time-start_time)//stride)
+    return image_data, times
+
 def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=60, stride=5, size=10, skip=False, with_summary=True):
     client = MongoClient('localhost', port)
     mongo = client.hai

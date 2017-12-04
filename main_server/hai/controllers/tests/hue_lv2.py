@@ -10,6 +10,7 @@ from bson.son import SON
 
 from controllers.controller import Controller
 from controllers.learner.logreg import LogReg
+from server_actors import chatbot
 
 app = Flask(__name__)
 app.config.from_pyfile(filename="../../application.cfg")
@@ -176,8 +177,10 @@ class HueLv2(Controller):
         if event == "chat" and self.fb_id:
             msg = data["message"]["text"]
             if msg == "train":
+                chatbot.send_fb_message(self.fb_id, "start training")
                 self.X, self.y = collect_img_hue(self.light_states, self.user)
                 self.learner.data_update(self.X, self.y)
+                self.learner.train()
 
         if event == "timer":
             if self.learner.classifier is not None:

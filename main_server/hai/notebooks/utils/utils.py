@@ -4,12 +4,16 @@ from PIL import Image
 import matplotlib.animation as animation
 import numpy as np
 import pymongo
+from pymongo import MongoClient
 import time
 from datetime import datetime
+from flask import Flask
 
 import controllers.utils as utils
-from _app import app
-from database import mongo
+
+app = Flask(__name__)
+app.config.from_pyfile(filename="../../application.cfg")
+mongo = MongoClient('localhost', app.config['PORT_DB']).hai
 
 
 def visualize(col):

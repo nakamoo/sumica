@@ -1,5 +1,8 @@
 import requests
-from _app import app
+from flask import Flask
+
+app = Flask(__name__)
+app.config.from_pyfile(filename="../application.cfg")
 
 # fb_token = "EAACPbD64AjUBAMhcfZCXbQoYuEmjZCQavHnaoG0MpcZCqo9waS5nXVuzuZBDLS5W9iEgcP3DvMuS92uJG3hlmSWoAyXzVt8wIYtbCdYj0LzAXiZAFv98QxMmoHojU8lrevGZAEBChHHMiq1IgYcpUOzOwpZAAjZCxF3IKO3XUnbiVMOYTdMqvgXJ"
 fb_token = app.config['FB_TOKEN']

@@ -11,10 +11,145 @@ from imgaug import augmenters as iaa
 
 port = 20202
 
-def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, augs=1):
+def box_contains_pose(sample, box):
+    poses = sample["pose"]["body"]
+    max_contains = 0
+    pose = None
+    hand = None
+    
+    for person in poses:
+        contains = 0
+        
+        for x, y, c in person:
+            if c > 0.05 and (x >= box[0] and x <= box[2] and y >= box[1] and y <= box[3]):
+                contains += 1
+        if contains > max_contains:
+            max_contains = contains
+            pose = person
+          
+    max_contains2 = 0
+    for h in sample["pose"]["hand"]:
+        contains = 0
+        
+        for x, y, c in h:
+            if c > 0.05 and (x >= box[0] and x <= box[2] and y >= box[1] and y <= box[3]):
+                contains += 1
+        if contains > max_contains2:
+            max_contains2 = contains
+            hand = h
+        
+    return max_contains, pose, hand
+
+def person_box(sample):
+    dets = sample["detections"]
+    top_det = None
+    top_contains_pose = 0
+    person_boxes = 0
+    top_area = 0
+    top_pose = None
+    top_hand = None
+    
+    for det in dets:
+        if det["label"] == "person":
+            current_contains_pose, pose, hand = box_contains_pose(sample, det["box"])
+            b = det["box"]
+            current_area = (b[3]-b[1])*(b[2]-b[0])
+            
+            # force
+            #if current_contains_pose > 0:
+            if top_det is None or current_contains_pose > top_contains_pose or (current_contains_pose == top_contains_pose and det["confidence"] > top_det["confidence"]):
+                top_det = det
+                top_contains_pose = current_contains_pose
+                top_area = current_area
+                top_pose = pose
+                top_hand = hand
+                
+            person_boxes += 1
+    
+    #print("person boxes:", person_boxes, "poses:", len(sample["pose"]["body"]))
+    #print("max pose overlap:", top_contains_pose)
+    return top_det, top_pose, top_hand, top_contains_pose
+
+def deform_box(box):
+    x1, y1, x2, y2 = box
+    height = (y2-y1)
+    width = (x2-x1)
+    new_height = np.random.uniform(0.8, 1.2) * height
+    new_width = np.random.uniform(0.8, 1.2) * width
+    new_x1 = x1 + new_width * np.random.uniform(-0.1, 0.1)
+    new_y1 = y1 + new_height * np.random.uniform(-0.1, 0.1)
+    new_height = max(1, new_height)
+    new_width = max(1, new_width)
+    new_x1 = max(0, new_x1)
+    new_y1 = max(0, new_y1)
+    
+    new_x1, new_y1, new_width, new_height = map(int, [new_x1, new_y1, new_width, new_height])
+    
+    return [new_x1, new_y1, new_x1+new_width, new_y1+new_height]
+
+def crop_person(sample, crop_aug=False):
+    person, pose, hand, top_contains = person_box(sample)
+    #mats = []
+    #crop_boxes = []
+    
+    if person is not None:
+        mat = scipy.misc.imread("./images/raw_images/" + sample["filename"])
+        box = list(person["box"])
+        # expand box
+        w = box[2]-box[0]
+        h = box[3]-box[1]
+        offsetx, offsety = w * 0.1, h * 0.1
+        
+        # override if hand is visible
+        if hand is not None:
+            coords = np.array([[x, y] for x, y, c in hand if c > 0.05])
+            mean_x, mean_y = np.mean(coords, axis=0)
+            
+            s = 0.3
+            box = [mean_x-w*s, mean_y-h*s, mean_x+w*s, mean_y+h*s]
+        elif pose is not None and (pose[4][2] > 0.05 or pose[7][2] > 0.05):
+            s = 0.3
+            if pose[4][2] > 0.05:
+                box = [pose[4][0]-w*s, pose[4][1]-h*s, pose[4][0]+w*s, pose[4][1]+h*s]
+            elif pose[7][2] > 0.05:
+                box = [pose[7][0]-w*s, pose[7][1]-h*s, pose[7][0]+w*s, pose[7][1]+h*s]
+        else:
+            box[0] = box[0] - offsetx
+            box[1] = box[1] + offsety
+            box[2] = box[2] - offsetx
+            box[3] = box[3] + offsety
+                
+        box[0] = max(int(box[0]), 0)
+        box[2] = min(int(box[2]), mat.shape[1])
+        box[1] = max(int(box[1]), 0)
+        box[3] = min(int(box[3]), mat.shape[0])
+        
+        if not crop_aug:
+            mat = mat[box[1]:box[3], box[0]:box[2]]
+            #crop_boxes.append(box)
+            crop_box = box
+            mat = scipy.misc.imresize(mat, (224, 224))
+            #mats.append(mat)
+        else:
+            #for _ in range(crop_augs):
+            crop_box = deform_box(box)
+            aug_mat = mat[crop_box[1]:crop_box[3], crop_box[0]:crop_box[2]]
+            #crop_boxes.append(aug_box)
+            mat = scipy.misc.imresize(aug_mat, (224, 224))
+            #mats.append(aug_mat)
+    else:
+        mat = np.zeros([1, 1, 3])
+        #mat = scipy.misc.imread("./images/raw_images/" + sample["filename"])
+        mat = scipy.misc.imresize(mat, (224, 224))
+        crop_box = [0, 0, 0, 0]
+        #crop_boxes.append([0,0,0,0])
+        #mats.append(mat)
+    
+    return mat, crop_box, person
+        
+def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, augs=-1, crop_augs=-1, scale_box=0):
     dataX, dataY = [], []
     imagesX = []
-    summs = []
     classes = list(set([y["text"] for y in print_data]))
 
     for x, y in zip(image_data, print_data):
@@ -37,28 +172,80 @@ def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, aug
             if not skip:
                 imagesX.append(row_images)
                 dataY.append(classes.index(y["text"]))
+            else:
+                print("skipping datapoint")
                 
     img_batch = []
+    boxes = []
+    new_dataY = []
+    summs = []
 
-    for t in imagesX:
-        for img in t:
-            mat = scipy.misc.imread("./images/raw_images/" +  img["filename"])
-            mat = scipy.misc.imresize(mat, (224, 224))
-            img_batch.append(mat)
-            summs.append(img)
+    print(len(imagesX), len(dataY))
+    for all_cams, y in zip(imagesX, dataY):
+        #for sample in timeframe:
+        #mats, aug_boxes, person = crop_person(sample, crop_augs)
+        #augged_data = [crop_person(cam_sample, crop_augs) for cam_sample in all_cams]
+        
+        if crop_augs > 0:
+            for aug_i in range(crop_augs):
+                """
+                cams = [view[aug_i] for view in augged_data]
+                print(cams[0])
+                print(len(cams[0]))
+                for cam_i, (mat, aug_box, person_det) in enumerate(cams):
+                    img_batch.append(mat)
+                    boxes.append(aug_box)
+                    summs.append(all_cams[cam_i])
+                new_dataY.append(y)
+                """
+                for cam_sample in all_cams:
+                    mat, aug_box, person = crop_person(cam_sample, crop_aug=True)
+                    img_batch.append(mat)
+                    boxes.append(aug_box)
+                    summs.append(cam_sample)
+                new_dataY.append(y)
+        else:
+            for cam_sample in all_cams:
+                mat, aug_box, person = crop_person(cam_sample, crop_aug=False)
+                img_batch.append(mat)
+                boxes.append(aug_box)
+                summs.append(cam_sample)
+            new_dataY.append(y)
             
+    dataY = new_dataY
+    print(len(img_batch), len(boxes), len(dataY), len(summs))
+    
     from PIL import Image
-    times = augs
-    aug_imgs = augment_images(img_batch, times)
-    aug_imgs_pil = [Image.fromarray(img) for img in aug_imgs]
+    
+    if augs > 0:
+        aug_times = augs
+        aug_imgs = augment_images(img_batch, aug_times)
+        aug_imgs_pil = [Image.fromarray(img) for img in aug_imgs]
+    else:
+        aug_times = 1
+        aug_imgs_pil = [Image.fromarray(img) for img in img_batch]
 
-    vecs = feat_gen(aug_imgs_pil, summs*times)
-    vecs = np.array(vecs)
+    mat = None
+    if feat_gen is not None:
+        vecs = feat_gen(aug_imgs_pil, summs*aug_times, boxes*aug_times)
+        vecs = np.array(vecs)
     
-    #samples = sum([len(x) for x in image_data])
-    mat = vecs.reshape([-1,vecs.shape[1]*num_cams])
+        #samples = sum([len(x) for x in image_data])
+        print(vecs.shape)
+        mat = vecs.reshape([-1,vecs.shape[1]*num_cams])
+        
+    print(len(aug_imgs_pil), num_cams)
+        
+    imgs = []
+    index = 0
+    for _ in range(len(dataY)*aug_times):
+        row = []
+        for _ in range(num_cams):
+            row.append(aug_imgs_pil[index])
+            index += 1
+        imgs.append(row)
     
-    return mat, dataY*times, classes
+    return mat, dataY*aug_times, classes, imgs, boxes
 
 
 def augment_images(img_batch, times, verbose=True):
@@ -71,9 +258,10 @@ def augment_images(img_batch, times, verbose=True):
         iaa.AddToHueAndSaturation((-20, 20)),
     ])
     """
+    """
     seq = iaa.Sequential([
-        #iaa.Fliplr(0.5), # horizontal flips
-        iaa.Crop(percent=(0, 0.1)), # random crops
+        iaa.Fliplr(0.5), # horizontal flips
+        #iaa.Crop(percent=(0, 0.1)), # random crops
         # Small gaussian blur with random sigma between 0 and 0.5.
         # But we only blur about 50% of all images.
         iaa.Sometimes(0.5,
@@ -82,6 +270,37 @@ def augment_images(img_batch, times, verbose=True):
         # Strengthen or weaken the contrast in each image.
         iaa.ContrastNormalization((0.75, 1.5)),
         iaa.Grayscale(alpha=(0.0, 1.0)),
+        # Add gaussian noise.
+        # For 50% of all images, we sample the noise once per pixel.
+        # For the other 50% of all images, we sample the noise per pixel AND
+        # channel. This can change the color (not only brightness) of the
+        # pixels.
+        iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),
+        # Make some images brighter and some darker.
+        # In 20% of all cases, we sample the multiplier once per channel,
+        # which can end up changing the color of the images.
+        iaa.Multiply((0.8, 1.2), per_channel=0.2),
+        # Apply affine transformations to each image.
+        # Scale/zoom them, translate/move them, rotate them and shear them.
+        iaa.Affine(
+            scale={"x": (0.9, 1.1), "y": (0.9, 1.1)},
+            translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)},
+            rotate=(-10, 10),
+            shear=(-4, 4)
+        )
+    ], random_order=True)
+    """
+    
+    seq = iaa.Sequential([
+        iaa.Fliplr(0.5), # horizontal flips
+        iaa.Crop(percent=(0, 0.1)), # random crops
+        # Small gaussian blur with random sigma between 0 and 0.5.
+        # But we only blur about 50% of all images.
+        iaa.Sometimes(0.5,
+            iaa.GaussianBlur(sigma=(0, 0.5))
+        ),
+        # Strengthen or weaken the contrast in each image.
+        iaa.ContrastNormalization((0.75, 1.5)),
         # Add gaussian noise.
         # For 50% of all images, we sample the noise once per pixel.
         # For the other 50% of all images, we sample the noise per pixel AND
@@ -109,6 +328,85 @@ def augment_images(img_batch, times, verbose=True):
         images.extend(images_aug)
         
     return images
+
+def get_event_images2(username, event_data, cam_names, start_offset=0, end_offset=60, stride=5, size=10, skip_incomplete=True):
+    client = MongoClient('localhost', port)
+    mongo = client.hai
+    
+    skipped = 0
+    picked = 0
+    
+    image_data = []
+    for data in event_data:
+        data2 = []
+        start_time = int(data["time"]+start_offset)
+        end_time = int(data["time"]+end_offset)
+
+        for s in range(start_time, end_time-size, stride):
+            interval_data = []
+            incomplete = False
+
+            for cam in cam_names:
+                query = {"user_name": username, "cam_id": cam, "time": {"$gte": s, "$lt": s+size}}
+                if skip_incomplete:
+                    query["detections"] = {"$exists": True}
+                    query["pose"] = {"$exists": True}
+                
+                n = mongo.images.find(query)
+
+                if n.count() > 0:
+                    interval_data.append(n[0])
+                else:
+                    interval_data.append(None)
+                    incomplete = True
+
+            if skip_incomplete and incomplete:
+                skipped += 1
+            else:
+                data2.append(interval_data)
+                picked += 1
+        image_data.append(data2)
+        
+    print("skipped:", skipped, "picked:", picked)
+    return image_data
+
+def get_event_images3(username, cam_names, start_time, end_time, stride=5, size=10, skip_incomplete=True):
+    client = MongoClient('localhost', port)
+    mongo = client.hai
+    
+    skipped = 0
+    picked = 0
+    image_data = []
+    times = []
+    
+    for s in range(start_time, end_time-size, stride):
+            interval_data = []
+            incomplete = False
+
+            for cam in cam_names:
+                query = {"user_name": username, "cam_id": cam, "time": {"$gte": s, "$lt": s+size}}
+                if skip_incomplete:
+                    query["detections"] = {"$exists": True}
+                    query["pose"] = {"$exists": True}
+                
+                n = mongo.images.find(query)
+
+                if n.count() > 0:
+                    interval_data.append(n[0])
+                else:
+                    interval_data.append(None)
+                    incomplete = True
+
+            if skip_incomplete and incomplete:
+                skipped += 1
+            else:
+                image_data.append(interval_data)
+                times.append(s)
+                picked += 1
+        
+    print("skipped:", skipped, "picked:", picked)
+    print("total:", (end_time-start_time)//stride)
+    return image_data, times
 
 def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=60, stride=5, size=10, skip=False, with_summary=True):
     client = MongoClient('localhost', port)
@@ -396,6 +694,9 @@ def data2vec(touch_classes, look_classes, data, incl_touch=True, incl_look=True,
         fin_vec.append(feats)
         
     return np.concatenate(fin_vec)
+
+def data2vec2(data):
+    return np.array([])
     
 def get_objects(data):
     look_all, touch_all = [], []

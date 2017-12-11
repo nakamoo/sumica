@@ -15,11 +15,8 @@ class Manager:
             if act["platform"] == "play_youtube":
                 try:
                     Popen('pkill -9 mpv', shell=True)
-                    time.sleep(0.3)
-                    if act['data'] == 'j':
-                        Popen("mpv 'https://www.youtube.com/watch?v=3jWRrafhO7M' --no-video > /dev/null 2>&1", shell=True)
-                    elif act['data'] == 'n':
-                        Popen("mpv 'https://www.youtube.com/watch?v=WrO9PTpuSSs' --no-video > /dev/null 2>&1", shell=True)
+                    time.sleep(0.5)
+                    Popen("mpv 'https://www.youtube.com/watch?v=Q0X6JNMbGMo' --no-video > /dev/null 2>&1", shell=True)
                     self.now_playing = act['data']
                 except:
                     traceback.print_exc()

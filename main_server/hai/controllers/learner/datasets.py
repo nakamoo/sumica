@@ -9,7 +9,7 @@ import cv2
 
 from imgaug import augmenters as iaa
 
-port = 1111
+port = 20202
 
 def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, augs=1):
     dataX, dataY = [], []
@@ -25,7 +25,7 @@ def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, aug
 
             for cam in imgs:
                 if cam is not None:
-                    test_img = scipy.misc.imread("./images/raw_images/" +  cam["filename"])
+                    test_img = scipy.misc.imread("./images/raw_images/" + cam["filename"])
                     if test_img is None or len(test_img.shape) != 3:
                         skip = True
                         break
@@ -60,7 +60,8 @@ def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, aug
     
     return mat, dataY*times, classes
 
-def augment_images(img_batch, times):
+
+def augment_images(img_batch, times, verbose=True):
     images = []
     
     """
@@ -102,7 +103,8 @@ def augment_images(img_batch, times):
     ], random_order=True)
 
     for i in range(times):
-        print("{}/{}".format(i, times))
+        if verbose:
+            print("{}/{}".format(i, times))
         images_aug = seq.augment_images(img_batch)
         images.extend(images_aug)
         

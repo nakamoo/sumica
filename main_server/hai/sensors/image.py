@@ -55,7 +55,7 @@ def post_image_data():
     def process(img_data):
         if data["motion_update"]:
             db.mongo.images.update_one({"filename": img_data['filename']}, {'$set': {"history.image_processing_start": time.time()}}, upsert=False)
-            db.trigger_controllers(data['user_name'], "image", img_data, parallel=True)
+            db.trigger_controllers(data['user_name'], "image", img_data, parallel=False)
             db.mongo.images.update_one({"filename": img_data['filename']}, {'$set': {"history.image_processing_finish": time.time()}}, upsert=False)
             
     future = image_processor.submit(process, data.copy())

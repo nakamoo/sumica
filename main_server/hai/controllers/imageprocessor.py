@@ -11,8 +11,10 @@ import controllers.utils as utils
 from _thread import start_new_thread
 
 import coloredlogs, logging
+
+from _app import app
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 class ImageProcessor(Controller):
     def __init__(self, user):

@@ -23,8 +23,6 @@ class Manager:
 
             if act["platform"] == "stop_youtube":
                 try:
-                    # Popen('pkill -f mpsyt', shell=True)
-                    # Popen('pkill -f omxplayer', shell=True)
                     Popen('pkill -9 mpv', shell=True)
                     self.now_playing = None
                 except:
@@ -32,5 +30,5 @@ class Manager:
 
 if __name__ == "__main__":
     youtubeplayer = Manager('sample', '1.0.0.0', None)
-    youtubeplayer.execute([{'platform': 'play_youtube', 'data': 'nujabes'}])
+    youtubeplayer.execute([{'platform': 'play_youtube', 'data': 'n'}])
     # youtubeplayer.execute([{'platform': 'stop_youtube', 'data': ''}])

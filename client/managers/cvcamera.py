@@ -56,6 +56,10 @@ class Manager:
             man.close()
             print("releasing", man.cam_name)
 
+    def execute(self, acts):
+        pass
+
+
 class CamManager:
     def __init__(self, user, server_ip, cam_loc, cam_name, camtype, detect_only=False, password=None):
         self.server_ip = server_ip
@@ -161,6 +165,7 @@ class CamManager:
         diff_thres = 0.5
 
         while True:
+            time.sleep(1)
             if self.image is None or self.image1 is None or self.image2 is None:
                 time.sleep(1)
                 continue
@@ -188,7 +193,9 @@ class CamManager:
                     print("unable to send image to server.")
                     print(e)
 
-                time.sleep(0.1)
+                # time.sleep(0.1)
+                # 恐らく早すぎてdetection serverに負荷がかかってエラーが生じている
+                time.sleep(1)
             else:
                 print("image not captured.")
                 time.sleep(1)

@@ -7,10 +7,11 @@ from threading import Timer
 import os
 import time
 import controllers.utils as utils
+from _app import app
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 def chunker(seq, size):
   return (seq[pos:pos+size] for pos in range(0, len(seq), size))
@@ -48,7 +49,6 @@ def summarize(path, dets, poses):
           dets.remove(b)
 
   summary = []
-
   for result in dets:
       box = result["box"]
 

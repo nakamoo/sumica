@@ -1,5 +1,6 @@
 import cv2
 import colorsys
+import numpy as np
 
 keypoint_labels = [
     "Nose",
@@ -52,6 +53,28 @@ def box_contains_pose(box, body_pose):
         
     return count
 
+def iou(boxA, boxB):
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+
+    # compute the area of intersection rectangle
+    interArea = (xB - xA + 1) * (yB - yA + 1)
+
+    # compute the area of both the prediction and ground-truth
+    # rectangles
+    boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
+    boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+
+    # compute the intersection over union by taking the intersection
+    # area and dividing it by the sum of prediction + ground-truth
+    # areas - the interesection area
+    iou = interArea / float(boxAArea + boxBArea - interArea)
+
+    # return the intersection over union value
+    return iou
+
 def filter_persons(data, det_threshold=0.8):
     # detection passes if it contains pose or confidence is above threshold
     dets = data["detections"]
@@ -89,41 +112,57 @@ def filter_persons(data, det_threshold=0.8):
                     
     return indices, pose_indices
 
-def visualize(frame, summ):
+def visualize(frame, summ, draw_objects=True):
     for result in summ["detections"]:
-        det = result["box"]
-        name = result["label"] + ": " + "%.2f" % result["confidence"]
-        
-        if "passed" in result and not result["passed"]:
-            continue
-
-        i = sum([ord(x) for x in result["label"]])
-        c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
-        c = tuple([int(x * 255.0) for x in c])
-        
-        cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
-        
-        if "passed" in result:
-            name += "; " + result["action"] + ": " + "%.2f" % result["action_confidence"]
-            act_box = result["action_crop"]
-            cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), c, 2)
+            det = result["box"]
+            name = result["label"] + ": " + "%.2f" % result["confidence"]
             
-        cv2.putText(frame, name, (det[0], det[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, c, 2)
+            if not draw_objects and result["label"] != "person":
+                continue
 
+            if "passed" in result and not result["passed"]:
+                continue
+
+            i = sum([ord(x) for x in result["label"]])
+            c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
+            c = tuple([int(x * 255.0) for x in c])
+
+            #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+            
+            label_offsetx = det[0]
+
+            if "passed" in result:
+                name += "; " + result["action"] + ": " + "%.2f" % result["action_confidence"]
+                act_box = result["action_crop"]
+                
+                label_offsetx = act_box[0]
+                cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), c, 2)
+                cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
+            else:
+                cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+
+            cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), c, -1)
+            cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
+            cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+    body_lines = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [5, 6], [6, 7], [0, 14], [14, 16], [0, 15], [15, 17], [1, 8], [8, 9], [9, 10], [1, 11], [11, 12], [12, 13]]
+        
     for person in summ["pose"]["body"]:
-        for x, y, c in person:
-            if c > 0.05:
-                cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
-            #if result["label"] == "person" and result["pose"] is not None:
-            #  def draw_pts(pts, col):
-            #    for x, y, c in chunker(pts, 3):
-            #      if c > 0.05:
-            #        cv2.circle(frame, (int(x), int(y)), 3, col, -1)
+        for i, (pt1_i, pt2_i) in enumerate(body_lines):
+            pt1 = person[pt1_i]
+            pt2 = person[pt2_i]
 
-            #  #draw_pts(result["pose"]["body"], (0, 255, 0))
-            #  #draw_pts(result["pose"]["hand_left_keypoints"], (255, 0, 0))
-            #  #draw_pts(result["pose"]["hand_right_keypoints"], (255, 0, 0))
+            if pt1[2] < 0.05 or pt2[2] < 0.05:
+                continue
+
+            a = np.array([[[i*20, 255, 255]]], dtype=np.uint8)
+            col = cv2.cvtColor(a, cv2.COLOR_HSV2BGR)[0][0]
+            col = (int(col[0]), int(col[1]), int(col[2]))
+            cv2.circle(frame, (int(pt1[0]), int(pt1[1])), 5, col, -1)
+            cv2.circle(frame, (int(pt2[0]), int(pt2[1])), 5, col, -1)
+            cv2.line(frame, (int(pt1[0]), int(pt1[1])), (int(pt2[0]), int(pt2[1])), col, 2)
             
+    """
     for person in summ["pose"]["face"]:
         for x, y, c in person:
             if c > 0.05:
@@ -133,5 +172,6 @@ def visualize(frame, summ):
         for x, y, c in person:
             if c > 0.05:
                 cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+    """
 
     return frame

@@ -4,6 +4,7 @@ import requests
 import database as db
 import json
 from utils import encryption
+from controllers.utils import iou
 import os
 import cv2
 import time
@@ -12,6 +13,25 @@ from _app import app
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
+
+def nms(dets, threshold=0.5):
+    #logger.error("BEFORE: " + str(len(dets)))
+    
+    sorted_list = sorted(dets, key=lambda k: k['confidence']) 
+    filtered_list = []
+    
+    for det in dets:
+        skip = False
+        for b in filtered_list:
+            if b["label"] == det["label"] and iou(b["box"], det["box"]) > threshold:
+                skip = True
+                break
+        
+        if not skip:
+            filtered_list.append(det)
+    
+    #logger.error("AFTER: " + str(len(filtered_list)))
+    return filtered_list
 
 class Detection(Controller):
     def __init__(self, user):
@@ -43,7 +63,9 @@ class Detection(Controller):
             #print("detections: {}".format(r.text))
             
             logger.info(state_json.text)
-            new_data.update(json.loads(state_json.text))
+            dets = json.loads(state_json.text)
+            dets["detections"] = nms(dets["detections"])
+            new_data.update(dets)
             new_data["history.detection_recorded"] = time.time()
 
             #db.mongo.detections.insert_one(det_data)

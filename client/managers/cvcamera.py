@@ -126,7 +126,7 @@ class CamManager:
                     print("frame error")
 
             if frame is None:
-                print(self.cam_name, ": frame is ", frame, ret)
+                print(self.cam_name, ": frame is ", frame)
                 time.sleep(1)
                 continue
                 #ret, frame = self.cap.read()
@@ -229,9 +229,11 @@ class CamManager:
             #    data["motion_update"] = "False"
 
             addr = "{}/data/images".format(ip)
+            t = time.time()
             print(self.cam_name, "sending image to:", addr)
 
             r = requests.post(addr, files=files, data=data, verify=False)
+            print("time taken:", time.time()-t)
         except:
             print(self.cam_name, "error in sending image")
 

@@ -49,7 +49,6 @@ def summarize(path, dets, poses):
           dets.remove(b)
 
   summary = []
-
   for result in dets:
       box = result["box"]
 

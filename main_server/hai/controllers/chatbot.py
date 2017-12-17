@@ -13,6 +13,7 @@ class Chatbot(Controller):
             self.fb_id = n["fb_id"]
 
         self.lights = None
+        self.cmds = []
         self.tag = ""
 
     def on_event(self, event, data):
@@ -32,6 +33,8 @@ class Chatbot(Controller):
               self.lights = False
             elif msg.startswith("tag"):
               self.tag = msg.split()[-1]
+            elif msg.split()[0] == "say":
+                self.cmds.append({"platform": "tts", "data": "".join(msg.strip().split()[1:])})
             elif msg == "am i here":
               n = db.mongo.detections.find({"user_name": self.user}).sort([("time",-1)]).limit(1)
               here = False
@@ -57,10 +60,17 @@ class Chatbot(Controller):
 
             else:
               chatbot.send_fb_message(self.fb_id, "どうも！")
-        elif event == "image":
-            db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'tag': self.tag}}, upsert=False)
+        #elif event == "image":
+        #    db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'tag': self.tag}}, upsert=False)
+        elif event == "speech":
+            if data["type"] == "speech":
+                chatbot.send_fb_message(self.fb_id, "You said: %s" % data["text"])
+                if data["text"].startswith("リピート"):
+                    self.cmds.append({"platform": "tts", "data": "".join(data["text"].strip().split()[1:])})
 
     def execute(self):
+        re = []
+        
         if self.lights is not None:
             l = self.lights
             self.lights = None
@@ -77,11 +87,12 @@ class Chatbot(Controller):
                     {"id": "3", "state":format({"on": l})}
                 ])
 
-            re = [{"platform": "hue", "data": data}]
+            re.append({"platform": "hue", "data": data})
             self.log_operation(re)
-            return re
-        else:
-            return []
+        
+        re.extend(self.cmds)
+        self.cmds = []
+        return re
 
 def on_global_event(event, data):
     if event == "chat":

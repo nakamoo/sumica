@@ -1,6 +1,13 @@
-from server_actors import actor
-from database import mongo
 import time
+from flask import Flask
+import pymongo
+
+from server_actors import actor
+
+app = Flask(__name__)
+app.config.from_pyfile(filename="../application.cfg")
+mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
+
 
 class Controller(object):
     def __init__(self, user):

@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 def init_pose():
-    OPENPOSE_ROOT = os.environ["OPENPOSE_ROOT"]
     op = OP.OpenPose((656, 368), (368, 368), (1280, 720), "COCO", "/home/sean/openpose/models/", 0, False,
                 OP.OpenPose.ScaleMode.ZeroToOne, True, True)
     return op

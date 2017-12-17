@@ -11,45 +11,58 @@ import time
 from datetime import datetime
 from flask import Flask
 
-import controllers.utils as utils
+from controllers.learner import datasets as ds
 
 app = Flask(__name__)
 app.config.from_pyfile(filename="../../application.cfg")
 mongo = MongoClient('localhost', app.config['PORT_DB']).hai
 
 
-def visualize(col):
+def visualize(col, pose=True, detect_human=True):
     im_path = app.config['RAW_IMG_DIR'] + col['filename']
     img = np.array(Image.open(im_path, 'r'))
 
-    def draw_pts(pts, col):
-        for x, y, c in pts:
-            if c > 0.05:
-                cv2.circle(img, (int(x), int(y)), 3, col, -1)
-    if len(col['pose']['body']) == 1:
-        draw_pts(col['pose']['body'][0], (0, 255, 0))
-    if len(col['pose']['hand']) == 1:
-        draw_pts(col['pose']['hand'][0], (0, 255, 0))
-    if len(col['pose']['face']) == 1:
-        draw_pts(col['pose']['face'][0], (0, 255, 0))
+    if pose:
+        def draw_pts(pts, col):
+            for x, y, c in pts:
+                if c > 0.05:
+                    cv2.circle(img, (int(x), int(y)), 3, col, -1)
+        if len(col['pose']['body']) == 1:
+            draw_pts(col['pose']['body'][0], (0, 255, 0))
+        if len(col['pose']['hand']) == 1:
+            draw_pts(col['pose']['hand'][0], (0, 255, 0))
+        if len(col['pose']['face']) == 1:
+            draw_pts(col['pose']['face'][0], (0, 255, 0))
+    if detect_human:
+        person, _, _, _ = ds.person_box(col)
+        if person is not None:
+            person_box = list(person['box'])
+            cv2.putText(img, '{:.3f}'.format(person['confidence']), (person_box[0], person_box[1]),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 1)
+            cv2.rectangle(img, (person_box[0], person_box[1]), (person_box[2], person_box[3]), (255,0,0), 3)
 
     # plt.imshow(img)
     # return Image.fromarray(img)
     return img
 
 
-def display_latest_image():
+def display_latest_image(cam=None):
     # only display latest image
-    images = mongo.images.find(sort=[("_id", pymongo.DESCENDING)])
+    if cam is None:
+        images = mongo.images.find(sort=[("_id", pymongo.DESCENDING)])
+    else:
+        images = mongo.images.find({'cam_id': cam}, sort=[("_id", pymongo.DESCENDING)])
     im = images.next()
     display_image(im)
 
 
-def display_image(im, pose=False):
+def display_image(im, pose=False, diff=False):
     print_time(im['time'])
     if pose:
-        img = visualize(im)
+        img = visualize(im, pose=True)
         plt.imshow(img)
+    elif diff:
+        plt.imshow(Image.open(app.config['RAW_IMG_DIR'] + im['diff_filename']))
     else:
         plt.imshow(Image.open(app.config['RAW_IMG_DIR'] + im['filename']))
 
@@ -89,7 +102,7 @@ def strtime_to_epoch(strtime):
 
 
 class UpdateDist(object):
-    def __init__(self, axL, axR, image_pairs, info=None, skip=1, pose=False):
+    def __init__(self, axL, axR, image_pairs, info=None, skip=1, pose=False, human=False):
         self.image_pairs = image_pairs
         self.axL = axL
         self.axR = axR
@@ -104,12 +117,13 @@ class UpdateDist(object):
         self.skip = skip
         self.length = math.ceil(len(image_pairs) / skip)
         self.pose = pose
+        self.human = human
 
     def __call__(self, i):
         self.axL.clear()
         im1 = self.image_pairs[self.skip * i][1]
-        if self.pose:
-            img1 = visualize(im1)
+        if self.pose or self.human:
+            img1 = visualize(im1, pose=self.pose, detect_human=self.human)
             self.axL.imshow(img1)
         else:
             im1_path = app.config['RAW_IMG_DIR'] + im1['filename']
@@ -119,12 +133,12 @@ class UpdateDist(object):
                       horizontalalignment='left', verticalalignment='bottom')
         if self.info is not None:
             self.axL.text(300, 0, str(self.info[self.skip * i]),
-                          horizontalalignment='right', verticalalignment='bottom')
+                          horizontalalignment='left', verticalalignment='bottom')
 
         self.axR.clear()
         im0 = self.image_pairs[self.skip * i][0]
-        if self.pose:
-            img = visualize(im0)
+        if self.pose or self.human:
+            img = visualize(im0, pose=self.pose, detect_human=self.human)
             self.axR.imshow(img)
         else:
             im0_path = app.config['RAW_IMG_DIR'] + im0['filename']

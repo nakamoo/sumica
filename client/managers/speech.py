@@ -31,7 +31,9 @@ class Manager:
             return interrupted
 
         models = ["hotwords/yes.pmdl", "hotwords/no.pmdl", "hotwords/ask.pmdl"]
-        awake = 0
+        listen_start = -1
+        last_spoken = -1
+        listening = False
         said_something = False
         current_buffer = bytearray(b'')
 
@@ -42,37 +44,41 @@ class Manager:
         print('Listening... Press Ctrl+C to exit')
 
         def speech(data, ans):
-            nonlocal awake, current_buffer, said_something
-            #print(ans, awake)
-            if awake <= 0:
+            nonlocal last_spoken, listen_start, listening, current_buffer, said_something
+            if not listening:
                 if ans == 3:
                     print("speech recognition: awake")
                     self.actions.act("tts", "はい？")
-                    awake = 20
+                    listening = True
+                    listen_start = time.time()
+                    last_spoken = time.time()
                     said_something = False
                 elif ans == 1:
-                    print("speech indication: yes")
+                    logging.debug("speech indication: yes")
 
                     data = {"user_name": self.user, "time": time.time(), "type": "yes"}
-                    requests.post("%s/data/speech" % self.ip, data=data, verify=False)
+                    
+                    try:
+                       requests.post("%s/data/speech" % self.ip, data=data, verify=False)
+                    except:
+                       logging.error("could not send speech event: yes")
                 elif ans == 2:
-                    print("speech indication: no")
+                    logging.debug("speech indication: no")
 
                     data = {"user_name": self.user, "time": time.time(), "type": "no"}
-                    print("sending request")
-                    requests.post("%s/data/speech" % self.ip, data=data, verify=False, timeout=1)
-                    print("received request")
-            #elif ans == 0 and awake <= 15:
-            #    awake = 10
-            #elif ans == -2:
-            awake -= 1
-            
-            if awake > 0 and awake <= 15:
-                #print(len(current_buffer))
+                    
+                    try:
+                        requests.post("%s/data/speech" % self.ip, data=data, verify=False, timeout=1)
+                    except:
+                        logging.error("could not send speech event: no")
+            elif ans == 0:
+                 last_spoken = time.time()
+           
+            if time.time() - last_spoken < 1 and time.time() - listen_start < 5:
                 current_buffer.extend(data)
                 if ans == 0:
                     said_something = True
-            else:
+            elif listening:
                 #print("buffer:", current_buffer)
                 if len(current_buffer) > 0:
                     sampwidth = detector.audio.get_sample_size(detector.audio.get_format_from_width(
@@ -87,7 +93,7 @@ class Manager:
                     waveFile.writeframes(current_buffer)
                     waveFile.close()
                     """
-                    print("over")
+                    print("listening over")
 
                     if said_something:
                         try:
@@ -103,8 +109,9 @@ class Manager:
                             print(e)
                     else:
                         print("no speech detected")
-                        self.actions.act("tts", "聞き取れませんでした")
+                        self.actions.act("tts", "何か言いましたか？")
 
+                listening = False
                 current_buffer = bytearray(b'')
 
         callbacks = [speech]#[lambda: print("yes"),

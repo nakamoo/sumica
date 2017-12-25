@@ -1,5 +1,7 @@
 client/utils/hue_state.json
 client/tts_cache/*.wav
+client/hotwords
+client/managers/hotword
 
 main_server/hai/images/*
 main_server/images/*

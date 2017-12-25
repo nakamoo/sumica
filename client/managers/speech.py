@@ -3,6 +3,7 @@ import subprocess
 from subprocess import Popen
 import traceback
 import requests
+import logging
 
 import sys
 sys.path.insert(0, "./")
@@ -36,13 +37,13 @@ class Manager:
 
         #signal.signal(signal.SIGINT, signal_handler)
         
-        detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.5]*len(models), audio_gain=1)
+        detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.5, 0.5, 0.5], audio_gain=1)
         r = sr.Recognizer()
         print('Listening... Press Ctrl+C to exit')
 
         def speech(data, ans):
             nonlocal awake, current_buffer, said_something
-
+            #print(ans, awake)
             if awake <= 0:
                 if ans == 3:
                     print("speech recognition: awake")
@@ -58,15 +59,21 @@ class Manager:
                     print("speech indication: no")
 
                     data = {"user_name": self.user, "time": time.time(), "type": "no"}
-                    requests.post("%s/data/speech" % self.ip, data=data, verify=False)
-            elif ans == -2:
-                awake -= 1
+                    print("sending request")
+                    requests.post("%s/data/speech" % self.ip, data=data, verify=False, timeout=1)
+                    print("received request")
+            #elif ans == 0 and awake <= 15:
+            #    awake = 10
+            #elif ans == -2:
+            awake -= 1
             
             if awake > 0 and awake <= 15:
+                #print(len(current_buffer))
                 current_buffer.extend(data)
                 if ans == 0:
                     said_something = True
             else:
+                #print("buffer:", current_buffer)
                 if len(current_buffer) > 0:
                     sampwidth = detector.audio.get_sample_size(detector.audio.get_format_from_width(
                         detector.detector.BitsPerSample() / 8))
@@ -104,9 +111,16 @@ class Manager:
                      #lambda: print("no")]
 
         print("starting detector")
-        detector.start(detected_callback=callbacks,
+
+        try:
+            detector.start(detected_callback=callbacks,
                        interrupt_check=interrupt_callback,
                        sleep_time=0.03)
+        except Exception as e:
+            logging.error("fatal audio error")
+            logging.error(e)
+            import sys
+            sys.exit()
 
         detector.terminate()
 

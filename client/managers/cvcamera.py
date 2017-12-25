@@ -9,6 +9,7 @@ import skimage.measure
 import numpy as np
 import traceback
 import urllib
+import logging
 
 def visualize(frame, all_boxes, win_name="frame"):
     for result in all_boxes:
@@ -65,13 +66,13 @@ class CamManager:
         self.cam_name = cam_name
         self.camtype = camtype
 
-        print("camera:", camtype, cam_name, cam_loc)
+        logging.debug("camera: {}, {}, {}".format(camtype, cam_name, cam_loc))
 
         try:
             if camtype == "webcam":
                 self.cap = cv2.VideoCapture(int(cam_loc))
 
-                print("cam detected:", cam_loc, self.cap.isOpened())
+                logging.debug("cam detected: {}, {}".format(cam_loc, self.cap.isOpened()))
                 self.enabled = self.cap.isOpened()
                 if not self.enabled:
                     self.cap.release()
@@ -185,8 +186,8 @@ class CamManager:
                     else:
                         self.send(self.image, thresh, self.server_ip)
                 except Exception as e:
-                    print("unable to send image to server.")
-                    print(e)
+                    logging.warn("unable to send image to server.")
+                    logging.warn(e)
 
                 time.sleep(0.1)
             else:
@@ -200,8 +201,8 @@ class CamManager:
         cv2.destroyAllWindows()
 
     def send(self, image, thresh, ip):
-        img_fn = "image_{}.png"
-        diff_fn = "diff_{}.png"
+        img_fn = "image_{}.png".format(self.cam_name)
+        diff_fn = "diff_{}.png".format(self.cam_name)
 
         cv2.imwrite(img_fn, image)
         cv2.imwrite(diff_fn, thresh)
@@ -228,7 +229,7 @@ class CamManager:
             r = requests.post(addr, files=files, data=data, verify=False)
             print("time taken:", time.time()-t)
         except:
-            print(self.cam_name, "error in sending image")
+            logging.warn("{}: error in sending image".format(self.cam_name))
 
     def show(self, image, ip):
         cv2.imwrite("image.jpg", image)

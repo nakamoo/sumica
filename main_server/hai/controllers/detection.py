@@ -7,11 +7,19 @@ from utils import encryption
 import os
 import cv2
 import time
-from _app import app
+# from _app import app
+
+from flask import Flask
+import pymongo
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
+
+app = Flask(__name__)
+app.config.from_pyfile(filename="../../application.cfg")
+mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
+
 
 class Detection(Controller):
     def __init__(self, user):
@@ -34,19 +42,19 @@ class Detection(Controller):
             logger.info(os.path.exists(image_path))
             logger.info("image shape: {}".format(str(cv2.imread(image_path).shape)))
             
-            #db.mongo.images.update_one({"filename": data['filename']}, {'$set': {"history.detection_request": time.time()}}, upsert=False)
+            # db.mongo.images.update_one({"filename": data['filename']}, {'$set': {"history.detection_request": time.time()}}, upsert=False)
             new_data = {}
             new_data['history.detection_request'] = time.time()
             
             state_json = requests.post("http://" + app.config['RECOGNITION_SERVER_URL'] + "/detect_path", data={'path': os.path.abspath(image_path), 'threshold': 0.5, 'get_image_features': 'true', 'get_object_features': 'true'})
 
-            #print("detections: {}".format(r.text))
+            # print("detections: {}".format(r.text))
             
             logger.info(state_json.text)
             new_data.update(json.loads(state_json.text))
             new_data["history.detection_recorded"] = time.time()
 
-            #db.mongo.detections.insert_one(det_data)
+            # db.mongo.detections.insert_one(det_data)
             db.mongo.images.update_one({"_id": data["_id"]}, {'$set': new_data}, upsert=False)
             logger.info("DETECTION")
     

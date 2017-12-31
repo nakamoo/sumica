@@ -3,6 +3,7 @@ from server_actors import chatbot
 import database as db
 import json
 
+
 class Chatbot(Controller):
     def __init__(self, user):
         self.fb_id = None

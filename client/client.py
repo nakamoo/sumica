@@ -14,10 +14,13 @@ import traceback
 from utils.actions import Actions
 requests.packages.urllib3.disable_warnings()
 
+import coloredlogs, logging
+coloredlogs.install(level="DEBUG")
+
 SERVER_IP = "https://homeai.ml:{}".format(sys.argv[2])
 
 ID = sys.argv[1]
-print("id:", ID)
+logging.info("id: {}".format(ID))
 
 actions = Actions()
 
@@ -28,13 +31,13 @@ for f in fs:
     try:
         mods.append(importlib.import_module(f))
     except:
-        print("couldn't import {}".format(f))
+        logging.warn("couldn't import {}".format(f))
 
 for m in mods:
     try:
         sensor_mods.append(m.Manager(ID, SERVER_IP, actions))
     except:
-        traceback.print_exc()
+        logging.warn("couldn't initialize {}".format(m))
 
 # start all sensor modules
 for inp in sensor_mods:
@@ -54,24 +57,29 @@ def act_list2(acts):
 while True:
     try:
         time.sleep(1)
+        logging.debug("getting commands")
 
         try:
             # fetch actions
             r = requests.post(SERVER_IP + "/controllers/execute", data={'user_name': ID}, verify=False)
-            action_data = json.loads(r.text)
-            print("action data:", action_data)
-            act_list2(action_data)
-            actions.act_list(action_data)
-            time.sleep(0.5)
         except Exception as e:
-            time.sleep(1)
-            traceback.print_exc()
+            logging.warn(e)
 
+        try:
+            action_data = json.loads(r.text)
+        except Exception as e:
+            logging.warn(e)
+            logging.warn(r.text)
+
+        logging.debug("action data: {}".format(action_data))
+        act_list2(action_data)
+        actions.act_list(action_data)
+           
     except KeyboardInterrupt:
         for inp in sensor_mods:
             try:
                 inp.close()
             except Exception as e:
-                traceback.print_exc()
+                logging.debug("shutting down")
                 exit()
 

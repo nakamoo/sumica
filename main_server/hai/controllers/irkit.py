@@ -6,7 +6,7 @@ from server_actors import chatbot
 
 class IRKit(Controller):
     def __init__(self, user):
-        self.re = None
+        self.re = []
         self.user = user
         self.tv_on = False
         n = mongo.fb_users.find_one({"id": user})
@@ -43,10 +43,26 @@ class IRKit(Controller):
                 inserted_data['time'] = time.time()
                 mongo.irkit.insert_one(inserted_data)
 
+        if event == "speech" and data["type"] == "speech":
+            msg = data["text"]
+            if "テレビ" in msg and "つけて" in msg:
+                if self.tv_on:
+                    self.re.append({"platform": "tts", "data": "TVは既についています"})
+                else:
+                    self.re.append({"platform": "irkit", "data": ['TV', 'on']})
+                    self.tv_on = True
+            if "テレビ" in msg and "消して" in msg:
+                if self.tv_on:
+                    self.re.append({"platform": "tts", "data": "TVを消します"})
+                    self.re.append({"platform": "irkit", "data": ['TV', 'off']})
+                    self.tv_on = False
+                else:
+                    self.re.append({"platform": "tts", "data": "TVは既に消えています"})
+
     def execute(self):
-        if self.re is not None:
+        if self.re:
             re = self.re
-            self.re = None
+            self.re = []
             self.log_operation(re)
             return re
         else:

@@ -4,10 +4,11 @@ import json
 import datetime
 import requests
 import traceback
+import logging
 
 class Manager:
     def __init__(self, user, server_ip, actions):
-        print("connecting to any Hue devices...")
+        logging.debug("connecting to any Hue devices...")
         out = subprocess.check_output(['node', './utils/hue.js', 'connect'])
         out = out.decode('utf-8')
         self.server_ip = server_ip
@@ -82,7 +83,8 @@ class Manager:
             try:
                 out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
                 state = out.decode('utf-8').split("\n")[-2]
-                # print(state)
+                logging.debug(state)
+
                 state = json.loads(state)
                 if self.last_state is None:
                     self.last_state = state
@@ -144,7 +146,7 @@ class Manager:
 
                 time.sleep(5)
             except:
-                traceback.print_exc()
+                logging.warn("error in sending hue data")
 
 if __name__ == "__main__":
     cam = Manager(SERVER_IP)

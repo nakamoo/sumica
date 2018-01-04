@@ -39,9 +39,9 @@ def execute_controllers():
 def execute_specific_controller():
     return "Not implemented", 404
 
-@app.route('/monitor')
-def monitor():
-    return render_template('monitor.html')
+#@app.route('/monitor')
+#def monitor():
+#    return render_template('monitor.html')
 
 @app.route('/cams')
 def cams():
@@ -49,7 +49,7 @@ def cams():
     import database as db
     import time
     
-    images = {}
+    images = []
     name = request.args.get('username')
     start_time = time.time() - 3600
     query = {"user_name": "sean", "time": {"$gt": start_time, "$lt": time.time()}}
@@ -62,9 +62,9 @@ def cams():
         with open("images/raw_images/" + n["filename"], "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read())
             encoded_string = encoded_string.decode("utf-8")
-            images[cam] = encoded_string
+            images.append({"name":cam, "img":encoded_string})
     
-    return jsonify(images), 201
+    return jsonify(images), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(port),

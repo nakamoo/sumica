@@ -61,13 +61,6 @@ class Chatbot(Controller):
 
             else:
               chatbot.send_fb_message(self.fb_id, "どうも！")
-        #elif event == "image":
-        #    db.mongo.images.update_one({"_id": data["_id"]}, {'$set': {'tag': self.tag}}, upsert=False)
-        elif event == "speech":
-            if data["type"] == "speech":
-                chatbot.send_fb_message(self.fb_id, "You said: %s" % data["text"])
-                if data["text"].startswith("リピート"):
-                    self.cmds.append({"platform": "tts", "data": "".join(data["text"].strip().split()[1:])})
 
     def execute(self):
         re = []

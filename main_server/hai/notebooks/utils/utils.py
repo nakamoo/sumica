@@ -2,6 +2,7 @@ import math
 
 import cv2
 from matplotlib import pylab as plt
+from matplotlib.pyplot import imread
 from PIL import Image
 import matplotlib.animation as animation
 import numpy as np
@@ -10,12 +11,14 @@ from pymongo import MongoClient
 import time
 from datetime import datetime
 from flask import Flask
+import configparser
+import matplotlib.cm as cm
 
 from controllers.learner import datasets as ds
 
-app = Flask(__name__)
-app.config.from_pyfile(filename="../../application.cfg")
-mongo = MongoClient('localhost', app.config['PORT_DB']).hai
+config = configparser.ConfigParser()
+config.read('application.cfg')
+mongo = MongoClient('localhost', int(config["flask"]["PORT_DB"])).hai
 
 
 def visualize(col, pose=True, detect_human=True):
@@ -150,3 +153,80 @@ class UpdateDist(object):
         return self.axL, self.axR
 
 
+class ImageUpdater(object):
+    def __init__(self, axes, imdata, pose_mat, act_mat, com_mat, meta, labels):
+        self.axes = axes
+        self.imdata = imdata
+        self.pose_mat = pose_mat
+        self.act_mat = act_mat
+        self.com_mat = com_mat
+        self.meta = meta
+        self.acts = [[] for _ in range(len(self.axes[0]))]
+        self.act_classes = []
+        self.labels = labels
+        
+        for ax in self.axes[0]:
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.grid(False)
+            
+        for scene in meta:
+            for view in scene:
+                if view is not None and "action" in view:
+                    self.act_classes.append(view["action"])
+                    
+        self.act_classes = list(set(self.act_classes))
+
+    def __call__(self, scene_i):
+        print(scene_i)
+        
+        for view_i, ax in enumerate(self.axes[0]):
+            ax.clear()
+            data = self.imdata[scene_i][view_i]
+            m = self.meta[scene_i][view_i]
+            
+            img = imread("images/raw_images/" + data["filename"])
+            #img = utils.visualize(img, data, draw_objects=False)
+            if m is not None:
+                utils.draw_object(img, m)
+                
+                if "pose_body_index" in m:
+                    utils.draw_pose(img, data["pose"]["body"][m["pose_body_index"]])
+                
+            ax.imshow(img)
+            text = epoch_to_strtime(data['time']) + " {}/{}".format(scene_i+1, len(self.imdata))
+            
+            if m is not None and "action" in m:
+                self.acts[view_i].append(self.act_classes.index(m["action"])+1)
+                text += " " + m["action"]
+            else:
+                self.acts[view_i].append(0)
+                
+            ax.set_title(text)
+            
+        def draw_scatter(ax, mat, title):
+            ax.clear()
+            ax.set_title(title)
+            ax.set_xlim(np.min(mat[:, 0]), np.max(mat[:, 0]))
+            ax.set_ylim(np.min(mat[:, 1]), np.max(mat[:, 1]))
+            if self.labels is None:
+                col = "blue"
+            else:
+                col = self.labels[:scene_i]
+                
+            ax.scatter(mat[:scene_i, 0], mat[:scene_i, 1], c=col, cmap="rainbow")
+            ax.scatter(mat[scene_i, 0], mat[scene_i, 1], c="black", marker="*", s=300)
+            
+        if self.pose_mat is not None:
+            draw_scatter(self.axes[1][0], self.pose_mat, "pose concat vector")
+            
+        if self.act_mat is not None:
+            draw_scatter(self.axes[2][0], self.act_mat, "action cnn concat vector")
+            
+        draw_scatter(self.axes[3][0], self.com_mat, "combined vector")
+        
+        #for i in range(len(self.axes[0])):
+        #    self.axes[1][i].clear()
+        #    self.axes[1][i].imshow([self.acts[i]], aspect='auto', cmap="rainbow")
+
+        return self.axes

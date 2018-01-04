@@ -30,10 +30,10 @@ class ActionRecognition(Controller):
                     updates["detections.{}.passed".format(i)] = i in persons
                     if i in persons:
                         box = n["detections"][i]["box"]
-                        longer_side = max(box[2]-box[0],box[3]-box[1])
+                        longer_side = max((box[2]-box[0])*2.0,(box[3]-box[1])*2.0)
                         longer_side = min(min(whole_img.shape[1], longer_side), whole_img.shape[0])
                             
-                        a = longer_side//2
+                        a = int(longer_side/2)
                         cx, cy = (box[0]+box[2])//2, (box[1]+box[3])//2
                         x1, y1, x2, y2 = cx-a, cy-a, cx+a, cy+a
                         if x1 < 0:

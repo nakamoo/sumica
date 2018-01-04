@@ -7,6 +7,6 @@ def get_db():
 
     ini_str = '[root]\n' + open('application.cfg', 'r').read()
     ini_fp = StringIO(ini_str)
-    config.readfp(ini_fp)
+    config.read_file(ini_fp)
     client = MongoClient('localhost', int(config["root"]["PORT_DB"]))
     return client.hai

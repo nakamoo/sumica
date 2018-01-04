@@ -14,7 +14,7 @@ from flask import Flask
 import pymongo
 
 app = Flask(__name__)
-app.config.from_pyfile(filename="../../application.cfg")
+app.config.from_pyfile(filename="../application.cfg")
 mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
 
 import coloredlogs, logging

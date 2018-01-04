@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 import database as db
 import coloredlogs, logging
+import json
+from _app import app
 
 bp = Blueprint("hue", __name__)
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 @bp.route('/data/hue')
 def get_hue_data():
@@ -16,7 +18,9 @@ def post_hue_data():
     #logger.info(data)
     data["time"] = float(data["time"])
     data["last_manual"] = float(data["last_manual"])
-    
+    data['light_states'] = json.loads(data['lights'])
+
+
     logger.debug(str(data))
     
     db.mongo.hue.insert_one(data)

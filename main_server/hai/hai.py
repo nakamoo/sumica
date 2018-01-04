@@ -39,6 +39,32 @@ def execute_controllers():
 def execute_specific_controller():
     return "Not implemented", 404
 
+@app.route('/monitor')
+def monitor():
+    return render_template('monitor.html')
+
+@app.route('/cams')
+def cams():
+    import base64, os
+    import database as db
+    import time
+    
+    images = {}
+    name = request.args.get('username')
+    start_time = time.time() - 3600
+    query = {"user_name": "sean", "time": {"$gt": start_time, "$lt": time.time()}}
+    cams = mongo.images.find(query).distinct("cam_id")
+    
+    for cam in cams:
+        query = {"user_name": "sean", "time": {"$gt": start_time, "$lt": time.time()}, "cam_id": cam}
+        n = db.mongo.images.find(query).limit(1).sort([("time", -1)])[0]
+        
+        with open("images/raw_images/" + n["filename"], "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read())
+            encoded_string = encoded_string.decode("utf-8")
+            images[cam] = encoded_string
+    
+    return jsonify(images), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(port),

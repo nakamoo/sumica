@@ -7,7 +7,7 @@ mongo.hue.ensure_index('time')
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 import os
 import traceback
@@ -21,9 +21,8 @@ from controllers.settings import Settings
 from controllers.pose2 import Pose2
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
-from controllers.activity_test import ActivityTest
-from controllers.activity_test3 import ActivityTest3
 from controllers.tests.activity_test5 import ActivityTest5
+from controllers.actionrec import ActionRecognition
 from controllers.youtubeplayer import YoutubePlayer
 from controllers.irkit import IRKit
 from controllers.printtest import PrintTest
@@ -47,13 +46,13 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(), Detection(), Chatbot(user_name), Snapshot(user_name), Settings(user_name)]
+    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(), Detection(), ActionRecognition(), Chatbot(user_name), Snapshot(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()
 # TODO: use DB
 controllers_objects = {}
-#controllers_objects['koki'] = standard_controllers('koki')
+# controllers_objects['koki'] = standard_controllers('koki')
 controllers_objects['sean'] = standard_controllers('sean')
 
 def trigger_controllers(user, event, data, parallel=False):

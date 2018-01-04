@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 bp = Blueprint("images", __name__)
 
@@ -55,7 +55,7 @@ def post_image_data():
     def process(img_data):
         if data["motion_update"]:
             db.mongo.images.update_one({"filename": img_data['filename']}, {'$set': {"history.image_processing_start": time.time()}}, upsert=False)
-            db.trigger_controllers(data['user_name'], "image", img_data, parallel=True)
+            db.trigger_controllers(data['user_name'], "image", img_data, parallel=False)
             db.mongo.images.update_one({"filename": img_data['filename']}, {'$set': {"history.image_processing_finish": time.time()}}, upsert=False)
             
     future = image_processor.submit(process, data.copy())

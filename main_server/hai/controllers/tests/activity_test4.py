@@ -1,4 +1,5 @@
 import pickle
+from _app import app
 from controllers.controller import Controller
 import controllers.learner.datasets as ds
 from controllers.snapshot import show_image_chat
@@ -22,7 +23,7 @@ from PIL import Image
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 def get_dataset(username, start_time, end_time, nn):
     logger.debug("generating dataset")

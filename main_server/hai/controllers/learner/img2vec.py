@@ -26,7 +26,7 @@ class NNFeatures:
         for i, img in enumerate(imgs):
             if progress > 0 and i % progress == 0:
                 print("{}/{}".format(i, len(imgs)))
-            
+
             img_tensor = preprocess(img)
             img_variable = Variable(img_tensor.unsqueeze(0)).cuda(self.gpu_num)
             fc_out = self.model(img_variable).squeeze()

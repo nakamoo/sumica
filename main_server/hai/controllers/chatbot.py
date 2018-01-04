@@ -47,6 +47,17 @@ class Chatbot(Controller):
               else:
                   chatbot.send_fb_message(self.fb_id, "no")
 
+            elif msg == "No":
+                c = db.mongo.operation.find({'user': self.user}, sort=[('_id', -1)]).next()['controller']
+                docs = db.mongo.operation.find({'controller': c}, sort=[('_id', -1)], limit=2)
+                docs.next()
+                previous_operation = docs.next()['operation']
+                for controller in db.controllers_objects[self.user]:
+                    if controller.__class__.__name__ == c:
+                        db.controllers_objects[self.user][2].re = previous_operation
+                        break
+                chatbot.send_fb_message(self.fb_id, "ごめんなさい．戻します.")
+
             else:
               chatbot.send_fb_message(self.fb_id, "どうも！")
         #elif event == "image":
@@ -77,6 +88,7 @@ class Chatbot(Controller):
                 ])
 
             re.append({"platform": "hue", "data": data})
+            self.log_operation(re)
         
         re.extend(self.cmds)
         self.cmds = []

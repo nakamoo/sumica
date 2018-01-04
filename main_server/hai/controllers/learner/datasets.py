@@ -9,7 +9,7 @@ import cv2
 
 from imgaug import augmenters as iaa
 
-port = 1111
+port = 20202
 
 def box_contains_pose(sample, box):
     poses = sample["pose"]["body"]
@@ -57,7 +57,8 @@ def person_box(sample):
             
             # force
             #if current_contains_pose > 0:
-            if top_det is None or current_contains_pose > top_contains_pose or (current_contains_pose == top_contains_pose and det["confidence"] > top_det["confidence"]):
+            if top_det is None or current_contains_pose > top_contains_pose or \
+                    (current_contains_pose == top_contains_pose and det["confidence"] > top_det["confidence"]):
                 top_det = det
                 top_contains_pose = current_contains_pose
                 top_area = current_area
@@ -87,7 +88,7 @@ def deform_box(box):
     
     return [new_x1, new_y1, new_x1+new_width, new_y1+new_height]
 
-def crop_person(sample, crop_aug=False):
+def crop_person(sample, crop_aug=False, crop_hand=True):
     person, pose, hand, top_contains = person_box(sample)
     #mats = []
     #crop_boxes = []
@@ -99,26 +100,26 @@ def crop_person(sample, crop_aug=False):
         w = box[2]-box[0]
         h = box[3]-box[1]
         offsetx, offsety = w * 0.1, h * 0.1
-        
+
+        box[0] = box[0] - offsetx
+        box[1] = box[1] + offsety
+        box[2] = box[2] - offsetx
+        box[3] = box[3] + offsety
         # override if hand is visible
-        if hand is not None:
-            coords = np.array([[x, y] for x, y, c in hand if c > 0.05])
-            mean_x, mean_y = np.mean(coords, axis=0)
-            
-            s = 0.3
-            box = [mean_x-w*s, mean_y-h*s, mean_x+w*s, mean_y+h*s]
-        elif pose is not None and (pose[4][2] > 0.05 or pose[7][2] > 0.05):
-            s = 0.3
-            if pose[4][2] > 0.05:
-                box = [pose[4][0]-w*s, pose[4][1]-h*s, pose[4][0]+w*s, pose[4][1]+h*s]
-            elif pose[7][2] > 0.05:
-                box = [pose[7][0]-w*s, pose[7][1]-h*s, pose[7][0]+w*s, pose[7][1]+h*s]
-        else:
-            box[0] = box[0] - offsetx
-            box[1] = box[1] + offsety
-            box[2] = box[2] - offsetx
-            box[3] = box[3] + offsety
-                
+        if crop_hand:
+            if hand is not None:
+                coords = np.array([[x, y] for x, y, c in hand if c > 0.05])
+                mean_x, mean_y = np.mean(coords, axis=0)
+
+                s = 0.3
+                box = [mean_x-w*s, mean_y-h*s, mean_x+w*s, mean_y+h*s]
+            elif pose is not None and (pose[4][2] > 0.05 or pose[7][2] > 0.05):
+                s = 0.3
+                if pose[4][2] > 0.05:
+                    box = [pose[4][0]-w*s, pose[4][1]-h*s, pose[4][0]+w*s, pose[4][1]+h*s]
+                elif pose[7][2] > 0.05:
+                    box = [pose[7][0]-w*s, pose[7][1]-h*s, pose[7][0]+w*s, pose[7][1]+h*s]
+
         box[0] = max(int(box[0]), 0)
         box[2] = min(int(box[2]), mat.shape[1])
         box[1] = max(int(box[1]), 0)
@@ -160,7 +161,7 @@ def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, aug
 
             for cam in imgs:
                 if cam is not None:
-                    test_img = scipy.misc.imread("./images/raw_images/" +  cam["filename"])
+                    test_img = scipy.misc.imread("./images/raw_images/" + cam["filename"])
                     if test_img is None or len(test_img.shape) != 3:
                         skip = True
                         break
@@ -247,7 +248,8 @@ def generate_image_event_dataset(image_data, print_data, num_cams, feat_gen, aug
     
     return mat, dataY*aug_times, classes, imgs, boxes
 
-def augment_images(img_batch, times):
+
+def augment_images(img_batch, times, verbose=True):
     images = []
     
     """
@@ -321,7 +323,8 @@ def augment_images(img_batch, times):
     ], random_order=True)
 
     for i in range(times):
-        print("{}/{}".format(i, times))
+        if verbose:
+            print("{}/{}".format(i, times))
         images_aug = seq.augment_images(img_batch)
         images.extend(images_aug)
         
@@ -367,6 +370,44 @@ def get_event_images2(username, event_data, cam_names, start_offset=0, end_offse
         
     print("skipped:", skipped, "picked:", picked)
     return image_data
+
+def get_event_images3(username, cam_names, start_time, end_time, stride=5, size=10, skip_incomplete=True):
+    client = MongoClient('localhost', port)
+    mongo = client.hai
+    
+    skipped = 0
+    picked = 0
+    image_data = []
+    times = []
+    
+    for s in range(start_time, end_time-size, stride):
+            interval_data = []
+            incomplete = False
+
+            for cam in cam_names:
+                query = {"user_name": username, "cam_id": cam, "time": {"$gte": s, "$lt": s+size}}
+                if skip_incomplete:
+                    query["detections"] = {"$exists": True}
+                    query["pose"] = {"$exists": True}
+                
+                n = mongo.images.find(query)
+
+                if n.count() > 0:
+                    interval_data.append(n[0])
+                else:
+                    interval_data.append(None)
+                    incomplete = True
+
+            if skip_incomplete and incomplete:
+                skipped += 1
+            else:
+                image_data.append(interval_data)
+                times.append(s)
+                picked += 1
+        
+    print("skipped:", skipped, "picked:", picked)
+    print("total:", (end_time-start_time)//stride)
+    return image_data, times
 
 def get_event_images(username, event_data, cam_names, start_offset=0, end_offset=60, stride=5, size=10, skip=False, with_summary=True):
     client = MongoClient('localhost', port)

@@ -1,4 +1,5 @@
 import pickle
+from _app import app
 from .controller import Controller
 from controllers.learner import datasets
 import json
@@ -14,7 +15,7 @@ import calendar
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 class ActivityTest3(Controller):
     def __init__(self, user):

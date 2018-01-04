@@ -16,10 +16,9 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 def init_pose():
-    OPENPOSE_ROOT = os.environ["OPENPOSE_ROOT"]
     op = OP.OpenPose((656, 368), (368, 368), (1280, 720), "COCO", "/home/sean/openpose/models/", 0, False,
                 OP.OpenPose.ScaleMode.ZeroToOne, True, True)
     return op
@@ -39,8 +38,8 @@ def extract_keypoints(img):
     return body, hand, face
 
 class Pose2(Controller):
-    def __init__(self):
-        pass
+    def __init__(self, user):
+        self.user = user
 
     def on_event(self, event, data):
         if event == "image":

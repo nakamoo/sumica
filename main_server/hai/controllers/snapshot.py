@@ -40,6 +40,7 @@ def show_image_chat(n, fb_id, send_img=True, message=""):
     chatbot.send_fb_message(fb_id, "here's your image ({:.2f} secs ago)".format(age))
     url = "https://homeai.ml:{}/static/".format(app.config["PORT"]) + path
     chatbot.send_fb_message(fb_id, "(url: {})".format(url))
+    chatbot.send_fb_message(fb_id, "action: {}".format(n["action"]))
     print("snapshot url:", url)
     
     if send_img:

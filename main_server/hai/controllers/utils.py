@@ -111,17 +111,15 @@ def filter_persons(data, det_threshold=0.8):
             pose_indices.append(None)
                     
     return indices, pose_indices
-
-def visualize(frame, summ, draw_objects=True):
-    for result in summ["detections"]:
+    
+def draw_object(frame, result):
             det = result["box"]
             name = result["label"] + ": " + "%.2f" % result["confidence"]
             
-            if not draw_objects and result["label"] != "person":
-                continue
+            
 
             if "passed" in result and not result["passed"]:
-                continue
+                return
 
             i = sum([ord(x) for x in result["label"]])
             c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
@@ -145,10 +143,10 @@ def visualize(frame, summ, draw_objects=True):
             cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
             cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
 
+def draw_pose(frame, person):
     body_lines = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [5, 6], [6, 7], [0, 14], [14, 16], [0, 15], [15, 17], [1, 8], [8, 9], [9, 10], [1, 11], [11, 12], [12, 13]]
-        
-    for person in summ["pose"]["body"]:
-        for i, (pt1_i, pt2_i) in enumerate(body_lines):
+    
+    for i, (pt1_i, pt2_i) in enumerate(body_lines):
             pt1 = person[pt1_i]
             pt2 = person[pt2_i]
 
@@ -161,6 +159,15 @@ def visualize(frame, summ, draw_objects=True):
             cv2.circle(frame, (int(pt1[0]), int(pt1[1])), 5, col, -1)
             cv2.circle(frame, (int(pt2[0]), int(pt2[1])), 5, col, -1)
             cv2.line(frame, (int(pt1[0]), int(pt1[1])), (int(pt2[0]), int(pt2[1])), col, 2)
+            
+def visualize(frame, summ, draw_objects=True):
+    for result in summ["detections"]:
+        if not draw_objects and result["label"] != "person":
+                continue
+        draw_object(frame, result)
+        
+    for person in summ["pose"]["body"]:
+        draw_pose(frame, person)
             
     """
     for person in summ["pose"]["face"]:

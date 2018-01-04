@@ -16,6 +16,7 @@ import threading
 
 from controllers.detection import Detection
 from controllers.chatbot import Chatbot
+from controllers.speechbot import Speechbot
 from controllers.hello import HelloController
 from controllers.settings import Settings
 from controllers.pose2 import Pose2
@@ -46,7 +47,7 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Snapshot(user_name), Settings(user_name)]
+    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()

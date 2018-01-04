@@ -96,7 +96,7 @@ def group_colors(n=3, start=0, end=999999999999):
     return colors
 
 
-def collect_img_hue(operating_instructions, user, duration=1800, start=0, end=999999999999, nums=5000):
+def collect_img_hue(operating_instructions, user, duration=1800000, start=0, end=999999999999, nums=5000):
     X = []
     y = []
     for i, op in enumerate(operating_instructions):
@@ -161,8 +161,19 @@ class HueDBReader(DBReader):
         self.user = user
 
     def read_db(self, start, end):
-        operating_instructions = group_colors(start, end)
-        X, y = collect_img_hue(operating_instructions, self.user, start=start, end=end)
+        operating_instructions = group_colors(start=start, end=end)
+        X, y = collect_img_hue(operating_instructions, self.user, duration=1800, start=start, end=end)
         return X, y
 
+
+class ExprHueDBReader(DBReader):
+    def __init__(self, user):
+        self.user = user
+        self.labels = None
+
+    def read_db(self, start, end):
+        operating_instructions = group_colors(start=start, end=end)
+        self.labels = operating_instructions
+        X, y = collect_img_hue(operating_instructions, self.user, start=start, end=end)
+        return X, y
 

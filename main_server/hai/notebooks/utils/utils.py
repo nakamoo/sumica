@@ -135,7 +135,7 @@ class UpdateDist(object):
         self.axL.text(0.0, 1.0, epoch_to_strtime(im1['time']),
                       horizontalalignment='left', verticalalignment='bottom')
         if self.info is not None:
-            self.axL.text(300, 0, str(self.info[self.skip * i]),
+            self.axL.text(0, 40, str(self.info[self.skip * i]),
                           horizontalalignment='left', verticalalignment='bottom')
 
         self.axR.clear()

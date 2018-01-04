@@ -1,11 +1,16 @@
 from controllers.learner.i3dnn import I3DNN
 from .controller import Controller
 from controllers.utils import filter_persons
-from _app import app
 import cv2
 import numpy as np
-import database as db
 import time
+
+import pymongo
+from flask import Flask
+app = Flask(__name__)
+app.config.from_pyfile(filename="../application.cfg")
+mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
+
 
 class ActionRecognition(Controller):
     def __init__(self):
@@ -18,7 +23,7 @@ class ActionRecognition(Controller):
             else:
                 image_path = app.config['RAW_IMG_DIR'] + data['filename']
 
-            n = db.mongo.images.find_one({"_id": data["_id"]})
+            n = mongo.images.find_one({"_id": data["_id"]})
             persons, pose_indices = filter_persons(n)
             
             img = cv2.imread(image_path)
@@ -63,7 +68,7 @@ class ActionRecognition(Controller):
                             updates["detections.{}.pose_body_index".format(i)] = pose_indices[a]
 
             updates["history.action_recorded"] = time.time()
-            db.mongo.images.update_one({"_id": data["_id"]}, {'$set': updates}, upsert=False)
+            mongo.images.update_one({"_id": data["_id"]}, {'$set': updates}, upsert=False)
 
     def execute(self):
         return []

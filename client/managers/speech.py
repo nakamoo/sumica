@@ -39,7 +39,7 @@ class Manager:
 
         #signal.signal(signal.SIGINT, signal_handler)
         
-        detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.5, 0.5, 0.5], audio_gain=1)
+        detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.2, 0.5, 0.5], audio_gain=1)
         r = sr.Recognizer()
         print('Listening... Press Ctrl+C to exit')
 
@@ -74,11 +74,12 @@ class Manager:
             elif ans == 0:
                  last_spoken = time.time()
            
-            if time.time() - last_spoken < 1 and time.time() - listen_start < 5:
+            a = time.time() - listen_start
+            if time.time() - last_spoken < 1 and a > 0.5 and a < 5:
                 current_buffer.extend(data)
                 if ans == 0:
                     said_something = True
-            elif listening:
+            elif listening and a > 2:
                 #print("buffer:", current_buffer)
                 if len(current_buffer) > 0:
                     sampwidth = detector.audio.get_sample_size(detector.audio.get_format_from_width(

@@ -14,6 +14,13 @@ class IRKit(Controller):
             self.fb_id = n["fb_id"]
 
     def on_event(self, event, data):
+        if event == 'confirmation':
+            if data['platform'] == 'irkit' and 'answer' in data:
+                if data['confirmation'] == 'テレビをつけますか?' and data['answer']:
+                    self.tv_on = True
+                if data['confirmation'] == 'テレビをけしますか?' and data['answer']:
+                    self.tv_on = False
+
         if event == "chat":
             msg = data["message"]["text"].split()
             if msg[0] == "irkit":

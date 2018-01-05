@@ -30,7 +30,7 @@ class YoutubePlayer(Controller):
                 keyword = msg[:msg.find('を流')]
                 self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
                 self.re.append({"platform": "play_youtube", "data": keyword})
-            if "音楽を消し" in msg or '音楽を止めt ':
+            if ("音楽を消し" in msg) or ('音楽を止め' in msg):
                 self.re.append({"platform": "tts", "data": "音楽を消します"})
                 self.re.append({"platform": "stop_youtube", "data": ''})
 

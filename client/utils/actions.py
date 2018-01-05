@@ -64,7 +64,7 @@ class Actions:
                     tts.say("わかりました，操作をキャンセルします")
                     return
 
-                tts.say('テレビをつけます')
+                tts.say('テレビを操作します')
                 irkit.post_messages(data)
             else:
                 irkit.post_messages(data)

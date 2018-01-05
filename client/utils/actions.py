@@ -4,6 +4,7 @@ import json
 import time
 
 from utils.irkit import IrkitInternetAPI
+from utils.speechrecognition import confirm
 irkit = IrkitInternetAPI()
 
 import utils.tts as tts
@@ -16,9 +17,13 @@ class Actions:
     def act_list(self, actions):
         for action in actions:
             if "platform" in action and "data" in action:
-                self.act(action["platform"], action["data"])
+                if "confirmation" in action:
+                    self.act(action["platform"], action["data"],
+                            confirmation=action['confirmation'])
+                else:
+                    self.act(action["platform"], action["data"])
 
-    def act(self, platform, data):
+    def act(self, platform, data, confirmation=None):
         print(">>", platform)
         if platform == "youtube":
             print("OPENING YOUTUBE")
@@ -42,6 +47,18 @@ class Actions:
             self.last_hue_update = {"data":json_data, "time":time.time()}
             self.hue_overridden = False
         elif platform == "irkit":
-            irkit.post_messages(data)
+            if confirmation is not None:
+                tts.say(confirmation)
+                ans = confirm()
+                if ans is None:
+                    tts.say("上手く聞こえませんでした")
+                    return
+                elif not ans:
+                    tts.say("わかりました，操作をキャンセルします")
+                    return
+                irkit.post_messages(data)
+            else:
+                irkit.post_messages(data)
+
         elif platform == "tts":
-            tts.say(data)
+                tts.say(data)

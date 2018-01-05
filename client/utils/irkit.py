@@ -52,12 +52,12 @@ class IrkitInternetAPI:
         device = data[0]
         params = self.config[device]['param']
         params = "'" + params + "'"
-        cmd = 'curl -i "http://192.168.10.143/messages" -H "X-Requested-With: curl" -d ' + params
+        cmd = 'curl -i "' + self.endpoint + '/messages" -H "X-Requested-With: curl" -d ' + params
         subprocess.Popen(cmd, shell=True)
 
 
 if __name__ == '__main__':
     irkit = IrkitInternetAPI()
-    #irkit.set_param()
+    # irkit.set_param()
     #irkit.post_messages('AirConditioning')
     irkit.post_messages(['TV'])

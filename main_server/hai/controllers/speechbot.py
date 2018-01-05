@@ -21,12 +21,12 @@ class Speechbot(Controller):
             msg = data["text"]
 
             if "電気" in msg and "つけて" in msg:
-              self.cmds.append({"platform": "tts", "data": "電気をつけます"})
-              self.lights = True
+                self.cmds.append({"platform": "tts", "data": "電気をつけます"})
+                self.lights = True
             elif "電気" in msg and "消して" in msg:
-              self.cmds.append({"platform": "tts", "data": "電気を消します"})
-              self.lights = False
-            elif "何時" in msg:        
+                self.cmds.append({"platform": "tts", "data": "電気を消します"})
+                self.lights = False
+            elif "何時" in msg:
                 now = datetime.datetime.now()
                 send = "サーバの時間は" + str(now.hour) + "時" + str(now.minute) + "分です"
                 self.cmds.append({"platform": "tts", "data": send})
@@ -36,16 +36,17 @@ class Speechbot(Controller):
                 else:
                     label = msg[2:]
                 self.cmds.append({"platform": "tts", "data": label + "を記録しました"})
-                log_data  = {"time": time.time(), "user": self.user, "type": "label", "label": label}
+                log_data = {"time": time.time(), "user": self.user, "type": "label", "label": label}
                 db.mongo.events.insert_one(log_data)
             elif msg.startswith("リピート"):
-              self.cmds.append({"platform": "tts", "data": "".join(data["text"].strip().split()[1:])})
+                self.cmds.append({"platform": "tts", "data": "".join(data["text"].strip().split()[1:])})
 
             chatbot.send_fb_message(self.fb_id, "You said: %s" % data["text"])
             
     def execute(self):
         re = []
-        
+
+        re.extend(self.cmds)
         if self.lights is not None:
             l = self.lights
             self.lights = None
@@ -64,6 +65,7 @@ class Speechbot(Controller):
 
             re.append({"platform": "hue", "data": data})
         
-        re.extend(self.cmds)
         self.cmds = []
+        if re:
+            self.log_operation(re)
         return re

@@ -22,26 +22,17 @@ class IRKit(Controller):
                         if self.tv_on:
                             chatbot.send_fb_message(self.fb_id, "TVは既についています")
                         else:
-                            chatbot.send_fb_message(self.fb_id, "TVをつけます")
-                            self.re = [{"platform": "irkit", "data": msg[1:]}]
-                            self.tv_on = True
+                            self.re.append({"platform": "irkit", "data": msg[1:],
+                                            "confirmation": "テレビをつけますか?"})
                     elif msg[2] == "off":
                         if self.tv_on:
-                            chatbot.send_fb_message(self.fb_id, "TVをけします")
-                            self.re = [{"platform": "irkit", "data": msg[1:]}]
-                            self.tv_on = False
+                            self.re.append({"platform": "irkit", "data": msg[1:],
+                                            "confirmation": "テレビをけしますか?"})
                         else:
                             chatbot.send_fb_message(self.fb_id, "TVは既にきえています")
 
                 elif msg[1] == "AirConditioning":
                     pass
-
-                inserted_data = dict()
-                inserted_data['message'] = msg
-                inserted_data['device'] = msg[1]
-                inserted_data['user'] = self.user
-                inserted_data['time'] = time.time()
-                mongo.irkit.insert_one(inserted_data)
 
         if event == "speech" and data["type"] == "speech":
             msg = data["text"]
@@ -49,6 +40,7 @@ class IRKit(Controller):
                 if self.tv_on:
                     self.re.append({"platform": "tts", "data": "TVは既についています"})
                 else:
+                    self.re.append({"platform": "tts", "data": "TVをつけます"})
                     self.re.append({"platform": "irkit", "data": ['TV', 'on']})
                     self.tv_on = True
             if "テレビ" in msg and "消して" in msg:

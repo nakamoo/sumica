@@ -22,7 +22,7 @@ SERVER_IP = "https://homeai.ml:{}".format(sys.argv[2])
 ID = sys.argv[1]
 logging.info("id: {}".format(ID))
 
-actions = Actions()
+actions = Actions(ID, SERVER_IP)
 
 fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith('.py')]
 sensor_mods = []

@@ -2,6 +2,8 @@ from subprocess import Popen
 import subprocess
 import json
 import time
+import requests
+import logging
 
 from utils.irkit import IrkitInternetAPI
 from utils.speechrecognition import confirm
@@ -10,9 +12,11 @@ irkit = IrkitInternetAPI()
 import utils.tts as tts
 
 class Actions:
-    def __init__(self):
+    def __init__(self, user, server_ip):
         self.last_hue_update = {"data": None}
         self.hue_overridden = False
+        self.user = user
+        self.ip = server_ip
 
     def act_list(self, actions):
         for action in actions:
@@ -48,14 +52,19 @@ class Actions:
             self.hue_overridden = False
         elif platform == "irkit":
             if confirmation is not None:
-                tts.say(confirmation)
-                ans = confirm()
+                ans = confirm(confirmation)
+                data_confirm = {'platform': platform, 'data': data, 'user_name': self.user,
+                        'confirmation': confirmation, 'answer': ans}
+                r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False, timeout=1)
+                logging.debug(r)
                 if ans is None:
                     tts.say("上手く聞こえませんでした")
                     return
                 elif not ans:
                     tts.say("わかりました，操作をキャンセルします")
                     return
+
+                tts.say('テレビをつけます')
                 irkit.post_messages(data)
             else:
                 irkit.post_messages(data)

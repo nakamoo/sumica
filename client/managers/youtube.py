@@ -26,16 +26,10 @@ class Manager:
             if act["platform"] == "play_youtube":
                 if "confirmation" in act:
                     logging.debug("confirm: " + act['confirmation'])
-                    tts.say(act['confirmation'])
-                    time.sleep(0.5)
-                    ans = confirm()
+                    ans = confirm(act['confirmation'])
                     logging.debug("answer: " + str(ans))
                     data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
                             'confirmation': act['confirmation'], 'answer': ans}
-                    ans = True
-                    if ans is None:
-                        tts.say("上手く聞こえませんでした,もう一度お願いします")
-                        ans = confirm()
 
                     if ans is None:
                         tts.say("上手く聞こえませんでした")
@@ -54,8 +48,8 @@ class Manager:
                     try:
                         youtube_result = Youtube(act['data'], result=1)
                         logging.debug('play: '+ youtube_result.url[1])
-                        # Popen("mpv '" + youtube_result.url[1] + "' --loop --no-video", shell=True)
-                        Popen("mpv '" + youtube_result.url[0] + "' --loop --no-video > /dev/null 2>&1", shell=True)
+                        Popen("mpv '" + youtube_result.url[1] + "' --loop --no-video", shell=True)
+                        # Popen("mpv '" + youtube_result.url[0] + "' --loop --no-video > /dev/null 2>&1", shell=True)
                     except:
                         traceback.print_exc()
                         tts.say(act['data'] + "は見つかりませんでした")
@@ -85,6 +79,5 @@ if __name__ == "__main__":
     youtubeplayer = Manager('koki', 'https://homeai.ml:5007', None)
     youtubeplayer.execute([{'platform': 'play_youtube', 'data': 'smap', 'confirmation': 'smapを再生しますか?'}])
     # youtubeplayer.execute([{'platform': 'stop_youtube', 'data': ''}])
-    yt = Youtube('smap')
     while True:
         pass

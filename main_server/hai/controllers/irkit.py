@@ -30,12 +30,17 @@ class IRKit(Controller):
                 predicted_on = self.classes[index]
                 if self.tv_on and (not predicted_on):
                     self.wait = True
+                    self.ask_time = time.time()
                     self.re.append({"platform": "irkit", "data": ['TV', 'off'],
                                     "confirmation": "テレビをけしますか?"})
                 elif (not self.tv_on) and predicted_on:
                     self.wait = True
+                    self.ask_time = time.time()
                     self.re.append({"platform": "irkit", "data": ['TV', 'on'],
                                     "confirmation": "テレビをつけますか?"})
+
+            if time.time() - self.ask_time > self.duration:
+                self.wait = False
 
         if event == 'confirmation':
             if data['platform'] == 'irkit':

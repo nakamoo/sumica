@@ -103,6 +103,9 @@ class Test0106(Controller):
                 else:
                     print('prediction is same as current state')
 
+            if time.time() - self.ask_time > self.duration:
+                self.wait = False
+
         if event == 'confirmation':
             if data['platform'] == 'hue':
                 self.wait = False

@@ -25,18 +25,20 @@ class YoutubePlayer(Controller):
 
     def on_event(self, event, data):
         if event == "image":
-            print(self.state)
-            # if not self.wait:
-            #     index, confidence = predict()
-            #     if self.state != self.classes[index]:
-            #         self.wait = True
-            #         self.ask_time = time.time()
-            #         if self.classes[index]:
-            #             self.re = [{"platform": "play_youtube", "data": self.classes[index],
-            #                         "confirmation": self.classes[index] + "を再生しますか?"}]
-            #         else:
-            #             self.re = [{"platform": "stop_youtube", "data": '',
-            #                         "confirmation": "音楽をけしますか?"}]
+            if not self.wait and time.time() - self.ask_time > self.duration:
+                index, confidence = predict()
+                if self.state != self.classes[index]:
+                    self.wait = True
+                    self.ask_time = time.time()
+                    if self.classes[index]:
+                        self.re = [{"platform": "play_youtube", "data": self.classes[index],
+                                    "confirmation": self.classes[index] + "を再生しますか?"}]
+                    else:
+                        self.re = [{"platform": "stop_youtube", "data": '',
+                                    "confirmation": "音楽をけしますか?"}]
+
+            if time.time() - self.ask_time > self.duration:
+                self.wait = False
 
         if event == 'confirmation':
             if data['platform'] == 'play_youtube':
@@ -46,24 +48,25 @@ class YoutubePlayer(Controller):
                         self.state = data['data']
             if data['platform'] == 'stop_youtube':
                 self.wait = False
-                self.wait = False
                 if 'answer' in data:
                     if data['answer']:
                         self.state = False
 
-        # if event == "speech" and data["type"] == "speech":
-        #     msg = data["text"]
-        #     if 'ホワイトノイズ' in msg:
-        #         keyword = 'ホワイトノイズ'
-        #         self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
-        #         self.re.append({"platform": "play_youtube", "data": keyword})
-        #     # if "を流" in msg:
-        #     #     keyword = msg[:msg.find('を流')]
-        #     #     self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
-        #     #     self.re.append({"platform": "play_youtube", "data": keyword})
-        #     if ("音楽を消し" in msg) or ('音楽を止め' in msg):
-        #         self.re.append({"platform": "tts", "data": "音楽を消します"})
-        #         self.re.append({"platform": "stop_youtube", "data": ''})
+        if event == "speech" and data["type"] == "speech":
+            msg = data["text"]
+            if 'ホワイトノイズ' in msg:
+                keyword = 'ホワイトノイズ'
+                self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
+                self.re.append({"platform": "play_youtube", "data": keyword})
+                self.state = keyword
+            # if "を流" in msg:
+            #     keyword = msg[:msg.find('を流')]
+            #     self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
+            #     self.re.append({"platform": "play_youtube", "data": keyword})
+            if ("消して" in msg) or ('止めて' in msg):
+                self.re.append({"platform": "tts", "data": "音楽を消します"})
+                self.re.append({"platform": "stop_youtube", "data": ''})
+                self.state = False
 
         if event == "chat":
             msg = data["message"]["text"].split()

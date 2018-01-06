@@ -8,6 +8,7 @@ from flask import Flask
 app = Flask(__name__)
 app.config.from_pyfile(filename="../application.cfg")
 mongo = MongoClient('localhost', app.config['PORT_DB']).hai
+from controllers.tests.test0106 import get_current_images
 
 # hue class
 def predict():
@@ -15,7 +16,7 @@ def predict():
     return minute % 2, 0.7
 
 
-def get_tv_label(start, end):
+def get_tv_label(start, end=10e10):
     labels = []
     classes = ['on', 'off']
     irkit_operations = mongo.operation.find({'controller': 'IRKit', 'time': {'$gt': start, '$lt': end}})
@@ -36,8 +37,11 @@ def get_tv_label(start, end):
 
 
 class IRKit(Controller):
-    def __init__(self, user):
+    def __init__(self, user, learner):
         self.re = []
+        self.learner = learner
+        _, self.classes = get_tv_label(self.learner.start_time)
+        self.cam_ids = self.learner.cams
         self.user = user
         self.tv_on = False
         self.ask_time = 0
@@ -51,7 +55,9 @@ class IRKit(Controller):
     def on_event(self, event, data):
         if event == "image":
             if not self.wait and time.time() - self.ask_time > self.duration:
-                index, confidence = predict()
+                d = get_current_images(self.user, self.cam_ids)
+                index, confidence = self.learner.predict('youtube', [d])
+                index = int(index[0])
                 predicted_on = self.classes[index]
                 if self.tv_on and (not predicted_on):
                     self.wait = True

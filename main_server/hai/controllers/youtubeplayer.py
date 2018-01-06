@@ -7,14 +7,14 @@ from flask import Flask
 app = Flask(__name__)
 app.config.from_pyfile(filename="../application.cfg")
 mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
-
+from controllers.tests.test0106 import get_current_images
 
 def predict():
     minute = datetime.now().minute
     return minute % 2, 0.7
 
 
-def get_youtube_label(start, end):
+def get_youtube_label(start, end=10e10):
     classes = set()
     labels = []
     youtube_operations = mongo.operation.find({'controller': 'YoutubePlayer', 'time': {'$gt': start, '$lt': end}})
@@ -24,8 +24,8 @@ def get_youtube_label(start, end):
                 classes.add(op['data'])
                 labels.append([youtube_operation['time'], op['data']])
             elif ('confirmation' not in op) and op['platform'] == 'stop_youtube':
-                classes.add('stop')
-                labels.append([youtube_operation['time'], 'stop'])
+                classes.add(False)
+                labels.append([youtube_operation['time'], False])
 
     youtube_confirmations = mongo.confirmation.find(
         {'platform': 'play_youtube', 'answer': 'True', 'time': {'$gt': start, '$lt': end}})
@@ -35,8 +35,8 @@ def get_youtube_label(start, end):
     youtube_confirmations = mongo.confirmation.find(
         {'platform': 'stop_youtube', 'answer': 'True', 'time': {'$gt': start, '$lt': end}})
     for youtube_confirmation in youtube_confirmations:
-        classes.add('stop')
-        labels.append([youtube_confirmation['time'], 'stop'])
+        classes.add(False)
+        labels.append([youtube_confirmation['time'], False])
 
     classes_list = list(classes)
     labels2 = [[a, classes_list.index(b)] for a, b in labels]
@@ -45,10 +45,12 @@ def get_youtube_label(start, end):
 
 
 class YoutubePlayer(Controller):
-    def __init__(self, user):
+    def __init__(self, user, learner):
         self.re = []
+        self.learner = learner
         self.user = user
-        self.classes = ['ホワイトノイズ', False]
+        _, self.classes = get_youtube_label(self.learner.start_time)
+        self.cam_ids = self.learner.cams
         self.state = False
         self.ask_time = 0
         self.duration = 600
@@ -57,7 +59,9 @@ class YoutubePlayer(Controller):
     def on_event(self, event, data):
         if event == "image":
             if not self.wait and time.time() - self.ask_time > self.duration:
-                index, confidence = predict()
+                d = get_current_images(self.user, self.cam_ids)
+                index, confidence = self.learner.predict('youtube', [d])
+                index = int(index[0])
                 if self.state != self.classes[index]:
                     self.wait = True
                     self.ask_time = time.time()

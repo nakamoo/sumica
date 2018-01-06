@@ -75,7 +75,7 @@ def check_color(data):
     raise Exception
 
 
-def get_hue_label(start, end):
+def get_hue_label(start, end=10e10):
     labels = []
     classes = set()
     hue_operations = mongo.operation.find({'controller': 'Test0106', 'time': {'$gt': start, '$lt': end}})
@@ -98,35 +98,26 @@ def predict():
 
 
 class Test0106(Controller):
-    def __init__(self, user):
+    def __init__(self, user, learner):
         self.user = user
+        self.learner = learner
         self.cam_ids = ['webcam0', 'webcam1']
-        with open('newsemisup.pkl', mode='rb') as f:
-            hoge = pickle.load(f)
-
-        self.classifier = hoge['classifier']
-        self.classes = hoge['classes']
         self.state = 'initial state'
         self.re = []
         self.output = []
         self.ask_time = 0
         self.duration = 600
         self.wait = False
-        self.classes = ['電球色', '白色', 'オフ']
-
-    def get_label(self, start, end):
-        pass
+        self.cam_ids = self.learner.cams
+        _, self.classes = get_hue_label(self.learner.start_time)
 
     def on_event(self, event, data):
         # prediction by AI
         if event == "image":
             if not self.wait and time.time() - self.ask_time > self.duration:
                 d = get_current_images(self.user, self.cam_ids)
-                # vectorizer = Person2Vec()
-                # a, b = vectorizer.vectorize([d])
-                # pa = np.concatenate([b, a], axis=1)
-                # ans = self.classifier.predict_proba(pa)[0]
-                index, confidence = predict()
+                index, confidence = self.learner.predict('youtube', [d])
+                index = int(index[0])
                 state_updated = hue.get_updated_state(self.classes[index])
                 # opelation by AI
                 if self.state != state_updated:

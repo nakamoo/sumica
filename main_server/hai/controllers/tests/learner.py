@@ -1,4 +1,7 @@
 from controllers.dbreader.imagereader import ImageReader
+from controllers.youtubeplayer import get_youtube_label
+from controllers.irkit import get_tv_label
+from controllers.tests.test0106 import get_hue_label
 from controllers.vectorizer.person2vec import Person2Vec
 import ruptures as rpt
 import time
@@ -63,6 +66,14 @@ class Learner:
             self.models[mode] = m
             
         return X, times, self.models
+
+    def update(self):
+        a, _ = get_hue_label(self.start_time)
+        b, _ = get_youtube_label(self.start_time)
+        c, _ = get_tv_label(self.start_time)
+        a.update(b)
+        a.update(c)
+        self.update_models(a)
             
     def predict(self, mode, images):
         clf = self.models[mode]

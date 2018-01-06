@@ -186,6 +186,7 @@ class ImageUpdater(object):
         
         if self.diffs is None:
             self.diffs = np.sin(np.arange(0, com_mat.shape[0] / 0.1, 0.1))
+        self.diffs /= np.max(self.diffs) # normalize
         
         self.colors = []
         
@@ -278,18 +279,20 @@ class ImageUpdater(object):
             
             if start > scene_i:
                 break
+            elif scene_i > end:
+                p = self.axes[1][0].plot(np.arange(start, end), self.diffs[start:end])
+                labs = self.labels[start:end]
+                self.axes[1][0].plot([end,end], [-2, 2], '--', lw=1, c='red')
             elif scene_i >= start:
                 p = self.axes[1][0].plot(np.arange(start, scene_i), self.diffs[start:scene_i])
                 labs = self.labels[start:scene_i]
-            else:
-                p = self.axes[1][0].plot(np.arange(start, end), self.diffs[start:end])
-                labs = self.labels[start:end]
             
             if p is not None:
                 labs_loc = np.where(labs != -1)[0]
                 if len(labs_loc) > 0:
                     self.axes[1][0].scatter(labs_loc + start, np.ones_like(labs_loc), c=self.colors[labs[labs_loc]])
                     
+        self.axes[1][0].set_ylim(-0.2, 1.2)
         self.axes[1][0].scatter(np.arange(scene_i), np.zeros(scene_i), c=self.colors[self.out2class[np.argmax(self.predictions[:scene_i], axis=1)]])
 
         self.axes[1][1].clear()

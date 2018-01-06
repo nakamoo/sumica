@@ -23,9 +23,14 @@ class Learner:
         _breaks = [0] + breaks
  
         #  label augmentation
+        # choose which breakpoint to assign
         clusters = np.searchsorted(_breaks, x_indices)
         
         for i, c in enumerate(clusters):
+            # special case for 0
+            if x_indices[i] == 0:
+                c += 1
+                
             prev_label = labels[_breaks[c-1]]
 
             if prev_label != -1:

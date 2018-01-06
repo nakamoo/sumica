@@ -18,6 +18,7 @@ from controllers.learner.hue_feature_designer import HueFeatureDesigner
 from server_actors import chatbot
 from notebooks.utils.utils import epoch_to_strtime, strtime_to_epoch
 from controllers.dbreader.hue_koki_dbreader import pair_images
+from server_actors import hue
 
 app = Flask(__name__)
 app.config.from_pyfile(filename="../../application.cfg")
@@ -68,6 +69,7 @@ class Test0106(Controller):
         self.classes = hoge['classes']
         self.state = None
         self.output = []
+        self.wait = False
 
     def on_event(self, event, data):
         if event == "image":
@@ -79,6 +81,8 @@ class Test0106(Controller):
             print(ans)
             index = np.argmax(ans)
             print(self.classes[index])
+            if not self.wait:
+                self.output.extend(hue.change_color('電球色', confirm=True))
             # if self.state != ans:
             #     self.state = ans
             #     all_state = ops[ans]
@@ -92,5 +96,6 @@ class Test0106(Controller):
     def execute(self):
         re = self.output
         self.output = []
-        self.log_operation(re)
+        if not re:
+            self.log_operation(re)
         return re

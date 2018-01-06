@@ -42,7 +42,7 @@ class Speechbot(Controller):
                 self.cmds.append({"platform": "tts", "data": "".join(data["text"].strip().split()[1:])})
 
             chatbot.send_fb_message(self.fb_id, "You said: %s" % data["text"])
-            
+
     def execute(self):
         re = []
 
@@ -50,13 +50,13 @@ class Speechbot(Controller):
         if self.lights is not None:
             l = self.lights
             self.lights = None
-            
+
             def format(hue_state):
                 if hue_state["on"]:
                     return hue_state
                 else:
                     return {"on": False}
-            
+
             data = json.dumps([
                     {"id": "1", "state":format({"on": l})},
                     {"id": "2", "state":format({"on": l})},

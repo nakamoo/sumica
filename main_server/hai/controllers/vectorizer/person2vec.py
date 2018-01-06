@@ -31,7 +31,8 @@ class Person2Vec(vectorizer.Vectorizer):
                             top_person = det
                  
                 if top_person is not None:
-                    pose_vec = np.array(view["pose"]["body"][top_person["pose_body_index"]]).flatten()
+                    if "pose_body_index" in top_person: # doesnt contain if no filter
+                        pose_vec = np.array(view["pose"]["body"][top_person["pose_body_index"]]).flatten()
                     
                     if "action_vector" in top_person:
                         act_vec = np.array(top_person["action_vector"])

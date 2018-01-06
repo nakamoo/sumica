@@ -16,7 +16,6 @@ from datetime import datetime
 
 from controllers.controller import Controller
 from controllers.vectorizer.person2vec import Person2Vec
-from controllers.learner.hue_feature_designer import HueFeatureDesigner
 from server_actors import chatbot
 from notebooks.utils.utils import epoch_to_strtime, strtime_to_epoch
 from controllers.dbreader.hue_koki_dbreader import pair_images
@@ -56,6 +55,40 @@ def get_current_images(user, cam_ids):
         images.append(safe_next(imgs))
 
     return images
+
+
+def check_color(data):
+    color_data = json.loads(data)
+    if color_data == [{'id': '1', 'state': {'bri': 254, 'hue': 14957, 'on': True, 'sat': 141}},
+                      {'id': '2', 'state': {'bri': 254, 'hue': 14957, 'on': True, 'sat': 141}},
+                      {'id': '3', 'state': {'bri': 254, 'hue': 14957, 'on': True, 'sat': 141}}]:
+        return '電球色'
+    elif color_data == [{'id': '1', 'state': {'bri': 254, 'hue': 33016, 'on': True, 'sat': 53}},
+                        {'id': '2', 'state': {'bri': 254, 'hue': 33016, 'on': True, 'sat': 53}},
+                        {'id': '3', 'state': {'bri': 254, 'hue': 33016, 'on': True, 'sat': 53}}]:
+        return '白色'
+    elif color_data == [{'id': '1', 'state': {'on': False}},
+                        {'id': '2', 'state': {'on': False}},
+                        {'id': '3', 'state': {'on': False}}]:
+        return 'オフ'
+
+    raise Exception
+
+
+def get_hue_label(start, end):
+    labels = []
+    classes = set()
+    hue_operations = mongo.operation.find({'controller': 'Test0106', 'time': {'$gt': start, '$lt': end}})
+    for hue_operation in hue_operations:
+        for op in hue_operation['operation']:
+            if ('confirmation' not in op) and op['platform'] == 'hue':
+                classes.add(check_color(op['data']))
+                labels.append([hue_operation['time'], check_color(op['data'])])
+
+    classes_list = list(classes)
+    labels2 = [[a, classes_list.index(b)] for a, b in labels]
+
+    return {'hue': labels2}, classes_list
 
 
 # hue class

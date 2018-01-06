@@ -22,7 +22,6 @@ from controllers.settings import Settings
 from controllers.pose2 import Pose2
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
-from controllers.tests.activity_test5 import ActivityTest5
 from controllers.actionrec import ActionRecognition
 from controllers.youtubeplayer import YoutubePlayer
 from controllers.irkit import IRKit

@@ -1,7 +1,12 @@
 import time
 from .controller import Controller
-from database import mongo
 from datetime import datetime
+import pymongo
+from PIL import Image
+from flask import Flask
+app = Flask(__name__)
+app.config.from_pyfile(filename="../application.cfg")
+mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
 
 
 def predict():
@@ -9,9 +14,35 @@ def predict():
     return minute % 2, 0.7
 
 
-def predict():
-    minute = datetime.now().minute
-    return minute % 2, 0.7
+def get_youtube_label(start, end):
+    classes = set()
+    labels = []
+    youtube_operations = mongo.operation.find({'controller': 'YoutubePlayer', 'time': {'$gt': start, '$lt': end}})
+    for youtube_operation in youtube_operations:
+        for op in youtube_operation['operation']:
+            if ('confirmation' not in op) and op['platform'] == 'play_youtube':
+                classes.add(op['data'])
+                labels.append([youtube_operation['time'], op['data']])
+            elif ('confirmation' not in op) and op['platform'] == 'stop_youtube':
+                classes.add('stop')
+                labels.append([youtube_operation['time'], 'stop'])
+
+    youtube_confirmations = mongo.confirmation.find(
+        {'platform': 'play_youtube', 'answer': 'True', 'time': {'$gt': start, '$lt': end}})
+    for youtube_confirmation in youtube_confirmations:
+        classes.add(youtube_confirmation['data'])
+        labels.append([youtube_confirmation['time'], youtube_confirmation['data']])
+    youtube_confirmations = mongo.confirmation.find(
+        {'platform': 'stop_youtube', 'answer': 'True', 'time': {'$gt': start, '$lt': end}})
+    for youtube_confirmation in youtube_confirmations:
+        classes.add('stop')
+        labels.append([youtube_confirmation['time'], 'stop'])
+
+    classes_list = list(classes)
+    labels2 = [[a, classes_list.index(b)] for a, b in labels]
+
+    return {'youtube': labels2}, classes_list
+
 
 class YoutubePlayer(Controller):
     def __init__(self, user):

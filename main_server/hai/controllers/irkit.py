@@ -1,13 +1,38 @@
 import time
 from .controller import Controller
-from database import mongo
 from server_actors import chatbot
 from datetime import datetime
+import pymongo
+from pymongo import MongoClient
+from flask import Flask
+app = Flask(__name__)
+app.config.from_pyfile(filename="../application.cfg")
+mongo = MongoClient('localhost', app.config['PORT_DB']).hai
 
 # hue class
 def predict():
     minute = datetime.now().minute
     return minute % 2, 0.7
+
+
+def get_tv_label(start, end):
+    labels = []
+    classes = ['on', 'off']
+    irkit_operations = mongo.operation.find({'controller': 'IRKit', 'time': {'$gt': start, '$lt': end}})
+    for irkit_operation in irkit_operations:
+        for op in irkit_operation['operation']:
+            if ('confirmation' not in op) and op['platform'] == 'irkit':
+                labels.append([irkit_operation['time'], classes.index(op['data'][1])])
+
+    irkit_confirmations = mongo.confirmation.find(
+        {'platform': 'irkit', 'answer': 'True', 'time': {'$gt': start, '$lt': end}})
+    for irkit_confirmation in irkit_confirmations:
+        if irkit_confirmation['confirmation'] == 'テレビをつけますか?':
+            labels.append([irkit_confirmation['time'], classes.index('on')])
+        elif irkit_confirmation['confirmation'] == 'テレビをけしますか?':
+            labels.append([irkit_confirmation['time'], classes.index('off')])
+
+    return {'TV': labels}, classes
 
 
 class IRKit(Controller):

@@ -5,6 +5,7 @@ import datetime
 import requests
 import traceback
 import logging
+import sys
 from utils.speechrecognition import confirm
 
 class Manager:
@@ -43,7 +44,7 @@ class Manager:
                         ans = confirm(act['confirmation'])
                         data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
                                 'confirmation': act['confirmation'], 'answer': ans}
-                        r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False, timeout=1)
+                        r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False)
                         if ans is None:
                             self.actions.act("tts", "上手く聞こえませんでした")
                             return

@@ -45,6 +45,9 @@ class Manager:
         except:
             exit()
 
+    def execute(self, acts):
+        pass
+
     def start(self):
         for man in self.mans:
             if man.enabled:

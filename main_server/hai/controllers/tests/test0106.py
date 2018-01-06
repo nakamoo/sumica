@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 import sys
 import os
@@ -11,6 +12,7 @@ from flask import Flask
 from bson.son import SON
 from sklearn.externals import joblib
 import numpy as np
+from datetime import datetime
 
 from controllers.controller import Controller
 from controllers.vectorizer.person2vec import Person2Vec
@@ -19,6 +21,7 @@ from server_actors import chatbot
 from notebooks.utils.utils import epoch_to_strtime, strtime_to_epoch
 from controllers.dbreader.hue_koki_dbreader import pair_images
 from server_actors import hue
+import json
 
 app = Flask(__name__)
 app.config.from_pyfile(filename="../../application.cfg")
@@ -38,6 +41,7 @@ def safe_next(imgs):
             Image.open(app.config['RAW_IMG_DIR'] + img["filename"]).verify()
             break
         except Exception as e:
+            traceback.print_exc()
             continue
     return img
 
@@ -58,6 +62,12 @@ def get_current_images(user, cam_ids):
 #        3:{'bri': 254, 'hue': 14910, 'on': True, 'sat': 144},
 #        2: {'on': False}}
 
+# hue class
+def predict():
+    minute = datetime.now().minute
+    return minute % 3, 0.7
+
+
 class Test0106(Controller):
     def __init__(self, user):
         self.user = user
@@ -67,35 +77,59 @@ class Test0106(Controller):
 
         self.classifier = hoge['classifier']
         self.classes = hoge['classes']
-        self.state = None
+        self.state = 'initial state'
+        self.re = []
         self.output = []
+        self.ask_time = 0
         self.wait = False
+        self.classes = ['電球色', '白色', 'オフ']
+
+    def get_label(self, start, end):
+        pass
 
     def on_event(self, event, data):
-        if event == "image":
-            d = get_current_images(self.user, self.cam_ids)
-            vectorizer = Person2Vec()
-            a, b = vectorizer.vectorize([d])
-            pa = np.concatenate([b, a], axis=1)
-            ans = self.classifier.predict_proba(pa)[0]
-            print(ans)
-            index = np.argmax(ans)
-            print(self.classes[index])
-            if not self.wait:
-                self.output.extend(hue.change_color('電球色', confirm=True))
-            # if self.state != ans:
-            #     self.state = ans
-            #     all_state = ops[ans]
-            #     hue_data = json.dumps([
-            #         {"id": "1", "state": all_state},
-            #         {"id": "2", "state": all_state},
-            #         {"id": "3", "state": all_state}
-            #     ])
-            #     self.output = [{"platform": "hue", "data": hue_data}]
+        # prediction by AI
+        # if event == "image":
+        #     if not self.wait and time.time() - self.ask_time > 60:
+        #         d = get_current_images(self.user, self.cam_ids)
+        #         # vectorizer = Person2Vec()
+        #         # a, b = vectorizer.vectorize([d])
+        #         # pa = np.concatenate([b, a], axis=1)
+        #         # ans = self.classifier.predict_proba(pa)[0]
+        #         index, confidence = predict()
+        #         state_updated = hue.get_updated_state(self.classes[index])
+        #         # opelation by AI
+        #         if self.state != state_updated:
+        #             self.wait = True
+        #             self.ask_time = time.time()
+        #             self.output = hue.change_color(self.classes[index], confirm=True)
+
+        if event == 'confirmation':
+            if data['platform'] == 'hue':
+                self.wait = False
+                if 'anawer' in data and data['answer']:
+                    self.state = json.loads(data['data'])
+
+        if event == "speech" and data["type"] == "speech":
+            msg = data["text"]
+            if "白色" in msg:
+                self.check_state_and_change('白色')
+            elif "電球色" in msg:
+                self.check_state_and_change('電球色')
+            elif ("電気" in msg) and ("オフ" in msg):
+                self.check_state_and_change('オフ')
+
+    def check_state_and_change(self, color):
+        state_updated = hue.get_updated_state(color)
+        if self.state != state_updated:
+            self.state = state_updated
+            self.output = hue.change_color(color)
+        else:
+            self.output = [{"platform": "tts", "data": "電気は既に" + color + "です"}]
 
     def execute(self):
         re = self.output
         self.output = []
-        if not re:
+        if re:
             self.log_operation(re)
         return re

@@ -45,7 +45,7 @@ class IRKit(Controller):
         self.user = user
         self.tv_on = False
         self.ask_time = 0
-        self.duration = 600
+        self.duration = 104
         self.wait = False
         n = mongo.fb_users.find_one({"id": user})
         if n:
@@ -56,7 +56,7 @@ class IRKit(Controller):
         if event == "image":
             if not self.wait and time.time() - self.ask_time > self.duration:
                 d = get_current_images(self.user, self.cam_ids)
-                index, confidence = self.learner.predict('youtube', [d])
+                index, confidence = self.learner.predict('TV', [d])
                 index = int(index[0])
                 predicted_on = self.classes[index]
                 if self.tv_on and (not predicted_on):

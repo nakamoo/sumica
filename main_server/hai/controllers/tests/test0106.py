@@ -106,7 +106,7 @@ class Test0106(Controller):
         self.re = []
         self.output = []
         self.ask_time = 0
-        self.duration = 600
+        self.duration = 122
         self.wait = False
         self.cam_ids = self.learner.cams
         _, self.classes = get_hue_label(self.learner.start_time)
@@ -116,7 +116,7 @@ class Test0106(Controller):
         if event == "image":
             if not self.wait and time.time() - self.ask_time > self.duration:
                 d = get_current_images(self.user, self.cam_ids)
-                index, confidence = self.learner.predict('youtube', [d])
+                index, confidence = self.learner.predict('hue', [d])
                 index = int(index[0])
                 state_updated = hue.get_updated_state(self.classes[index])
                 # opelation by AI

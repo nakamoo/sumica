@@ -53,7 +53,7 @@ class YoutubePlayer(Controller):
         self.cam_ids = self.learner.cams
         self.state = False
         self.ask_time = 0
-        self.duration = 600
+        self.duration = 85
         self.wait = False
 
     def on_event(self, event, data):
@@ -89,8 +89,10 @@ class YoutubePlayer(Controller):
 
         if event == "speech" and data["type"] == "speech":
             msg = data["text"]
-            if 'ホワイトノイズ' in msg:
-                keyword = 'ホワイトノイズ'
+            # if 'ホワイトノイズ' in msg:
+            #     keyword = 'ホワイトノイズ'
+            if "を流" in msg:
+                keyword = msg[:msg.find('を流')]
                 self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
                 self.re.append({"platform": "play_youtube", "data": keyword})
                 self.state = keyword

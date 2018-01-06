@@ -1,12 +1,8 @@
 from io import StringIO
 import configparser, os
 from pymongo import MongoClient
+from config import Config
 
 def get_db():
-    config = configparser.ConfigParser()
-
-    ini_str = '[root]\n' + open('application.cfg', 'r').read()
-    ini_fp = StringIO(ini_str)
-    config.readfp(ini_fp)
-    client = MongoClient('localhost', int(config["root"]["PORT_DB"]))
+    client = MongoClient('localhost', Config.PORT_DB)
     return client.hai

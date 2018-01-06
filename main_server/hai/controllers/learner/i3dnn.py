@@ -23,7 +23,7 @@ _CHECKPOINT_PATHS = {
 _LABEL_MAP_PATH = root + '/data/label_map.txt'
 
 class I3DNN:
-    def __init__(self):
+    def __init__(self, device_list="1"):
           eval_type = 'rgb'
           imagenet_pretrained = True
 
@@ -74,7 +74,7 @@ class I3DNN:
           self.model_predictions = tf.nn.softmax(self.model_logits)
           self.rgb_input = rgb_input
 
-          config = tf.ConfigProto(gpu_options=tf.GPUOptions(visible_device_list="1"))
+          config = tf.ConfigProto(gpu_options=tf.GPUOptions(visible_device_list=device_list))
           sess = tf.Session(config=config)
           self.sess = sess
           if eval_type in ['rgb', 'joint']:

@@ -1,14 +1,70 @@
 import time
 from .controller import Controller
 from database import mongo
+from datetime import datetime
 
+
+def predict():
+    minute = datetime.now().minute
+    return minute % 2, 0.7
+
+
+def predict():
+    minute = datetime.now().minute
+    return minute % 2, 0.7
 
 class YoutubePlayer(Controller):
     def __init__(self, user):
         self.re = []
         self.user = user
+        self.classes = ['ホワイトノイズ', False]
+        self.state = False
+        self.ask_time = 0
+        self.duration = 600
+        self.wait = False
 
     def on_event(self, event, data):
+        if event == "image":
+            print(self.state)
+            # if not self.wait:
+            #     index, confidence = predict()
+            #     if self.state != self.classes[index]:
+            #         self.wait = True
+            #         self.ask_time = time.time()
+            #         if self.classes[index]:
+            #             self.re = [{"platform": "play_youtube", "data": self.classes[index],
+            #                         "confirmation": self.classes[index] + "を再生しますか?"}]
+            #         else:
+            #             self.re = [{"platform": "stop_youtube", "data": '',
+            #                         "confirmation": "音楽をけしますか?"}]
+
+        if event == 'confirmation':
+            if data['platform'] == 'play_youtube':
+                self.wait = False
+                if 'answer' in data:
+                    if data['answer']:
+                        self.state = data['data']
+            if data['platform'] == 'stop_youtube':
+                self.wait = False
+                self.wait = False
+                if 'answer' in data:
+                    if data['answer']:
+                        self.state = False
+
+        # if event == "speech" and data["type"] == "speech":
+        #     msg = data["text"]
+        #     if 'ホワイトノイズ' in msg:
+        #         keyword = 'ホワイトノイズ'
+        #         self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
+        #         self.re.append({"platform": "play_youtube", "data": keyword})
+        #     # if "を流" in msg:
+        #     #     keyword = msg[:msg.find('を流')]
+        #     #     self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
+        #     #     self.re.append({"platform": "play_youtube", "data": keyword})
+        #     if ("音楽を消し" in msg) or ('音楽を止め' in msg):
+        #         self.re.append({"platform": "tts", "data": "音楽を消します"})
+        #         self.re.append({"platform": "stop_youtube", "data": ''})
+
         if event == "chat":
             msg = data["message"]["text"].split()
             if msg[0] == "music":
@@ -16,23 +72,14 @@ class YoutubePlayer(Controller):
                     self.re = [{"platform": "play_youtube", "data": msg[2],
                                 "confirmation": msg[2] + "を再生しますか?"}]
                 if msg[1] == "stop":
-                    self.re = [{"platform": "stop_youtube", "data": ""}]
+                    self.re = [{"platform": "stop_youtube", "data": '',
+                                "confirmation": "音楽をけしますか?"}]
 
                 inserted_data = dict()
                 inserted_data['message'] = msg
                 inserted_data['user_name'] = self.user
                 inserted_data['time'] = time.time()
                 mongo.music.insert_one(inserted_data)
-
-        if event == "speech" and data["type"] == "speech":
-            msg = data["text"]
-            if "を流" in msg:
-                keyword = msg[:msg.find('を流')]
-                self.re.append({"platform": "tts", "data": keyword+"を検索して再生します"})
-                self.re.append({"platform": "play_youtube", "data": keyword})
-            if ("音楽を消し" in msg) or ('音楽を止め' in msg):
-                self.re.append({"platform": "tts", "data": "音楽を消します"})
-                self.re.append({"platform": "stop_youtube", "data": ''})
 
     def execute(self):
         if self.re:

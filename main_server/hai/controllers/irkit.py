@@ -25,7 +25,7 @@ class IRKit(Controller):
 
     def on_event(self, event, data):
         if event == "image":
-            if not self.wait:
+            if not self.wait and time.time() - self.ask_time > self.duration:
                 index, confidence = predict()
                 predicted_on = self.classes[index]
                 if self.tv_on and (not predicted_on):

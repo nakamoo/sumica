@@ -5,6 +5,7 @@ import datetime
 import requests
 import traceback
 import logging
+import sys
 from utils.speechrecognition import confirm
 
 class Manager:
@@ -38,13 +39,12 @@ class Manager:
                 elif act["platform"] == "hue_back":
                     self.going_back = float(act["data"]) > 0
                 elif act['platform'] == "hue":
-                    print(act['confirmation'])
                     if 'confirmation' in act:
-                        print('confirm to change hu')
+                        print(act['confirmation'])
                         ans = confirm(act['confirmation'])
                         data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
                                 'confirmation': act['confirmation'], 'answer': ans}
-                        r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False, timeout=1)
+                        r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False)
                         if ans is None:
                             self.actions.act("tts", "上手く聞こえませんでした")
                             return

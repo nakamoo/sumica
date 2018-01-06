@@ -22,13 +22,15 @@ from controllers.settings import Settings
 from controllers.pose2 import Pose2
 from controllers.snapshot import Snapshot
 from controllers.summarizer import Summarizer
-from controllers.tests.activity_test5 import ActivityTest5
 from controllers.actionrec import ActionRecognition
 from controllers.youtubeplayer import YoutubePlayer
 from controllers.irkit import IRKit
 from controllers.printtest import PrintTest
 from controllers.imageprocessor import ImageProcessor
+from controllers.tests.test0106 import Test0106
+from controllers.tests.learner import Learner
 #from controllers.learner import Learner
+from notebooks.utils.utils import visualize, display_latest_image, display_image, print_time, strtime_to_epoch
 
 import time
 from _thread import start_new_thread
@@ -46,14 +48,18 @@ def load_controller_modules():
 
     return mods
 
+
+learner = Learner(app.config['USER'], ['webcam0', 'webcam1'], strtime_to_epoch("2018-01-06 18:05:00"))
+learner.update()
+
 def standard_controllers(user_name):
-    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
+    # return [YoutubePlayer(user_name, learner), IRKit(user_name), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Test0106(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
+    return [YoutubePlayer(user_name, learner), Test0106(user_name, learner), IRKit(user_name, learner), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()
 # TODO: use DB
 controllers_objects = {}
-app.config['USER']
 controllers_objects[app.config['USER']] = standard_controllers(app.config['USER'])
 
 def trigger_controllers(user, event, data, parallel=False):

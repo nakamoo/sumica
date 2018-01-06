@@ -12,7 +12,6 @@ import numpy as np
 
 from controllers.controller import Controller
 from controllers.dbreader.dbreader import DBReader
-from controllers.learner.hue_feature_designer import HueFeatureDesigner
 from server_actors import chatbot
 from notebooks.utils.utils import epoch_to_strtime
 

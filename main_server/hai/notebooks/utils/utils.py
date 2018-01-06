@@ -13,6 +13,7 @@ from datetime import datetime
 from flask import Flask
 import configparser
 import matplotlib.cm as cm
+from sklearn.preprocessing import normalize
 
 from controllers.learner import datasets as ds
 
@@ -175,7 +176,7 @@ class ImageUpdater(object):
         self.act_classes = []
         self.labels = labels
         self.predictions = predictions
-        self.classes = classes.tolist()
+        self.classes = classes#.tolist()
         self.skip = skip
         self.diffs = diffs
         self.mask = mask
@@ -183,13 +184,16 @@ class ImageUpdater(object):
         self.out2class = out2class
         #self.certainty = certainty
         
+        if self.diffs is None:
+            self.diffs = np.sin(np.arange(0, com_mat.shape[0] / 0.1, 0.1))
+        
         self.colors = []
         
         #for c in self.classes:
         #    self.colors.append(np.random.uniform(0, 1, 3))
             
         self.colors = list([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 1], [1, 0.5, 0], [0, 1, 0.5]])[:len(self.classes)]
-        self.colors[self.classes.index("etc")] = [0.5, 0.5, 0.5]
+        self.colors.append([0.5, 0.5, 0.5])
         self.colors = np.array(self.colors)
         
         for ax in self.axes[0]:
@@ -241,14 +245,12 @@ class ImageUpdater(object):
                 col = "blue"
                 ax.scatter(mat[:scene_i, 0], mat[:scene_i, 1], c=col)
             else:
-                etc_i = self.classes.index("etc")
-                m = labs == etc_i
-                ax.scatter(mat[:scene_i, 0], mat[:scene_i, 1], c=self.colors[etc_i], label="etc")
+                ax.scatter(mat[:scene_i, 0], mat[:scene_i, 1], c=self.colors[-1], label="etc")
                 
                 for i, c in enumerate(self.classes):
-                    if c != "etc":
-                        m = labs == i
-                        ax.scatter(mat[m, 0], mat[m, 1], c=self.colors[i], label=self.classes[i])
+                    #if c != "etc":
+                    m = labs == i
+                    ax.scatter(mat[m, 0], mat[m, 1], c=self.colors[i], label=self.classes[i])
 
                 ax.legend()
                 
@@ -284,7 +286,7 @@ class ImageUpdater(object):
                 labs = self.labels[start:end]
             
             if p is not None:
-                labs_loc = np.where(labs != self.classes.index("etc"))[0]
+                labs_loc = np.where(labs != -1)[0]
                 if len(labs_loc) > 0:
                     self.axes[1][0].scatter(labs_loc + start, np.ones_like(labs_loc), c=self.colors[labs[labs_loc]])
                     
@@ -308,3 +310,23 @@ class ImageUpdater(object):
         #    self.axes[1][i].imshow([self.acts[i]], aspect='auto', cmap="rainbow")
 
         return self.axes
+    
+    def write_video(cams, models, misc, mode, path, skip=5):
+        mat = misc["matrix"]
+        print("total frames:", mat.shape[0])
+        
+        fig, axes = plt.subplots(3, max(len(cams), 3), figsize=(12,9), squeeze=False)
+        
+        predictions = models[mode].predict_proba(mat)
+        classes = models[mode].classes_
+        train_labels = misc["train_labels"][mode]
+        mat.shape[0]
+        
+        diffs = np.array(([0] + np.sum(mat[:-1] - mat[1:], axis=1)**2.0)[:, None])
+
+        class_names = [str(c) for c in classes]
+        updater = ImageUpdater(cams, axes, np.array(misc["raw_data"]), None, None, mat,
+                               np.array(misc["meta"]), train_labels, predictions, class_names, classes, diffs, range(mat.shape[0]), misc["breaks"], skip=skip)
+        fig.tight_layout()
+        ani = animation.FuncAnimation(fig, updater, frames=range(0, len(misc["matrix"]), skip), interval=100, repeat=False)
+        ani.save(path, writer="ffmpeg")

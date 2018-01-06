@@ -38,7 +38,7 @@ class Manager:
                         tts.say("わかりました，再生をキャンセルします")
                         return
 
-                    r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False, timeout=1)
+                    r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False)
                     logging.debug(r)
 
                 try:
@@ -73,7 +73,7 @@ class Manager:
                         tts.say("わかりました，操作をキャンセルします")
                         return
 
-                    r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False, timeout=1)
+                    r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False)
                     logging.debug(r)
                 try:
                     Popen('pkill -9 mpv', shell=True)

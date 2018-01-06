@@ -8,6 +8,7 @@ from PIL import Image
 from flask import Flask
 from bson.son import SON
 from sklearn.externals import joblib
+import numpy as np
 
 from controllers.controller import Controller
 from controllers.learner.hue_feature_designer import HueFeatureDesigner
@@ -94,7 +95,7 @@ def group_colors(n=3, start=0, end=999999999999):
     return colors
 
 
-def collect_img_hue(operating_instructions, user, duration=1800, start=0, end=999999999999, nums=400):
+def collect_img_hue(operating_instructions, user, duration=1800, start=0, end=999999999999, nums=5000):
     X = []
     y = []
     for i, op in enumerate(operating_instructions):
@@ -151,7 +152,7 @@ def collect_img_hue(operating_instructions, user, duration=1800, start=0, end=99
         X.extend(X_tmp)
         y.extend(y_tmp)
 
-    return X, y
+    return np.array(X), np.array(y)
 
 
 def get_current_images(user, cam_ids):
@@ -168,6 +169,8 @@ def get_current_images(user, cam_ids):
 class HueLv2(Controller):
     def __init__(self, user, debug=False, xy=None):
         self.user = user
+        self.debug = debug
+
         self.output = []
         n = mongo.fb_users.find_one({"id": user})
         if n:
@@ -178,10 +181,11 @@ class HueLv2(Controller):
 
         self.cam_ids = ['webcam0', 'webcam1']
         self.operating_instructions = group_colors(start=self.start, end=self.end)
-        # TODO: 消す
-        # print(self.operating_instructions)
-        self.X, self.y = collect_img_hue(self.operating_instructions, self.user,
-                                         start=self.start, end=self.end)
+        if xy is None:
+            self.X, self.y = collect_img_hue(self.operating_instructions, self.user,
+                                             start=self.start, end=self.end)
+        else:
+            self.X, self.y = xy
         self.learner = HueFeatureDesigner(self.X, self.y, debug=debug)
         self.control = False
 

@@ -31,24 +31,33 @@ class HueFeatureDesigner():
         self.debug = debug
         self.color_augmentation_times = 1
         self.nn = NNFeatures()
-        self.classifier = None
         self.input_data = input_data
         self.label = label
-        self.X, self.y = self.create_feature()
+        # self.X, self.y = self.create_feature()
+        self.classifier = None
+        self.X = None
+        self.y = None
 
     def data_update(self, input_data, label):
         self.input_data = input_data
         self.label = label
-        self.X, self.y = self.create_feature()
+        # self.X, self.y = self.create_feature()
+        self.X = None
+        self.y = None
         self.classifier = None
 
-    def create_feature(self):
+    def create_feature(self, color_augmentation_times=None):
+        if color_augmentation_times is None:
+            cat = self.color_augmentation_times
+        else:
+            cat = color_augmentation_times
         X = self.vectorize(self.input_data,
-                           color_augmentation_times=self.color_augmentation_times)
+                           color_augmentation_times=cat)
         y = []
         for l in self.label:
             y.extend([l] * self.color_augmentation_times)
-        return np.array(X), np.array(y)
+        self.X = np.array(X)
+        self.y = np.array(y)
 
     def vectorize(self, data, color_augmentation_times=-1):
         features = []
@@ -80,7 +89,7 @@ class HueFeatureDesigner():
 
             else:
                 feature = []
-                img_list = [img0, img1]
+                img_list = [Image.fromarray(img0), Image.fromarray(img1)]
                 embed_vector = self.nn.img2vec(img_list, progress=-1)
                 for v in embed_vector:
                     feature.extend(v)
@@ -90,7 +99,7 @@ class HueFeatureDesigner():
             if self.debug:
                 pbar.update(1)
 
-        return features
+        return np.array(features)
 
     def train(self):
         X = np.array(self.X)

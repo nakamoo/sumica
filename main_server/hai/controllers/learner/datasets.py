@@ -57,7 +57,8 @@ def person_box(sample):
             
             # force
             #if current_contains_pose > 0:
-            if top_det is None or current_contains_pose > top_contains_pose or (current_contains_pose == top_contains_pose and det["confidence"] > top_det["confidence"]):
+            if top_det is None or current_contains_pose > top_contains_pose or \
+                    (current_contains_pose == top_contains_pose and det["confidence"] > top_det["confidence"]):
                 top_det = det
                 top_contains_pose = current_contains_pose
                 top_area = current_area
@@ -87,7 +88,7 @@ def deform_box(box):
     
     return [new_x1, new_y1, new_x1+new_width, new_y1+new_height]
 
-def crop_person(sample, crop_aug=False):
+def crop_person(sample, crop_aug=False, crop_hand=True):
     person, pose, hand, top_contains = person_box(sample)
     #mats = []
     #crop_boxes = []
@@ -99,26 +100,26 @@ def crop_person(sample, crop_aug=False):
         w = box[2]-box[0]
         h = box[3]-box[1]
         offsetx, offsety = w * 0.1, h * 0.1
-        
+
+        box[0] = box[0] - offsetx
+        box[1] = box[1] + offsety
+        box[2] = box[2] - offsetx
+        box[3] = box[3] + offsety
         # override if hand is visible
-        if hand is not None:
-            coords = np.array([[x, y] for x, y, c in hand if c > 0.05])
-            mean_x, mean_y = np.mean(coords, axis=0)
-            
-            s = 0.3
-            box = [mean_x-w*s, mean_y-h*s, mean_x+w*s, mean_y+h*s]
-        elif pose is not None and (pose[4][2] > 0.05 or pose[7][2] > 0.05):
-            s = 0.3
-            if pose[4][2] > 0.05:
-                box = [pose[4][0]-w*s, pose[4][1]-h*s, pose[4][0]+w*s, pose[4][1]+h*s]
-            elif pose[7][2] > 0.05:
-                box = [pose[7][0]-w*s, pose[7][1]-h*s, pose[7][0]+w*s, pose[7][1]+h*s]
-        else:
-            box[0] = box[0] - offsetx
-            box[1] = box[1] + offsety
-            box[2] = box[2] - offsetx
-            box[3] = box[3] + offsety
-                
+        if crop_hand:
+            if hand is not None:
+                coords = np.array([[x, y] for x, y, c in hand if c > 0.05])
+                mean_x, mean_y = np.mean(coords, axis=0)
+
+                s = 0.3
+                box = [mean_x-w*s, mean_y-h*s, mean_x+w*s, mean_y+h*s]
+            elif pose is not None and (pose[4][2] > 0.05 or pose[7][2] > 0.05):
+                s = 0.3
+                if pose[4][2] > 0.05:
+                    box = [pose[4][0]-w*s, pose[4][1]-h*s, pose[4][0]+w*s, pose[4][1]+h*s]
+                elif pose[7][2] > 0.05:
+                    box = [pose[7][0]-w*s, pose[7][1]-h*s, pose[7][0]+w*s, pose[7][1]+h*s]
+
         box[0] = max(int(box[0]), 0)
         box[2] = min(int(box[2]), mat.shape[1])
         box[1] = max(int(box[1]), 0)

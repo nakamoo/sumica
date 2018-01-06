@@ -53,8 +53,8 @@ def standard_controllers(user_name):
 control_mods = load_controller_modules()
 # TODO: use DB
 controllers_objects = {}
-# controllers_objects['koki'] = standard_controllers('koki')
-controllers_objects['sean'] = standard_controllers('sean')
+app.config['USER']
+controllers_objects[app.config['USER']] = standard_controllers(app.config['USER'])
 
 def trigger_controllers(user, event, data, parallel=False):
     if user is None:

@@ -18,7 +18,7 @@ class ActionRecognition(Controller):
                 image_path = Config.ENCRYPTED_IMG_DIR + data['filename']
             else:
                 image_path = Config.RAW_IMG_DIR + data['filename']
-
+                
             n = self.db.images.find_one({"_id": data["_id"]})
             persons, pose_indices = filter_persons(n)
             
@@ -69,6 +69,7 @@ class ActionRecognition(Controller):
                             updates["detections.{}.pose_body_index".format(i)] = pose_indices[a]
 
             updates["history.action_recorded"] = time.time()
+
             self.db.images.update_one({"_id": data["_id"]}, {'$set': updates}, upsert=False)
 
     def execute(self):

@@ -2,7 +2,7 @@
 # Requires PyAudio and PySpeech.
  
 import speech_recognition as sr
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
  
 # Record Audio
 r = sr.Recognizer()

@@ -59,6 +59,22 @@ class Manager:
                     traceback.print_exc()
 
             if act["platform"] == "stop_youtube":
+                if "confirmation" in act:
+                    logging.debug("confirm: " + act['confirmation'])
+                    ans = confirm(act['confirmation'])
+                    logging.debug("answer: " + str(ans))
+                    data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
+                            'confirmation': act['confirmation'], 'answer': ans}
+
+                    if ans is None:
+                        tts.say("上手く聞こえませんでした")
+                        return
+                    elif not ans:
+                        tts.say("わかりました，操作をキャンセルします")
+                        return
+
+                    r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False, timeout=1)
+                    logging.debug(r)
                 try:
                     Popen('pkill -9 mpv', shell=True)
                     self.now_playing = None

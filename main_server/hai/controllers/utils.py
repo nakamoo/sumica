@@ -1,6 +1,11 @@
 import cv2
 import colorsys
 import numpy as np
+from controllers.dbreader.utils import get_db
+from config import Config
+import pymongo
+import traceback
+from PIL import Image
 
 keypoint_labels = [
     "Nose",
@@ -23,6 +28,29 @@ keypoint_labels = [
     "LEar",
     "Bkg"
 ]
+
+def safe_next(imgs):
+    while True:
+        img = imgs.next()
+        try:
+            Image.open(Config.RAW_IMG_DIR + img["filename"]).verify()
+            break
+        except Exception as e:
+            traceback.print_exc()
+    return img
+
+def get_current_images(user, cam_ids):
+    db = get_db()
+    
+    images = []
+    for id in cam_ids:
+        imgs = db.images.find({'user_name': user, 'cam_id': id, 'detections': {'$exists': True},
+                                  'pose':{'$exists': True}},
+                                 sort=[("_id", pymongo.DESCENDING)]).limit(10)
+
+        images.append(safe_next(imgs))
+
+    return images
 
 def get_avg_pt(seq):
     n = 0

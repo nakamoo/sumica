@@ -9,7 +9,7 @@ app.config.from_pyfile(filename="../application.cfg")
 colors = {
     '電球色': {"bri": 254, "hue": 14957, "sat": 141, 'on': True},
     '白色': {"bri": 254, "hue": 33016, "sat": 53, 'on': True},
-    'オフ': {'on': False}
+    'オフ': {'on': False},
 }
 
 
@@ -19,14 +19,15 @@ def format(hue_state):
     else:
         return {"on": False}
 
-
-def change_color(color, light=[1,2,3], confirm=False):
+def get_updated_state(color):
     c = colors[color]
-    if isinstance(light, int):
-        light = [light]
     data = []
-    for l in light:
+    for l in [1, 2, 3]:
         data.append({'id': str(l), 'state': c})
+    return data
+
+def change_color(color, confirm=False):
+    data = get_updated_state(color)
     data = json.dumps(data)
 
     if confirm:
@@ -34,7 +35,7 @@ def change_color(color, light=[1,2,3], confirm=False):
 
     else:
         re = [{"platform": "tts", "data": "電気を" + color + "にします"},
-          {'platform': 'hue', 'data': data}]
+              {'platform': 'hue', 'data': data}]
 
     return re
 

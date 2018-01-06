@@ -2,6 +2,12 @@ import time
 from .controller import Controller
 from database import mongo
 from server_actors import chatbot
+from datetime import datetime
+
+# hue class
+def predict():
+    minute = datetime.now().minute
+    return minute % 2, 0.7
 
 
 class IRKit(Controller):
@@ -9,17 +15,36 @@ class IRKit(Controller):
         self.re = []
         self.user = user
         self.tv_on = False
+        self.ask_time = 0
+        self.duration = 600
+        self.wait = False
         n = mongo.fb_users.find_one({"id": user})
         if n:
             self.fb_id = n["fb_id"]
+        self.classes = [True, False]
 
     def on_event(self, event, data):
+        if event == "image":
+            if not self.wait:
+                index, confidence = predict()
+                predicted_on = self.classes[index]
+                if self.tv_on and (not predicted_on):
+                    self.wait = True
+                    self.re.append({"platform": "irkit", "data": ['TV', 'off'],
+                                    "confirmation": "テレビをけしますか?"})
+                elif (not self.tv_on) and predicted_on:
+                    self.wait = True
+                    self.re.append({"platform": "irkit", "data": ['TV', 'on'],
+                                    "confirmation": "テレビをつけますか?"})
+
         if event == 'confirmation':
-            if data['platform'] == 'irkit' and 'answer' in data:
-                if data['confirmation'] == 'テレビをつけますか?' and data['answer']:
-                    self.tv_on = True
-                if data['confirmation'] == 'テレビをけしますか?' and data['answer']:
-                    self.tv_on = False
+            if data['platform'] == 'irkit':
+                self.wait = False
+                if 'answer' in data:
+                    if data['confirmation'] == 'テレビをつけますか?' and data['answer']:
+                        self.tv_on = True
+                    if data['confirmation'] == 'テレビをけしますか?' and data['answer']:
+                        self.tv_on = False
 
         if event == "chat":
             msg = data["message"]["text"].split()
@@ -36,7 +61,7 @@ class IRKit(Controller):
                             self.re.append({"platform": "irkit", "data": msg[1:],
                                             "confirmation": "テレビをけしますか?"})
                         else:
-                            chatbot.send_fb_message(self.fb_id, "TVは既にきえています")
+                            chatbot.send_fb_message(self.fb_id, "TVはすでにきえています")
 
                 elif msg[1] == "AirConditioning":
                     pass
@@ -45,7 +70,7 @@ class IRKit(Controller):
             msg = data["text"]
             if "テレビ" in msg and "つけて" in msg:
                 if self.tv_on:
-                    self.re.append({"platform": "tts", "data": "TVは既についています"})
+                    self.re.append({"platform": "tts", "data": "TVはすでについています"})
                 else:
                     self.re.append({"platform": "tts", "data": "TVをつけます"})
                     self.re.append({"platform": "irkit", "data": ['TV', 'on']})

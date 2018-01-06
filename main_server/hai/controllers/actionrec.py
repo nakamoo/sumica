@@ -1,32 +1,33 @@
 from controllers.learner.i3dnn import I3DNN
 from .controller import Controller
 from controllers.utils import filter_persons
+from controllers.dbreader.utils import get_db
 import cv2
 import numpy as np
 import time
-
-import pymongo
-from flask import Flask
-app = Flask(__name__)
-app.config.from_pyfile(filename="../application.cfg")
-mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
-
+from config import Config
 
 class ActionRecognition(Controller):
-    def __init__(self):
-        self.nn = I3DNN()
+    def __init__(self, devices="1"):
+        self.nn = I3DNN(devices)
+        self.db = get_db()
 
     def on_event(self, event, data):
         if event == "image":
-            if app.config['ENCRYPTION']:
-                image_path = app.config['ENCRYPTED_IMG_DIR'] + data['filename']
+            if Config.ENCRYPTION:
+                image_path = Config.ENCRYPTED_IMG_DIR + data['filename']
             else:
-                image_path = app.config['RAW_IMG_DIR'] + data['filename']
-
-            n = mongo.images.find_one({"_id": data["_id"]})
+                image_path = Config.RAW_IMG_DIR + data['filename']
+                
+            n = self.db.images.find_one({"_id": data["_id"]})
             persons, pose_indices = filter_persons(n)
             
             img = cv2.imread(image_path)
+            
+            if img is None:
+                print("no image:", image_path)
+                return
+            
             whole_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 128.0 - 1.0
             updates = {"history.action_request": time.time()}
             
@@ -68,7 +69,8 @@ class ActionRecognition(Controller):
                             updates["detections.{}.pose_body_index".format(i)] = pose_indices[a]
 
             updates["history.action_recorded"] = time.time()
-            mongo.images.update_one({"_id": data["_id"]}, {'$set': updates}, upsert=False)
+
+            self.db.images.update_one({"_id": data["_id"]}, {'$set': updates}, upsert=False)
 
     def execute(self):
         return []

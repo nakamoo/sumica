@@ -38,9 +38,8 @@ class Manager:
                 elif act["platform"] == "hue_back":
                     self.going_back = float(act["data"]) > 0
                 elif act['platform'] == "hue":
-                    print(act['confirmation'])
                     if 'confirmation' in act:
-                        print('confirm to change hu')
+                        print(act['confirmation'])
                         ans = confirm(act['confirmation'])
                         data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
                                 'confirmation': act['confirmation'], 'answer': ans}

@@ -26,7 +26,7 @@ class Person2Vec(vectorizer.Vectorizer):
                 top_person = None
                 
                 for det in view["detections"]:
-                    if det["label"] == "person" and det["passed"] and "pose_body_index" in det:
+                    if det["label"] == "person" and "passed" in det and "pose_body_index" in det:
                         if top_person is None or area(det["box"]) > area(top_person["box"]):
                             top_person = det
                  

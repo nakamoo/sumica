@@ -1,4 +1,4 @@
-# create ID
+# creat ID
 # discover hardware (e.g. discover cameras)
 # send sensor data
 # receive commands and act
@@ -51,7 +51,7 @@ def act_list2(acts):
         try:
             inp.execute(acts)
         except:
-            #traceback.print_exc()
+            traceback.print_exc()
             pass
 
 while True:

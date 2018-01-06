@@ -5,6 +5,8 @@ import datetime
 import requests
 import traceback
 import logging
+import sys
+from utils.speechrecognition import confirm
 
 class Manager:
     def __init__(self, user, server_ip, actions):
@@ -20,6 +22,7 @@ class Manager:
         self.last_manual_time = 0
         self.last_state = None
         self.going_back = False
+        self.actions = actions
 
         if out.split("\n")[-2] != "ok":
             self.connected = False
@@ -36,6 +39,20 @@ class Manager:
                 elif act["platform"] == "hue_back":
                     self.going_back = float(act["data"]) > 0
                 elif act['platform'] == "hue":
+                    if 'confirmation' in act:
+                        print(act['confirmation'])
+                        ans = confirm(act['confirmation'])
+                        data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
+                                'confirmation': act['confirmation'], 'answer': ans}
+                        r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False)
+                        if ans is None:
+                            self.actions.act("tts", "上手く聞こえませんでした")
+                            return
+                        elif not ans:
+                            self.actions.act('tts', "わかりました，操作をキャンセルします")
+                            return
+                        self.actions.act('tts','照明を操作します')
+
                     json_data = json.loads(act['data'])
                     if self.check_state_change({'lights':json_data}):
                         with open('utils/hue_state.json', 'w+') as outfile:
@@ -45,6 +62,7 @@ class Manager:
                         out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
 
             except Exception as e:
+                traceback.print_exc()
                 print(e)
 
     def check_state_change(self, current):
@@ -149,5 +167,4 @@ class Manager:
                 logging.warn("error in sending hue data")
 
 if __name__ == "__main__":
-    cam = Manager(SERVER_IP)
-    cam.start()
+    pass

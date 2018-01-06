@@ -15,27 +15,21 @@ import configparser
 import matplotlib.cm as cm
 
 from controllers.learner import datasets as ds
+
+from controllers.dbreader.utils import get_db
+
+mongo = get_db()
+app = Flask(__name__)
+app.config.from_pyfile(filename="../../application.cfg") # needs cleanup with Config module
+
 import controllers.utils as utils
 from controllers.dbreader.utils import get_db
 from config import Config
-
-mongo = get_db()
 
 def visualize(col, pose=True, detect_human=True):
     im_path = app.config['RAW_IMG_DIR'] + col['filename']
     img = np.array(Image.open(im_path, 'r'))
 
-    if pose:
-        def draw_pts(pts, col):
-            for x, y, c in pts:
-                if c > 0.05:
-                    cv2.circle(img, (int(x), int(y)), 3, col, -1)
-        if len(col['pose']['body']) == 1:
-            draw_pts(col['pose']['body'][0], (0, 255, 0))
-        if len(col['pose']['hand']) == 1:
-            draw_pts(col['pose']['hand'][0], (0, 255, 0))
-        if len(col['pose']['face']) == 1:
-            draw_pts(col['pose']['face'][0], (0, 255, 0))
     if detect_human:
         person, _, _, _ = ds.person_box(col)
         if person is not None:
@@ -43,6 +37,21 @@ def visualize(col, pose=True, detect_human=True):
             cv2.putText(img, '{:.3f}'.format(person['confidence']), (person_box[0], person_box[1]),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 1)
             cv2.rectangle(img, (person_box[0], person_box[1]), (person_box[2], person_box[3]), (255,0,0), 3)
+
+    if pose:
+        def draw_pts(pts, col):
+            for x, y, c in pts:
+                if c > 0.05:
+                    cv2.circle(img, (int(x), int(y)), 3, col, -1)
+        if 'pose' not in col:
+            return img
+
+        if len(col['pose']['body']) == 1:
+            draw_pts(col['pose']['body'][0], (0, 255, 0))
+        if len(col['pose']['hand']) == 1:
+            draw_pts(col['pose']['hand'][0], (0, 255, 0))
+        if len(col['pose']['face']) == 1:
+            draw_pts(col['pose']['face'][0], (0, 255, 0))
 
     # plt.imshow(img)
     # return Image.fromarray(img)

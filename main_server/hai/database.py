@@ -28,6 +28,7 @@ from controllers.youtubeplayer import YoutubePlayer
 from controllers.irkit import IRKit
 from controllers.printtest import PrintTest
 from controllers.imageprocessor import ImageProcessor
+from controllers.tests.test0106 import Test0106
 #from controllers.learner import Learner
 
 import time
@@ -47,7 +48,7 @@ def load_controller_modules():
     return mods
 
 def standard_controllers(user_name):
-    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
+    return [YoutubePlayer(user_name), IRKit(user_name), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Test0106(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()

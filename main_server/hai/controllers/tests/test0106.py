@@ -57,10 +57,6 @@ def get_current_images(user, cam_ids):
 
     return images
 
-# 'classes': array(['enjoy', 'etc', 'sleep', 'work'],
-# ops = {0: {'bri': 254, 'hue': 2049, 'on': True, 'sat': 0},
-#        3:{'bri': 254, 'hue': 14910, 'on': True, 'sat': 144},
-#        2: {'on': False}}
 
 # hue class
 def predict():
@@ -81,6 +77,7 @@ class Test0106(Controller):
         self.re = []
         self.output = []
         self.ask_time = 0
+        self.duration = 600
         self.wait = False
         self.classes = ['電球色', '白色', 'オフ']
 
@@ -89,35 +86,38 @@ class Test0106(Controller):
 
     def on_event(self, event, data):
         # prediction by AI
-        # if event == "image":
-        #     if not self.wait and time.time() - self.ask_time > 60:
-        #         d = get_current_images(self.user, self.cam_ids)
-        #         # vectorizer = Person2Vec()
-        #         # a, b = vectorizer.vectorize([d])
-        #         # pa = np.concatenate([b, a], axis=1)
-        #         # ans = self.classifier.predict_proba(pa)[0]
-        #         index, confidence = predict()
-        #         state_updated = hue.get_updated_state(self.classes[index])
-        #         # opelation by AI
-        #         if self.state != state_updated:
-        #             self.wait = True
-        #             self.ask_time = time.time()
-        #             self.output = hue.change_color(self.classes[index], confirm=True)
+        if event == "image":
+            if not self.wait and time.time() - self.ask_time > self.duration:
+                d = get_current_images(self.user, self.cam_ids)
+                # vectorizer = Person2Vec()
+                # a, b = vectorizer.vectorize([d])
+                # pa = np.concatenate([b, a], axis=1)
+                # ans = self.classifier.predict_proba(pa)[0]
+                index, confidence = predict()
+                state_updated = hue.get_updated_state(self.classes[index])
+                # opelation by AI
+                if self.state != state_updated:
+                    self.wait = True
+                    self.ask_time = time.time()
+                    self.output = hue.change_color(self.classes[index], confirm=True)
+                else:
+                    print('prediction is same as current state')
 
         if event == 'confirmation':
             if data['platform'] == 'hue':
                 self.wait = False
-                if 'anawer' in data and data['answer']:
+                if ('answer' in data) and (data['answer'] == 'True'):
                     self.state = json.loads(data['data'])
 
         if event == "speech" and data["type"] == "speech":
-            msg = data["text"]
-            if "白色" in msg:
-                self.check_state_and_change('白色')
-            elif "電球色" in msg:
-                self.check_state_and_change('電球色')
-            elif ("電気" in msg) and ("オフ" in msg):
-                self.check_state_and_change('オフ')
+            if not self.wait:
+                msg = data["text"]
+                if "白色" in msg:
+                    self.check_state_and_change('白色')
+                elif "電球色" in msg:
+                    self.check_state_and_change('電球色')
+                elif ("電気" in msg) and ("オフ" in msg):
+                    self.check_state_and_change('オフ')
 
     def check_state_and_change(self, color):
         state_updated = hue.get_updated_state(color)

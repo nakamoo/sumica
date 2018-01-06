@@ -19,12 +19,14 @@ def format(hue_state):
     else:
         return {"on": False}
 
+
 def get_updated_state(color):
     c = colors[color]
     data = []
     for l in [1, 2, 3]:
         data.append({'id': str(l), 'state': c})
     return data
+
 
 def change_color(color, confirm=False):
     data = get_updated_state(color)

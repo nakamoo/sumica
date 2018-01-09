@@ -10,12 +10,9 @@ import cv2
 import time
 # from _app import app
 
-from flask import Flask
-import pymongo
+from controllers.dbreader.utils import get_db
 
-app = Flask(__name__)
-app.config.from_pyfile(filename="../application.cfg")
-mongo = pymongo.MongoClient('localhost', app.config['PORT_DB']).hai
+db = get_db()
 
 import coloredlogs, logging
 logger = logging.getLogger(__name__)

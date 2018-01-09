@@ -14,19 +14,13 @@ import traceback
 import importlib
 import threading
 
-from controllers.detection import Detection
+from controllers.features import FeatureExtractor
 from controllers.chatbot import Chatbot
 from controllers.speechbot import Speechbot
-from controllers.hello import HelloController
 from controllers.settings import Settings
-from controllers.pose2 import Pose2
 from controllers.snapshot import Snapshot
-from controllers.summarizer import Summarizer
-from controllers.actionrec import ActionRecognition
 from controllers.youtubeplayer import YoutubePlayer
 from controllers.irkit import IRKit
-from controllers.printtest import PrintTest
-from controllers.imageprocessor import ImageProcessor
 from controllers.tests.test0106 import Test0106
 from controllers.tests.learner import Learner
 #from controllers.learner import Learner
@@ -53,8 +47,8 @@ learner = Learner(app.config['USER'], ['webcam0', 'webcam1'], strtime_to_epoch("
 learner.update()
 
 def standard_controllers(user_name):
-    # return [YoutubePlayer(user_name, learner), IRKit(user_name), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Test0106(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
-    return [YoutubePlayer(user_name, learner), Test0106(user_name, learner), IRKit(user_name, learner), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
+    #return [YoutubePlayer(user_name, learner), Test0106(user_name, learner), IRKit(user_name, learner), PrintTest(user_name), Pose2(user_name), Detection(user_name), ActionRecognition(), Chatbot(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
+    return [YoutubePlayer(user_name, learner), IRKit(user_name, learner), FeatureExtractor(user_name), Chatbot(user_name), Speechbot(user_name), Snapshot(user_name), Settings(user_name)]
 
 # controller modules for global events
 control_mods = load_controller_modules()

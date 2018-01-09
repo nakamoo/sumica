@@ -5,7 +5,7 @@ client/tts_cache/*.wav
 client/hotwords
 client/managers/hotword
 
-main_server/sumica/images/*
+main_server/sumica/datafiles
 main_server/images/*
 main_server/sumica/application.cfg
 main_server/sumica/pose_tmp/*

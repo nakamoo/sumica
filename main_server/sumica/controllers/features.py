@@ -4,7 +4,6 @@ import requests
 import database as db
 import json
 from utils import encryption
-from controllers.utils import iou
 import os
 import cv2
 import time
@@ -17,22 +16,6 @@ import coloredlogs, logging
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
-
-def nms(dets, iou_threshold=0.5):
-    sorted_list = sorted(dets, key=lambda k: k['confidence'])
-    filtered_list = []
-
-    for det in dets:
-        skip = False
-        for b in filtered_list:
-            if b["label"] == det["label"] and iou(b["box"], det["box"]) > iou_threshold:
-                skip = True
-                break
-
-        if not skip:
-            filtered_list.append(det)
-
-    return filtered_list
 
 class FeatureExtractor(Controller):
     def __init__(self, user):
@@ -48,7 +31,7 @@ class FeatureExtractor(Controller):
             new_data = {}
             new_data['history.features_request'] = time.time()
 
-            state_json = requests.post("http://" + app.config['FEATURES_SERVER_URL'] + "/extract_features", data={'path': os.path.abspath(image_path), 'detection_threshold': 0.5, 'nms_iou_threshold': 0.5})
+            state_json = requests.post("http://" + app.config['FEATURES_SERVER_URL'] + "/extract_features", data={'path': os.path.abspath(image_path), 'detection_threshold': 0.5, 'nms_threshold': 0.5})
 
             features = json.loads(state_json.text)
             new_data.update(features)

@@ -13,12 +13,11 @@ from PIL import Image
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
-# This is needed to display the images.
-#%matplotlib inline
+det_root = "../../models"
 
 # This is needed since the notebook is stored in the object_detection folder.
-sys.path.append("../../models/object_detection")
-sys.path.append("../../models")
+sys.path.append(det_root + "/object_detection")
+sys.path.append(det_root)
 
 from utils import label_map_util
 
@@ -31,10 +30,10 @@ MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = '../../models/object_detection/' + MODEL_NAME + '/frozen_inference_graph.pb'
+PATH_TO_CKPT = det_root + '/object_detection/' + MODEL_NAME + '/frozen_inference_graph.pb'
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('../../models/object_detection', 'data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join(det_root, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
 
 NUM_CLASSES = 90
 
@@ -57,17 +56,6 @@ with detection_graph.as_default():
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
-
-# For the sake of simplicity we will use only 2 images:
-# image1.jpg
-# image2.jpg
-# If you want to test the code with your images, just add path to the images to the TEST_IMAGE_PATHS.
-#PATH_TO_TEST_IMAGES_DIR = 'test_images'
-#TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3) ]
-
-# Size, in inches, of the output images.
-IMAGE_SIZE = (12, 8)
-
 
 #with detection_graph.as_default():
 sess = tf.Session(graph=detection_graph)

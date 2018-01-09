@@ -164,7 +164,7 @@ class UpdateDist(object):
 
 
 class ImageUpdater(object):
-    def __init__(self, cams, axes, imdata, pose_mat, act_mat, com_mat, meta, labels, predictions, classes, out2class, diffs, mask, bkpts, skip=1):
+    def __init__(self, cams, axes, imdata, pose_mat, act_mat, com_mat, meta, raw_labels, labels, predictions, classes, out2class, diffs, mask, bkpts, mode_breaks, clusters, skip=1):
         self.cams = cams
         self.axes = axes
         self.imdata = imdata
@@ -182,7 +182,10 @@ class ImageUpdater(object):
         self.mask = mask
         self.bkpts = bkpts
         self.out2class = out2class
+        self.raw_labels = raw_labels
         #self.certainty = certainty
+        self.mode_breaks = mode_breaks
+        self.clusters = clusters
         
         if self.diffs is None:
             self.diffs = np.sin(np.arange(0, com_mat.shape[0] / 0.1, 0.1))
@@ -263,13 +266,30 @@ class ImageUpdater(object):
         if self.act_mat is not None:
             draw_scatter(self.axes[2][0], self.act_mat, "action cnn concat vector")
             
+        """
+        self.axes[1][2].clear()
+        self.axes[1][2].imshow(self.clusters[:, None].T, aspect="auto")
+        i = np.searchsorted(self.bkpts, scene_i)
+        self.axes[1][2].set_ylim(0, 0.5)
+        self.axes[1][2].plot([i, i], [0, 0.5], '-', lw=2, c='red')
+        if i < len(self.clusters):
+            self.axes[1][2].set_title("cluster: {}".format(self.clusters[i]))
+        """
+            
         if self.com_mat is not None:
             draw_scatter(self.axes[2][1], self.com_mat, "predictions", self.out2class[np.argmax(self.predictions, axis=1)])
             draw_scatter(self.axes[2][0], self.com_mat, "labels", self.labels)
             
+        drawto = len(self.com_mat)-1
+        marker = scene_i
+        #drawto = scene_i
+        
         self.axes[2][2].clear()
+        self.axes[2][2].set_ylim(-0.2, 1.2)
         self.axes[2][2].set_title("classification certainty")
-        self.axes[2][2].plot(np.max(self.predictions[:scene_i], axis=1))
+        self.axes[2][2].plot(np.max(self.predictions[:drawto], axis=1))
+        self.axes[2][2].plot([marker,marker], [-2, 2], '-', lw=2, c='blue')
+        self.axes[2][2].set_xlim(max(0, marker-200), marker+50)
             
         self.axes[1][0].clear()
         self.axes[1][0].set_title("image difference")
@@ -277,23 +297,37 @@ class ImageUpdater(object):
         for start, end in zip([0] + self.bkpts[:-1], self.bkpts):
             labs = None
             
-            if start > scene_i:
+            if start > drawto:
                 break
-            elif scene_i > end:
+            elif drawto > end:
                 p = self.axes[1][0].plot(np.arange(start, end), self.diffs[start:end])
                 labs = self.labels[start:end]
                 self.axes[1][0].plot([end,end], [-2, 2], '--', lw=1, c='red')
-            elif scene_i >= start:
-                p = self.axes[1][0].plot(np.arange(start, scene_i), self.diffs[start:scene_i])
-                labs = self.labels[start:scene_i]
+                
+                
+            elif drawto >= start:
+                p = self.axes[1][0].plot(np.arange(start, drawto), self.diffs[start:drawto])
+                labs = self.labels[start:drawto]
             
             if p is not None:
                 labs_loc = np.where(labs != -1)[0]
                 if len(labs_loc) > 0:
                     self.axes[1][0].scatter(labs_loc + start, np.ones_like(labs_loc), c=self.colors[labs[labs_loc]])
                     
+        #for b in self.mode_breaks:
+        #    self.axes[1][0].plot([b, b], [-2, 2], '--', lw=1, c='blue')
+        for b in self.bkpts:
+            self.axes[1][0].plot([b, b], [-2, 2], '--', lw=2, c='red')
+        
+                    
         self.axes[1][0].set_ylim(-0.2, 1.2)
-        self.axes[1][0].scatter(np.arange(scene_i), np.zeros(scene_i), c=self.colors[self.out2class[np.argmax(self.predictions[:scene_i], axis=1)]])
+        self.axes[1][0].set_xlim(max(0, marker-200), marker+50)
+        self.axes[1][0].scatter(np.arange(drawto), np.ones(drawto) * -0.1, c=self.colors[self.out2class[np.argmax(self.predictions[:drawto], axis=1)]])
+        lab_x = np.where(self.raw_labels[:drawto] != -1)
+        lab_c = self.raw_labels[lab_x]
+        self.axes[1][0].scatter(lab_x, np.ones_like(lab_x) * 0.8, c=self.colors[lab_c], marker="*")
+        
+        self.axes[1][0].plot([marker,marker], [-2, 2], '-', lw=2, c='blue')
 
         self.axes[1][1].clear()
         self.axes[1][1].set_title("clusters")
@@ -314,7 +348,7 @@ class ImageUpdater(object):
 
         return self.axes
     
-    def write_video(cams, models, misc, mode, path, skip=5):
+    def write_video(cams, models, misc, mode, path, skip=5, class_names=None):
         mat = misc["matrix"]
         print("total frames:", mat.shape[0])
         
@@ -322,14 +356,17 @@ class ImageUpdater(object):
         
         predictions = models[mode].predict_proba(mat)
         classes = models[mode].classes_
-        train_labels = misc["train_labels"][mode]
+        raw_labels = misc["train_labels"][mode]["raw"]
+        train_labels = misc["train_labels"][mode]["augmented"]
         mat.shape[0]
         
         diffs = np.array(([0] + np.sum(mat[:-1] - mat[1:], axis=1)**2.0)[:, None])
 
-        class_names = [str(c) for c in classes]
+        if class_names is None:
+            class_names = [str(c) for c in classes]
+            
         updater = ImageUpdater(cams, axes, np.array(misc["raw_data"]), None, None, mat,
-                               np.array(misc["meta"]), train_labels, predictions, class_names, classes, diffs, range(mat.shape[0]), misc["breaks"], skip=skip)
+                               np.array(misc["meta"]), raw_labels, train_labels, predictions, class_names, classes, diffs, range(mat.shape[0]), misc["breaks"], misc["mode_breaks"][mode], misc["clusters"], skip=skip)
         fig.tight_layout()
-        ani = animation.FuncAnimation(fig, updater, frames=range(0, len(misc["matrix"]), skip), interval=100, repeat=False)
+        ani = animation.FuncAnimation(fig, updater, frames=list(range(0, len(misc["matrix"]), skip)) + [len(misc["matrix"])-1], interval=100, repeat=False)
         ani.save(path, writer="ffmpeg")

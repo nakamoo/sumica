@@ -1,7 +1,4 @@
 from controllers.dbreader.imagereader import ImageReader
-from controllers.youtubeplayer import get_youtube_label
-from controllers.irkit import get_tv_label
-from controllers.tests.test0106 import get_hue_label
 from controllers.vectorizer.person2vec import Person2Vec
 import ruptures as rpt
 import time
@@ -12,10 +9,7 @@ import pickle
 from collections import Counter
 
 class Learner:
-    def __init__(self, username, cams, start_time):
-        self.username = username
-        self.cams = cams
-        self.start_time = start_time
+    def __init__(self):
         self.models = {}
         self.data2vec = Person2Vec()
 
@@ -27,6 +21,7 @@ class Learner:
         x_indices = np.searchsorted(x_times, y_times)
         # no label = -1
         labels = np.ones(x.shape[0], dtype=np.int32) * -1
+        intervals = [[] for _ in range(len(label_set))]
 
         _breaks = [0] + breaks
 
@@ -54,7 +49,7 @@ class Learner:
         clusters = np.searchsorted(_breaks, x_indices)
         
         for i, xx in enumerate(x_indices):
-            labels[xx] = y[i]
+            labels[xx - 1] = y[i]
         sparse_labels = labels.copy()
 
         for i, c in enumerate(clusters):
@@ -67,8 +62,10 @@ class Learner:
             if prev_label != -1 and (counts[y[i]] < counts[prev_label] or (counts[y[i]] == counts[prev_label] and assigned[y[i]] < assigned[prev_label])):
                 print("warning: overwriting segment w/ label {} ({}) to {} ({})".format(prev_label, counts[prev_label], y[i], counts[y[i]]))
                 assigned[prev_label] -= 1
+                intervals[prev_label] = []
 
             labels[_breaks[c-1]:_breaks[c]] = y[i]
+            intervals[i] = [_breaks[c-1], _breaks[c]]
             assigned[y[i]] += 1
 
         # take out remaining unlabeled data
@@ -80,36 +77,37 @@ class Learner:
         clf = RandomForestClassifier(n_estimators=20)
         clf.fit(labeled_x, train_labels)
 
-        return clf, {"raw": sparse_labels, "augmented": labels}, _breaks[1:]
+        return clf, {"raw": sparse_labels, "augmented": labels, "intervals": intervals, "indices": x_indices}, _breaks[1:]
 
-    def create_image_matrix(self, end_time=None):
-        imreader = ImageReader()
-
-        if end_time is None:
-            end_time = time.time()
-        imdata, times = imreader.read_db(self.username, self.start_time, end_time, self.cams, skip_absent=False, filtered=False)
-
+    def create_image_matrix(self, imdata):
         pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True)
-
         mat = np.concatenate([act_mat, pose_mat], axis=1)
 
-        return mat, times, imdata, meta
+        return mat, meta
 
     def calculate_breakpoints(self, X):
+        if X.shape[0] < 2:
+            return []
+        
         model = "l1"  # "l2", "rbf"
         algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(X)
         breaks = algo.predict(pen=np.log(X.shape[0])*X.shape[1]*2**2)
 
         return breaks
 
-    def update_models(self, labels, end_time=None):
-        X, times, imdata, meta = self.create_image_matrix(end_time)
+    def update_models(self, imdata, times, labels):
+        X, meta = self.create_image_matrix(imdata)
         breaks = self.calculate_breakpoints(X)
         train_labels = {}
         mode_breaks = {}
 
         for mode, label_set in labels.items():
-            m, label_list, m_breaks = self.learn_model(times, X, label_set, breaks)
+            if len(label_set) <= 0:
+                label_list = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
+                m, m_breaks = None, []
+            else: 
+                m, label_list, m_breaks = self.learn_model(times, X, label_set, breaks)
+                
             self.models[mode] = m
             train_labels[mode] = label_list
             mode_breaks[mode] = m_breaks
@@ -124,14 +122,6 @@ class Learner:
         misc["mode_breaks"] = mode_breaks
 
         return self.models, misc
-
-    def update(self):
-        a, _ = get_hue_label(self.start_time)
-        b, _ = get_youtube_label(self.start_time)
-        c, _ = get_tv_label(self.start_time)
-        a.update(b)
-        a.update(c)
-        self.update_models(a)
 
     def predict(self, mode, images):
         clf = self.models[mode]

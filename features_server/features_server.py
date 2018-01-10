@@ -30,6 +30,8 @@ op = future.result()
 
 import detection_nn
 
+from i3dnn import I3DNN
+i3d = I3DNN("2")
 
 datafiles_root = "../main_server/sumica/datafiles"
 
@@ -155,6 +157,47 @@ def object_detection(imgmat, query):
     
     return out_data
 
+def action_recognition(whole_img, data):
+    for i in range(len(data["detections"])):
+                if data["detections"][i]["label"] == "person":
+                        box = data["detections"][i]["box"]
+                        longer_side = max((box[2]-box[0])*2.0,(box[3]-box[1])*2.0)
+                        longer_side = min(min(whole_img.shape[1], longer_side), whole_img.shape[0])
+                            
+                        a = int(longer_side/2)
+                        cx, cy = (box[0]+box[2])//2, (box[1]+box[3])//2
+                        x1, y1, x2, y2 = cx-a, cy-a, cx+a, cy+a
+                        if x1 < 0:
+                            x2 -= x1
+                            x1 = 0
+                        if y1 < 0:
+                            y2 -= y1
+                            y1 = 0
+                        if x2 >= whole_img.shape[1]:
+                            x1 -= x2-whole_img.shape[1]
+                            x2 = whole_img.shape[1]
+                        if y2 >= whole_img.shape[0]:
+                            y1 -= y2-whole_img.shape[0]
+                            y2 = whole_img.shape[0]
+                            
+                        crop = whole_img[y1:y2,x1:x2,:]
+                        crop = cv2.resize(crop, (224, 224))
+                        img = np.array([[crop for _ in range(10)]])
+                        prob, logits, label, feats = i3d.process_image(img)
+                        det = data["detections"][i]
+                        updates = {}
+                        updates["action_label"] = label
+                        updates["action_confidence"] = float(prob)
+                        updates["action_crop"] = [x1,y1,x2,y2]
+                        updates["action_vector"] = feats
+                        det.update(updates)
+                        
+                        #a = persons.index(i)
+                        #if pose_indices[a] is not None:
+                        #    updates["detections.{}.pose_body_index".format(i)] = pose_indices[a]
+                        
+    return data
+
 @app.route('/extract_features', methods=["POST"])
 def extract_features():
     query = request.form.to_dict()
@@ -167,7 +210,7 @@ def extract_features():
     pose_data = future.result()
     
     out_data["pose"] = pose_data
-    #out_data = action_recognition(imgmat, out_data)
+    out_data = action_recognition(imgmat, out_data)
 
     return json.dumps(out_data)
 

@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 import sys
-root = "../../../kinetics-i3d"
+root = "../../kinetics-i3d"
 sys.path.insert(0, root)
 
 import i3d
@@ -101,14 +101,9 @@ class I3DNN:
         feats = np.max(out_feats, axis=(0, 1, 2, 3))
         out_logits = out_logits[0]
         out_predictions = out_predictions[0]
-        sorted_indices = np.argsort(out_predictions)[::-1]
+        top_index = np.argmax(out_predictions)
 
-        #print('Norm of logits: %f' % np.linalg.norm(out_logits))
-        #print('\nTop classes and probabilities')
-        for index in sorted_indices[:1]:
-            print(out_predictions[index], out_logits[index], self.kinetics_classes[index])
-
-            return out_predictions[index], out_logits[index], self.kinetics_classes[index], feats.tolist()
+        return out_predictions[top_index], out_logits[top_index], self.kinetics_classes[top_index], feats.tolist()
 
 if __name__ == '__main__':
   nn = I3DNN()

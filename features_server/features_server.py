@@ -14,7 +14,22 @@ import numpy as np
 from io import BytesIO
 import cv2
 
+import PyOpenPose as OP
+from concurrent.futures import ThreadPoolExecutor, wait
+
+def init_pose():
+    op = OP.OpenPose((656, 368), (368, 368), (1280, 720), "COCO", "/home/sean/openpose/models/", 0, False,
+                OP.OpenPose.ScaleMode.ZeroToOne, True, True)
+    return op
+
+# GPU conflict somehow goes away when using threads
+pose_executor = ThreadPoolExecutor(1)
+future = pose_executor.submit(init_pose)
+wait([future])
+op = future.result()
+
 import detection_nn
+
 
 datafiles_root = "../main_server/sumica/datafiles"
 
@@ -76,6 +91,26 @@ def iou(boxA, boxB):
     # return the intersection over union value
     return iou
 
+def pose_estimation(img):
+    op.detectPose(img)
+    op.detectFace(img)
+    op.detectHands(img)
+    body = op.getKeypoints(op.KeypointType.POSE)[0]
+    hand = op.getKeypoints(op.KeypointType.HAND)[0]
+    face = op.getKeypoints(op.KeypointType.FACE)[0]
+    new_data = {'body': [], 'hand': [], 'face': []}
+
+    if body is not None:
+        new_data['body'] = body.tolist()
+                
+    if hand is not None:
+        new_data['hand'] = hand.tolist()
+                
+    if face is not None:
+        new_data['face'] = face.tolist()
+        
+    return new_data
+
 def object_detection(imgmat, query):
     # default settings
     conf_thresh = 0.3
@@ -124,11 +159,17 @@ def object_detection(imgmat, query):
 def extract_features():
     query = request.form.to_dict()
     imgmat = format_image(io.imread(query["path"]))
+    
     out_data = object_detection(imgmat, query)
-    #out_data = pose_estimation(imgmat, out_data)
+    
+    future = pose_executor.submit(pose_estimation, (imgmat))
+    wait([future])
+    pose_data = future.result()
+    
+    out_data["pose"] = pose_data
     #out_data = action_recognition(imgmat, out_data)
 
     return json.dumps(out_data)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', threaded=False, use_reloader=False, debug=True, port=5002)
+    app.run(host='0.0.0.0', threaded=False, use_reloader=False, debug=False, port=5002)

@@ -4,6 +4,7 @@ import sys
 import uuid
 
 from flask import Flask, request
+
 app = Flask(__name__)
 
 import re
@@ -17,10 +18,12 @@ import cv2
 import PyOpenPose as OP
 from concurrent.futures import ThreadPoolExecutor, wait
 
+
 def init_pose():
     op = OP.OpenPose((656, 368), (368, 368), (1280, 720), "COCO", "/home/sean/openpose/models/", 0, False,
-                OP.OpenPose.ScaleMode.ZeroToOne, True, True)
+                     OP.OpenPose.ScaleMode.ZeroToOne, True, True)
     return op
+
 
 # GPU conflict somehow goes away when using threads
 pose_executor = ThreadPoolExecutor(1)
@@ -31,29 +34,34 @@ op = future.result()
 import detection_nn
 
 from i3dnn import I3DNN
+
 i3d = I3DNN("2")
 
 datafiles_root = "../main_server/sumica/datafiles"
 
+
 def format_image(image):
-    if len(image.shape) == 2: # grayscale -> 3 channels
+    if len(image.shape) == 2:  # grayscale -> 3 channels
         image = np.expand_dims(image, 2)
         image = np.repeat(image, 3, 2)
-    elif image.shape[2] > 3: # 4-channel -> 3-channels
+    elif image.shape[2] > 3:  # 4-channel -> 3-channels
         image = image[:, :, :3]
-    elif image.shape[2] == 1: # single-channel -> 3-channelS
+    elif image.shape[2] == 1:  # single-channel -> 3-channelS
         image = np.repeat(image, 3, 2)
 
     return image
 
-clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+
+clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+
 
 def preprocess(imgmat):
     img_yuv = cv2.cvtColor(imgmat, cv2.COLOR_RGB2YUV)
-    img_yuv[:,:,0] = clahe.apply(img_yuv[:,:,0])
+    img_yuv[:, :, 0] = clahe.apply(img_yuv[:, :, 0])
     img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
 
     return img_output
+
 
 def nms(dets, iou_threshold=0.5):
     sorted_list = sorted(dets, key=lambda k: k['confidence'])
@@ -70,6 +78,7 @@ def nms(dets, iou_threshold=0.5):
             filtered_list.append(det)
 
     return filtered_list
+
 
 def iou(boxA, boxB):
     xA = max(boxA[0], boxB[0])
@@ -93,6 +102,7 @@ def iou(boxA, boxB):
     # return the intersection over union value
     return iou
 
+
 def pose_estimation(img):
     op.detectPose(img)
     op.detectFace(img)
@@ -104,14 +114,15 @@ def pose_estimation(img):
 
     if body is not None:
         new_data['body'] = body.tolist()
-                
+
     if hand is not None:
         new_data['hand'] = hand.tolist()
-                
+
     if face is not None:
         new_data['face'] = face.tolist()
-        
+
     return new_data
+
 
 def object_detection(imgmat, query):
     # default settings
@@ -119,7 +130,7 @@ def object_detection(imgmat, query):
     get_img_feats = False
     get_obj_feats = False
     get_obj_dets = True
-    
+
     if "detection_threshold" in query:
         conf_thresh = float(query["detection_threshold"])
     if "get_image_features" in query:
@@ -139,7 +150,7 @@ def object_detection(imgmat, query):
 
     if get_img_feats:
         fn = str(uuid.uuid4()) + ".npy"
-        feats = np.max(img_feats, axis=(0,1)) # collapse feature maps into vector
+        feats = np.max(img_feats, axis=(0, 1))  # collapse feature maps into vector
         np.save(datafiles_root + "/image_features/" + fn, feats)
         out_data["image_features_filename"] = fn
 
@@ -154,65 +165,58 @@ def object_detection(imgmat, query):
             out_data["detections"] = nms(obj_dets, float(query["nms_threshold"]))
         else:
             out_data["detections"] = obj_dets
-    
+
     return out_data
+
 
 def action_recognition(whole_img, data):
     for i in range(len(data["detections"])):
-                if data["detections"][i]["label"] == "person":
-                        box = data["detections"][i]["box"]
-                        longer_side = max((box[2]-box[0])*2.0,(box[3]-box[1])*2.0)
-                        longer_side = min(min(whole_img.shape[1], longer_side), whole_img.shape[0])
-                            
-                        a = int(longer_side/2)
-                        cx, cy = (box[0]+box[2])//2, (box[1]+box[3])//2
-                        x1, y1, x2, y2 = cx-a, cy-a, cx+a, cy+a
-                        if x1 < 0:
-                            x2 -= x1
-                            x1 = 0
-                        if y1 < 0:
-                            y2 -= y1
-                            y1 = 0
-                        if x2 >= whole_img.shape[1]:
-                            x1 -= x2-whole_img.shape[1]
-                            x2 = whole_img.shape[1]
-                        if y2 >= whole_img.shape[0]:
-                            y1 -= y2-whole_img.shape[0]
-                            y2 = whole_img.shape[0]
-                            
-                        crop = whole_img[y1:y2,x1:x2,:]
-                        crop = cv2.resize(crop, (224, 224))
-                        img = np.array([[crop for _ in range(10)]])
-                        prob, logits, label, feats = i3d.process_image(img)
-                        det = data["detections"][i]
-                        updates = {}
-                        updates["action_label"] = label
-                        updates["action_confidence"] = float(prob)
-                        updates["action_crop"] = [x1,y1,x2,y2]
-                        updates["action_vector"] = feats
-                        det.update(updates)
-                        
-                        #a = persons.index(i)
-                        #if pose_indices[a] is not None:
-                        #    updates["detections.{}.pose_body_index".format(i)] = pose_indices[a]
-                        
+        if data["detections"][i]["label"] == "person":
+            box = data["detections"][i]["box"]
+            im_w, im_h = whole_img.shape[1], whole_img.shape[0]
+            longer_side = max((box[2] - box[0]) * 2.0, (box[3] - box[1]) * 2.0)
+            cx, cy = (box[0] + box[2]) // 2, (box[1] + box[3]) // 2
+            # make sure to fit the square box inside the image
+            longer_side = np.min([longer_side, cx*2.0, (im_w-cx)*2.0, cy*2.0, (im_h-cy)*2.0])
+
+            a = int(longer_side // 2)
+            x1, y1, x2, y2 = cx - a, cy - a, cx + a, cy + a
+
+            crop = whole_img[y1:y2, x1:x2, :]
+            crop = cv2.resize(crop, (224, 224))
+            img = np.repeat(crop[None, None, :], 10, axis=1)
+            prob, logits, label, feats = i3d.process_image(img)
+            det = data["detections"][i]
+            updates = {}
+            updates["action_label"] = label
+            updates["action_confidence"] = float(prob)
+            updates["action_crop"] = [x1, y1, x2, y2]
+            updates["action_vector"] = feats
+            det.update(updates)
+
+            # a = persons.index(i)
+            # if pose_indices[a] is not None:
+            #    updates["detections.{}.pose_body_index".format(i)] = pose_indices[a]
+
     return data
+
 
 @app.route('/extract_features', methods=["POST"])
 def extract_features():
     query = request.form.to_dict()
     imgmat = format_image(io.imread(query["path"]))
-    
+
     out_data = object_detection(imgmat, query)
-    
+
     future = pose_executor.submit(pose_estimation, (imgmat))
     wait([future])
     pose_data = future.result()
-    
+
     out_data["pose"] = pose_data
     out_data = action_recognition(imgmat, out_data)
 
     return json.dumps(out_data)
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', threaded=False, use_reloader=False, debug=False, port=5002)

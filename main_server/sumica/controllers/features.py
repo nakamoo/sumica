@@ -1,25 +1,23 @@
-from .controller import Controller
-import numpy as np
 import requests
-import database as db
 import json
-from utils import encryption
 import os
-import cv2
 import time
-# from _app import app
 
-from controllers.dbreader.utils import get_db
-db = get_db()
+from flask import current_app
+import numpy as np
+import cv2
+import coloredlogs
+import logging
 
-import coloredlogs, logging
+from controllers.controller import Controller
+
 logger = logging.getLogger(__name__)
-coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
+coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 
 class FeatureExtractor(Controller):
-    def __init__(self, user):
-        self.user = user
+    def __init__(self, username):
+        super().__init__(username)
 
     def on_event(self, event, data):
         if event == "image":

@@ -24,20 +24,29 @@ logging.info("id: {}".format(ID))
 
 actions = Actions(ID, SERVER_IP)
 
-fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith('.py')]
-sensor_mods = []
-mods = []
-for f in fs:
-    try:
-        mods.append(importlib.import_module(f))
-    except:
-        logging.warn("couldn't import {}".format(f))
+# fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith('.py')]
 
-for m in mods:
-    try:
-        sensor_mods.append(m.Manager(ID, SERVER_IP, actions))
-    except:
-        logging.warn("couldn't initialize {}".format(m))
+from managers.cvcamera import Manager as CameraManager
+from managers.youtube import Manager as YoutubeManager
+from managers.speech import Manager as SpeechManager
+from managers.hue import Manager as HueManager
+
+# sensor_mods = []
+# mods = []
+# for f in fs:
+#     try:
+#         mods.append(importlib.import_module(f))
+#     except:
+#         logging.warn("couldn't import {}".format(f))
+#
+# for m in mods:
+#     try:
+#         sensor_mods.append(m.Manager(ID, SERVER_IP, actions))
+#     except:
+#         logging.warn("couldn't initialize {}".format(m))
+
+sensor_mods = [CameraManager(ID, SERVER_IP, actions), YoutubeManager(ID, SERVER_IP, actions),
+               SpeechManager(ID, SERVER_IP, actions), HueManager(ID, SERVER_IP, actions)]
 
 # start all sensor modules
 for inp in sensor_mods:

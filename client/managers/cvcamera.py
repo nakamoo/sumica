@@ -45,9 +45,6 @@ class Manager:
         except:
             exit()
 
-    def execute(self, acts):
-        pass
-
     def start(self):
         for man in self.mans:
             if man.enabled:
@@ -59,9 +56,6 @@ class Manager:
         for man in self.mans:
             man.close()
             print("releasing", man.cam_name)
-
-    def execute(self, acts):
-        pass
 
 
 class CamManager:

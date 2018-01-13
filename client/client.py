@@ -31,6 +31,8 @@ from managers.youtube import Manager as YoutubeManager
 from managers.speech import Manager as SpeechManager
 from managers.hue import Manager as HueManager
 
+from actors.youtubeactor import YoutubeActor
+
 # sensor_mods = []
 # mods = []
 # for f in fs:
@@ -45,8 +47,15 @@ from managers.hue import Manager as HueManager
 #     except:
 #         logging.warn("couldn't initialize {}".format(m))
 
-sensor_mods = [CameraManager(ID, SERVER_IP, actions), YoutubeManager(ID, SERVER_IP, actions),
-               SpeechManager(ID, SERVER_IP, actions), HueManager(ID, SERVER_IP, actions)]
+camera_manager = CameraManager(ID, SERVER_IP, actions)
+youtube_manager = YoutubeManager(ID, SERVER_IP, actions)
+speech_manager = SpeechManager(ID, SERVER_IP, actions)
+hue_manager = HueManager(ID, SERVER_IP, actions)
+# sensor_mods = [camera_manager, youtube_manager, speech_manager, hue_manager]
+sensor_mods = []
+
+youtube_actor = YoutubeActor()
+actor_mods = [youtube_actor]
 
 # start all sensor modules
 for inp in sensor_mods:
@@ -56,7 +65,7 @@ for inp in sensor_mods:
 
 # TODO: clean
 def act_list2(acts):
-    for inp in sensor_mods:
+    for inp in actor_mods:
         try:
             inp.execute(acts)
         except:

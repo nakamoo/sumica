@@ -27,7 +27,7 @@ def visualize(frame, all_boxes, win_name="frame"):
 #cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 
 class Manager:
-    def __init__(self, user, server_ip, actions):
+    def __init__(self, user, server_ip):
         self.mans = []
 
         try:

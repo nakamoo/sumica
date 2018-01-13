@@ -9,17 +9,16 @@ from utils.irkit import IrkitInternetAPI
 from utils.speechrecognition import confirm
 irkit = IrkitInternetAPI()
 
+from actors.actor import Actor
 import utils.tts as tts
 
-class Actions:
+class GeneralActor(Actor):
     def __init__(self, user, server_ip):
-        self.last_hue_update = {"data": None}
-        self.hue_overridden = False
         self.user = user
         self.ip = server_ip
 
-    def act_list(self, actions):
-        for action in actions:
+    def execute(self, acts):
+        for action in acts:
             if "platform" in action and "data" in action:
                 if "confirmation" in action:
                     self.act(action["platform"], action["data"],
@@ -29,16 +28,7 @@ class Actions:
 
     def act(self, platform, data, confirmation=None):
         print(">>", platform)
-        if platform == "youtube":
-            print("OPENING YOUTUBE")
-            Popen("node utils/youtube.js {}".format(data), shell=True)
-        elif platform == "shell":
-            Popen("{}".format(data), shell=True)
-        elif platform == "print":
-            print(data)
-        elif platform == "sound":
-            Popen("play ../sounds/{}".format(data), shell=True)
-        elif platform == "irkit":
+        if platform == "irkit":
             if confirmation is not None:
                 ans = confirm(confirmation)
                 data_confirm = {'platform': platform, 'data': data, 'user_name': self.user,

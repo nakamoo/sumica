@@ -13,13 +13,13 @@ from managers.hotword import snowboydecoder
 import signal
 import wave
 import speech_recognition as sr
+import utils.tts as tts
 
 class Manager:
-    def __init__(self, user, server_ip, actions):
+    def __init__(self, user, server_ip):
         self.now_playing = None
         self.user = user
         self.ip = server_ip
-        self.actions = actions
 
     def start(self):
         interrupted = False
@@ -48,7 +48,7 @@ class Manager:
             if not listening:
                 if ans == 3:
                     print("speech recognition: awake")
-                    self.actions.act("tts", "はい？")
+                    tts.say("はい？")
                     listening = True
                     listen_start = time.time()
                     last_spoken = time.time()
@@ -105,12 +105,12 @@ class Manager:
                             data = {"user_name": self.user, "time": time.time(), "type": "speech", "text": text}
                             requests.post("%s/data/speech" % self.ip, data=data, verify=False)
                         except Exception as e:
-                            self.actions.act("tts", "聞き取れませんでした")
+                            tts.say("聞き取れませんでした")
                             print("some error")
                             print(e)
                     else:
                         print("no speech detected")
-                        self.actions.act("tts", "何か言いましたか？")
+                        tts.say("何か言いましたか？")
 
                 listening = False
                 current_buffer = bytearray(b'')
@@ -136,12 +136,11 @@ if __name__ == "__main__":
     import threading
 
     import utils
-    from utils.actions import Actions
 
     SERVER_IP = "https://homeai.ml:{}".format(sys.argv[2])
     ID = sys.argv[1]
 
-    man = Manager(ID, SERVER_IP, Actions())
+    man = Manager(ID, SERVER_IP)
     thread_stream = threading.Thread(target=man.start) 
     thread_stream.daemon = False
     thread_stream.start()

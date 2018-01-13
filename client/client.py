@@ -11,20 +11,14 @@ import time
 import sys
 import traceback
 
-from utils.actions import Actions
 requests.packages.urllib3.disable_warnings()
 
 import coloredlogs, logging
 coloredlogs.install(level="DEBUG")
 
 SERVER_IP = "https://homeai.ml:{}".format(sys.argv[2])
-
 ID = sys.argv[1]
 logging.info("id: {}".format(ID))
-
-actions = Actions(ID, SERVER_IP)
-
-# fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith('.py')]
 
 from managers.cvcamera import Manager as CameraManager
 from managers.speech import Manager as SpeechManager
@@ -32,30 +26,18 @@ from managers.hue import Manager as HueManager
 
 from actors.youtubeactor import YoutubeActor
 from actors.hueactor import HueActor
+from actors.generalactor import GeneralActor
 
-# sensor_mods = []
-# mods = []
-# for f in fs:
-#     try:
-#         mods.append(importlib.import_module(f))
-#     except:
-#         logging.warn("couldn't import {}".format(f))
-#
-# for m in mods:
-#     try:
-#         sensor_mods.append(m.Manager(ID, SERVER_IP, actions))
-#     except:
-#         logging.warn("couldn't initialize {}".format(m))
-
-camera_manager = CameraManager(ID, SERVER_IP, actions)
-speech_manager = SpeechManager(ID, SERVER_IP, actions)
-hue_manager = HueManager(ID, SERVER_IP, actions)
+camera_manager = CameraManager(ID, SERVER_IP)
+speech_manager = SpeechManager(ID, SERVER_IP)
+hue_manager = HueManager(ID, SERVER_IP)
 # sensor_mods = [camera_manager, youtube_manager, speech_manager, hue_manager]
 sensor_mods = []
 
 youtube_actor = YoutubeActor(ID, SERVER_IP)
 hue_actor = HueActor(ID, SERVER_IP)
-actor_mods = [youtube_actor, hue_actor]
+general_actor = GeneralActor(ID, SERVER_IP)
+actor_mods = [youtube_actor, hue_actor, general_actor]
 
 # start all sensor modules
 for inp in sensor_mods:
@@ -91,8 +73,7 @@ while True:
 
         logging.debug("action data: {}".format(action_data))
         act_list2(action_data)
-        actions.act_list(action_data)
-           
+
     except KeyboardInterrupt:
         for inp in sensor_mods:
             try:

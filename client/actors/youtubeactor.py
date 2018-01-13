@@ -15,6 +15,10 @@ import traceback
 from actors.actor import Actor
 
 class YoutubeActor(Actor):
+    def __init__(self, user, ip):
+        self.user = user
+        self.ip = ip
+
     def execute(self, acts):
         for act in acts:
             if act["platform"] == "play_youtube":
@@ -48,7 +52,6 @@ class YoutubeActor(Actor):
                         traceback.print_exc()
                         tts.say(act['data'] + "は見つかりませんでした")
                         # Popen("mpv https://www.youtube.com/watch?v=HKKe7p44PDY --loop --no-video > /dev/null 2>&1", shell=True)
-                    self.now_playing = act['data']
                 except:
                     traceback.print_exc()
 
@@ -71,10 +74,19 @@ class YoutubeActor(Actor):
                     logging.debug(r)
                 try:
                     Popen('pkill -9 mpv', shell=True)
-                    self.now_playing = None
                 except:
                     traceback.print_exc()
 
+
+class Youtube():
+    def __init__(self,query,result=10): # max20まで
+        search_url = "https://www.youtube.com/results?search_query=" + query
+        req = requests.get(search_url)
+        soup = BeautifulSoup(req.text.encode(req.encoding).decode('utf-8','strict'), "html.parser")
+        h3s = soup.find_all("h3", {"class":"yt-lockup-title"})[0:result+1]
+
+        self.data = [h3 for h3 in h3s]
+        self.url = ["https://www.youtube.com" + h3.a.get('href') for h3 in h3s]
 
 
 

@@ -27,7 +27,6 @@ actions = Actions(ID, SERVER_IP)
 # fs = ['managers.{}'.format(f[:-3]) for f in os.listdir('managers') if f.endswith('.py')]
 
 from managers.cvcamera import Manager as CameraManager
-from managers.youtube import Manager as YoutubeManager
 from managers.speech import Manager as SpeechManager
 from managers.hue import Manager as HueManager
 
@@ -48,13 +47,12 @@ from actors.youtubeactor import YoutubeActor
 #         logging.warn("couldn't initialize {}".format(m))
 
 camera_manager = CameraManager(ID, SERVER_IP, actions)
-youtube_manager = YoutubeManager(ID, SERVER_IP, actions)
 speech_manager = SpeechManager(ID, SERVER_IP, actions)
 hue_manager = HueManager(ID, SERVER_IP, actions)
 # sensor_mods = [camera_manager, youtube_manager, speech_manager, hue_manager]
 sensor_mods = []
 
-youtube_actor = YoutubeActor()
+youtube_actor = YoutubeActor(ID, SERVER_IP)
 actor_mods = [youtube_actor]
 
 # start all sensor modules

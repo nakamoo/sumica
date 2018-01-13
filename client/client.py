@@ -31,6 +31,7 @@ from managers.speech import Manager as SpeechManager
 from managers.hue import Manager as HueManager
 
 from actors.youtubeactor import YoutubeActor
+from actors.hueactor import HueActor
 
 # sensor_mods = []
 # mods = []
@@ -53,7 +54,8 @@ hue_manager = HueManager(ID, SERVER_IP, actions)
 sensor_mods = []
 
 youtube_actor = YoutubeActor(ID, SERVER_IP)
-actor_mods = [youtube_actor]
+hue_actor = HueActor(ID, SERVER_IP)
+actor_mods = [youtube_actor, hue_actor]
 
 # start all sensor modules
 for inp in sensor_mods:

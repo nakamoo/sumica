@@ -31,40 +31,6 @@ class Manager:
             self.connected = True
             print("connected to Hue.")
 
-    def execute(self, acts):
-        for act in acts:
-            try:
-                if act["platform"] == "send_hue":
-                    self.send = act["data"] == "True"
-                elif act["platform"] == "hue_back":
-                    self.going_back = float(act["data"]) > 0
-                elif act['platform'] == "hue":
-                    if 'confirmation' in act:
-                        print(act['confirmation'])
-                        ans = confirm(act['confirmation'])
-                        data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
-                                'confirmation': act['confirmation'], 'answer': ans}
-                        r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False)
-                        if ans is None:
-                            self.actions.act("tts", "上手く聞こえませんでした")
-                            return
-                        elif not ans:
-                            self.actions.act('tts', "わかりました，操作をキャンセルします")
-                            return
-                        self.actions.act('tts','照明を操作します')
-
-                    json_data = json.loads(act['data'])
-                    if self.check_state_change({'lights':json_data}):
-                        with open('utils/hue_state.json', 'w+') as outfile:
-                            json.dump(json_data, outfile)
-
-                        self.program_control = True
-                        out = subprocess.check_output(['node', 'utils/hue.js', 'set_state'])
-
-            except Exception as e:
-                traceback.print_exc()
-                print(e)
-
     def check_state_change(self, current):
         if self.last_state is None:
             return False

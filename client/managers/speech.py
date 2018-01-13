@@ -21,9 +21,6 @@ class Manager:
         self.ip = server_ip
         self.actions = actions
 
-    def execute(self, acts):
-        pass
-
     def start(self):
         interrupted = False
 

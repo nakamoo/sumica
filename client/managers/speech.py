@@ -85,15 +85,6 @@ class Manager:
                     sampwidth = detector.audio.get_sample_size(detector.audio.get_format_from_width(
                         detector.detector.BitsPerSample() / 8))
 
-                    """
-                    waveFile = wave.open("speech.wav", 'wb')
-                    waveFile.setnchannels(detector.detector.NumChannels())
-                    waveFile.setsampwidth(detector.audio.get_sample_size(detector.audio.get_format_from_width(
-                        detector.detector.BitsPerSample() / 8)))
-                    waveFile.setframerate(detector.detector.SampleRate())
-                    waveFile.writeframes(current_buffer)
-                    waveFile.close()
-                    """
                     print("listening over")
 
                     if said_something:

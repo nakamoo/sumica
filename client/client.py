@@ -31,8 +31,8 @@ from actors.generalactor import GeneralActor
 camera_manager = CameraManager(ID, SERVER_IP)
 speech_manager = SpeechManager(ID, SERVER_IP)
 hue_manager = HueManager(ID, SERVER_IP)
-# sensor_mods = [camera_manager, youtube_manager, speech_manager, hue_manager]
-sensor_mods = []
+sensor_mods = [camera_manager, speech_manager, hue_manager]
+# sensor_mods = []
 
 youtube_actor = YoutubeActor(ID, SERVER_IP)
 hue_actor = HueActor(ID, SERVER_IP)
@@ -45,14 +45,16 @@ for inp in sensor_mods:
     thread_stream.daemon = False
     thread_stream.start()
 
+
 # TODO: clean
-def act_list2(acts):
+def act_list(acts):
     for inp in actor_mods:
         try:
             inp.execute(acts)
         except:
             traceback.print_exc()
             pass
+
 
 while True:
     try:
@@ -72,7 +74,7 @@ while True:
             logging.warn(r.text)
 
         logging.debug("action data: {}".format(action_data))
-        act_list2(action_data)
+        act_list(action_data)
 
     except KeyboardInterrupt:
         for inp in sensor_mods:

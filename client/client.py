@@ -32,12 +32,14 @@ for f in fs:
         mods.append(importlib.import_module(f))
     except:
         logging.warn("couldn't import {}".format(f))
+        traceback.print_exc()
 
 for m in mods:
     try:
         sensor_mods.append(m.Manager(ID, SERVER_IP, actions))
     except:
         logging.warn("couldn't initialize {}".format(m))
+        traceback.print_exc()
 
 # start all sensor modules
 for inp in sensor_mods:

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>sumica interface</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.6/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="static/jsplumb.min.js"></script>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="static/main.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-sm navbar-dark" style="background-color: #000000;">
+    <a class="navbar-brand" href="#">sumica interface</a>
+</nav>
+
+<div class="container-fluid content">
+    <div class="row fill-parent">
+        <div class="col-sm-9 padding-0">
+            <div class="row" id="flowchart"></div>
+            <div class="container" id="timelinecontainer">
+                <div class="row" id="timeline"></div>
+            </div>
+        </div>
+        <div class="col-sm-3 padding-0">
+            <div style="position: absolute; bottom: 0;" id="feed">
+                <!--
+                <img src="https://via.placeholder.com/350x250" class="feedimg">
+                <img src="https://via.placeholder.com/350x250" class="feedimg">
+                -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="static/main.js"></script>
+<script src="static/flowchart.js"></script>
+<script src="static/timeline.js"></script>
+<script src="static/feed.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+body {
+    width:100%;
+    height:100%;
+    margin:0;
+    background-color: #303030
+}
+
+.content {
+    height:calc(100vh - 56px);
+}
+
+.fill-parent {
+    min-height: 100%;
+}
+
+.padding-0 {
+    padding:0;
+}
+
+.feedimg {
+    max-width:100%;
+}
+
+#timelinecontainer {
+    position: absolute;
+    bottom: 5px;
+    padding-bottom: 0;
+}
+
+#feed {
+    min-width: 100%;
+}
+
+#nofeedpanel {
+    background-color:black;
+}
+
+#nofeedtext {
+    color: white;
+    font-size: 2em;
+}

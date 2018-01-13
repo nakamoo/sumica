@@ -23,8 +23,6 @@ def global_event(event, data):
     FeatureExtractor.on_global_event(event, data)
     Chatbot.on_global_event(event, data)
     Speechbot.on_global_event(event, data)
-    Snapshot.on_global_event(event, data)
-    Settings.on_global_event(event, data)
 
 
 def standard_controllers(user_name):

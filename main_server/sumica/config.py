@@ -27,7 +27,7 @@ class ConfigKoki(object):
     LOG_LEVEL = "debug"
 
     ENCRYPTION = False
-    HOME = "/home/nakamua/HAI"
+    HOME = "/home/nakamura/HAI"
     ENCRYPTED_IMG_DIR = HOME + "/main_server/sumica/datafiles/images/encrypted_images/"
     RAW_IMG_DIR = HOME + "/main_server/sumica/datafiles/images/raw_images/"
 

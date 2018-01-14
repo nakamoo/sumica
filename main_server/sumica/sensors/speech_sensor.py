@@ -1,4 +1,5 @@
 import time
+import json
 
 from flask import Blueprint, request, jsonify
 import coloredlogs
@@ -32,6 +33,7 @@ def post_confirm_data():
     data = request.form.to_dict()
     logger.debug(str(data))
     data["time"] = time.time()
+    data["action"] = json.loads(data["action"])
     db.confirmation.insert_one(data)
     cm.trigger_controllers(data['user_name'], "confirmation", data)
     data.pop("_id")

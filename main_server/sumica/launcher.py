@@ -3,7 +3,6 @@ import os
 import sys
 
 from flask import Flask, request, jsonify
-
 app = Flask(__name__)
 app.config.from_object('config.Config')
 
@@ -11,6 +10,7 @@ with app.app_context():
     import controllermanager as cm
     import sensors
     import interface
+    from utils import log_command
 
 sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor]
 
@@ -28,6 +28,7 @@ def execute_controllers():
         commands = controller.execute()
         for command in commands:
             response.append(command)
+            log_command(command, controller)
 
     return jsonify(response), 201
 

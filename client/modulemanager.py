@@ -19,9 +19,9 @@ class ModuleManager(object):
         self.SERVER_IP = SERVER_IP
 
         speech_manager = SpeechManager(ID, SERVER_IP, speech_event)
-        # hue_manager = HueManager(ID, SERVER_IP)
-        # sensor_mods = [camera_manager, speech_manager, hue_manager]
-        self.sensor_mods = [speech_manager]
+        hue_manager = HueManager(ID, SERVER_IP)
+        camera_manager = CameraManager(ID, SERVER_IP)
+        self.sensor_mods = [speech_manager, hue_manager, camera_manager]
 
         youtube_actor = YoutubeActor(self.ID, self.SERVER_IP)
         hue_actor = HueActor(self.ID, self.SERVER_IP)

@@ -5,6 +5,7 @@ import datetime
 import requests
 import traceback
 import logging
+import traceback
 import sys
 from utils.speechrecognition import confirm
 
@@ -32,7 +33,7 @@ class Manager:
         while True:
             try:
                 out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
-                state = out.decode('utf-8').split("\n")[-2]
+                state = json.loads(out.decode('utf-8').split("\n")[-2])
                 logging.debug(state)
 
                 data = dict()
@@ -45,6 +46,7 @@ class Manager:
 
             except:
                 logging.warn("error in sending hue data")
+                traceback.print_exc()
 
 
 if __name__ == "__main__":

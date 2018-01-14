@@ -3,7 +3,8 @@ import subprocess
 from subprocess import Popen
 import traceback
 import requests
-import logging
+import coloredlogs, logging
+coloredlogs.install(level="DEBUG")
 
 import sys
 sys.path.insert(0, "./")
@@ -16,20 +17,25 @@ import speech_recognition as sr
 import utils.tts as tts
 
 class Manager:
-    def __init__(self, user, server_ip):
+    def __init__(self, user, server_ip, speech_event):
         self.now_playing = None
         self.user = user
         self.ip = server_ip
+        self.speech_event = speech_event
 
     def start(self):
-        interrupted = False
+        while True:
+            self.speech_event.wait()
+            self.recognize()
 
-        def signal_handler(signal, frame):
-            interrupted = True
+    def interrupt_callback(self):
+        if self.speech_event.is_set():
+            return False
+        else:
+            logging.debug("SpeechManager: Interrupted")
+            return True
 
-        def interrupt_callback():
-            return interrupted
-
+    def recognize(self):
         models = ["hotwords/yes.pmdl", "hotwords/no.pmdl", "hotwords/ask.pmdl"]
         listen_start = -1
         last_spoken = -1
@@ -37,11 +43,9 @@ class Manager:
         said_something = False
         current_buffer = bytearray(b'')
 
-        #signal.signal(signal.SIGINT, signal_handler)
-        
         detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.2, 0.5, 0.5], audio_gain=1)
         r = sr.Recognizer()
-        print('Listening... Press Ctrl+C to exit')
+        logging.debug("SpeechManager: Start")
 
         def speech(data, ans):
             nonlocal last_spoken, listen_start, listening, current_buffer, said_something
@@ -109,18 +113,17 @@ class Manager:
         callbacks = [speech]#[lambda: print("yes"),
                      #lambda: print("no")]
 
-        print("starting detector")
-
         try:
             detector.start(detected_callback=callbacks,
-                       interrupt_check=interrupt_callback,
-                       sleep_time=0.03)
+                           interrupt_check=self.interrupt_callback,
+                           sleep_time=0.03)
         except Exception as e:
             logging.error("fatal audio error")
             logging.error(e)
             import sys
             sys.exit()
 
+        logging.debug("SpeechManager: Terminate")
         detector.terminate()
 
 if __name__ == "__main__":

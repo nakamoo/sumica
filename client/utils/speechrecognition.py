@@ -2,8 +2,9 @@ import sys
 sys.path.insert(0, "./")
 
 import time
-import speech_recognition as sr 
 import utils.tts as tts
+import coloredlogs, logging
+coloredlogs.install(level="DEBUG")
 
 from managers.hotword import snowboydecoder
 
@@ -13,6 +14,7 @@ def listen_confirmation():
     detected = False
     models = ["hotwords/yes.pmdl", "hotwords/no.pmdl"]
     detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.5, 0.5], audio_gain=1)
+
     def interrupt_callback():
         nonlocal start_time, detected
         if detected:
@@ -21,6 +23,7 @@ def listen_confirmation():
             return True
         else:
             return False
+
     def detected_callback(data, ans):
         nonlocal confirmation_answer, detected
         if ans == 1:
@@ -34,12 +37,19 @@ def listen_confirmation():
     return confirmation_answer
 
 def confirm(confirmation):
+    from modulemanager import speech_event
+    logging.debug("speech event >> clear(SpeechManager stop)")
+    speech_event.clear()
+
     tts.say(confirmation)
     time.sleep(0.5)
     ans = listen_confirmation()
     if ans is None:
         tts.say("上手く聞こえませんでした,もう一度お願いします")
         ans = listen_confirmation()
+
+    logging.debug("speech event >> set(SpeechManager resume)")
+    speech_event.set()
     return ans
 
 if __name__ == "__main__":

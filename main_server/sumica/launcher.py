@@ -12,7 +12,7 @@ with app.app_context():
     import sensors
     import interface
 
-sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor, sensors.youtube_sensor]
+sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor]
 
 for sensor in sensor_mods:
     app.register_blueprint(sensor.bp)

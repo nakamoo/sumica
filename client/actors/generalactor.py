@@ -21,8 +21,8 @@ class GeneralActor(Actor):
         for act in acts:
             print(">>", act['platform'])
             if "platform" in act and "data" in act:
-                if "confirmation" in act:
-                    if act['confirmation'] is not None:
+                if act['platform'] == "irkit" and act['data'][0] == 'TV':
+                    if 'confirmation' in act:
                         phrases = [
                             'テレビを操作します',
                             'わかりました，操作をキャンセルします',

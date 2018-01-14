@@ -23,15 +23,14 @@ class YoutubeActor(Actor):
         for act in acts:
             if act["platform"] == "play_youtube":
                 if "confirmation" in act:
-                    if act['confirmation'] is not None:
-                        phrases = [
-                            '',
-                            'わかりました，操作をキャンセルします',
-                            '上手く聞こえませんでした'
-                        ]
-                        approved = confirm_and_post_result(act, self.user, self.ip, phrases)
-                        if not approved:
-                            return
+                    phrases = [
+                        '',
+                        'わかりました，操作をキャンセルします',
+                        '上手く聞こえませんでした'
+                    ]
+                    approved = confirm_and_post_result(act, self.user, self.ip, phrases)
+                    if not approved:
+                        return
 
                 try:
                     Popen('pkill -9 mpv', shell=True)
@@ -51,15 +50,14 @@ class YoutubeActor(Actor):
 
             if act["platform"] == "stop_youtube":
                 if "confirmation" in act:
-                    if act['confirmation'] is not None:
-                        phrases = [
-                            '音楽の再生を終了します',
-                            'わかりました，操作をキャンセルします',
-                            '上手く聞こえませんでした'
-                        ]
-                        approved = confirm_and_post_result(act, self.user, self.ip, phrases)
-                        if not approved:
-                            return
+                    phrases = [
+                        '音楽の再生を終了します',
+                        'わかりました，操作をキャンセルします',
+                        '上手く聞こえませんでした'
+                    ]
+                    approved = confirm_and_post_result(act, self.user, self.ip, phrases)
+                    if not approved:
+                        return
 
                 try:
                     Popen('pkill -9 mpv', shell=True)

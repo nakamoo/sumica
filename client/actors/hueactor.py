@@ -6,7 +6,7 @@ import requests
 import traceback
 import logging
 import sys
-from utils.speechrecognition import confirm
+from utils.speechrecognition import confirm, confirm_and_post_result
 
 from actors.actor import Actor
 
@@ -20,17 +20,14 @@ class HueActor(Actor):
             try:
                 if act['platform'] == "hue":
                     if 'confirmation' in act:
-                        print(act['confirmation'])
-                        ans = confirm(act['confirmation'])
-                        data_confirm = {'action': json.dump(act), 'user_name': self.user, 'answer': ans}
-                        r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False)
-                        if ans is None:
-                            self.actions.act("tts", "上手く聞こえませんでした")
+                        phrases = [
+                            '照明を操作します',
+                            'わかりました，操作をキャンセルします',
+                            '上手く聞こえませんでした'
+                        ]
+                        approved = confirm_and_post_result(act, self.user, self.ip, phrases)
+                        if not approved:
                             return
-                        elif not ans:
-                            self.actions.act('tts', "わかりました，操作をキャンセルします")
-                            return
-                        self.actions.act('tts','照明を操作します')
 
                     json_data = json.loads(act['data'])
                     with open('utils/hue_state.json', 'w+') as outfile:

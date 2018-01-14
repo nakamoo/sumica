@@ -6,11 +6,11 @@ import requests
 import logging
 
 from utils.irkit import IrkitInternetAPI
-from utils.speechrecognition import confirm
-irkit = IrkitInternetAPI()
-
+from utils.speechrecognition import confirm, confirm_and_post_result
 from actors.actor import Actor
 import utils.tts as tts
+
+irkit = IrkitInternetAPI()
 
 class GeneralActor(Actor):
     def __init__(self, user, server_ip):
@@ -23,18 +23,15 @@ class GeneralActor(Actor):
             if "platform" in act and "data" in act:
                 if "confirmation" in act:
                     if act['confirmation'] is not None:
-                        ans = confirm(act['confirmation'])
-                        data_confirm = {'action': json.dumps(act),'user_name': self.user, 'answer': ans}
-                        r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False)
-                        logging.debug(r)
-                        if ans is None:
-                            tts.say("上手く聞こえませんでした")
-                            return
-                        elif not ans:
-                            tts.say("わかりました，操作をキャンセルします")
+                        phrases = [
+                            'テレビを操作します',
+                            'わかりました，操作をキャンセルします',
+                            '上手く聞こえませんでした'
+                        ]
+                        approved = confirm_and_post_result(act, self.user, self.ip, phrases)
+                        if not approved:
                             return
 
-                        tts.say('テレビを操作します')
                         irkit.post_messages(act['data'])
                     else:
                         irkit.post_messages(act['data'])

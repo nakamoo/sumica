@@ -22,8 +22,7 @@ class HueActor(Actor):
                     if 'confirmation' in act:
                         print(act['confirmation'])
                         ans = confirm(act['confirmation'])
-                        data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
-                                        'confirmation': act['confirmation'], 'answer': ans}
+                        data_confirm = {'action': json.dump(act), 'user_name': self.user, 'answer': ans}
                         r = requests.post("%s/data/confirmation" % self.server_ip, data=data_confirm, verify=False)
                         if ans is None:
                             self.actions.act("tts", "上手く聞こえませんでした")

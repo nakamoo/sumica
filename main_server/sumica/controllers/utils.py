@@ -1,7 +1,7 @@
 import cv2
 import colorsys
 import numpy as np
-from controllers.dbreader.utils import get_db
+from utils import db
 from config import Config
 import pymongo
 import traceback
@@ -103,19 +103,19 @@ def iou(boxA, boxB):
     # return the intersection over union value
     return iou
 
-def filter_persons(data, det_threshold=0.8):
-    # detection passes if it contains pose or confidence is above threshold
+def sort_persons(data):
     dets = data["detections"]
     poses = data["pose"]["body"]
-    indices = []
-    pose_indices = []
+    results = []
     
     for pose_i, pose in enumerate(poses):
         # find best matching box for each pose
         best_index = None
         best_count = 0
         best_area = 9999999
-        
+
+        indices = [r[0] for r in results]
+
         for i, det in enumerate(dets):
             if i not in indices and det["label"] == "person":
                 count = box_contains_pose(det["box"], pose)
@@ -123,22 +123,24 @@ def filter_persons(data, det_threshold=0.8):
                 area = (b[3]-b[1])*(b[2]-b[0])
                 if best_index is None:
                     best_index, best_count, best_area = i, count, area
-                elif count >= best_count:
-                    if count > best_count:
-                        best_index, best_count, best_area = i, count, area
-                    elif area < best_area:
-                        best_index, best_count, best_area = i, count, area
+                elif count > best_count:
+                    best_index, best_count, best_area = i, count, area
+                elif count == best_count and area < best_area:
+                    best_index, best_count, best_area = i, count, area
         
         if best_index is not None:
-            indices.append(best_index)
-            pose_indices.append(pose_i)
-            
+            results.append([best_index, pose_i, dets[best_index]["confidence"]])
+
+    indices = [r[0] for r in results]
     for i, det in enumerate(dets):
-        if i not in indices and det["confidence"] >= det_threshold:
-            indices.append(i)
-            pose_indices.append(None)
-                    
-    return indices, pose_indices
+        if i not in indices and det["label"] == "person":
+            results.append([best_index, -1, dets[best_index]["confidence"]])
+
+    # sort by pose first, then detection confidence
+    results = sorted(results, key=lambda x: (int(x[1] is None), -x[2]))
+    results = [{"det_index": r[0], "pose_index": r[1]} for r in results]
+
+    return results
     
 def draw_object(frame, result):
             det = result["box"]

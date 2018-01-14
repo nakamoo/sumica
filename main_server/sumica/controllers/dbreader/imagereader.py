@@ -1,16 +1,15 @@
-import controllers.dbreader.dbreader as dbreader
-from controllers.dbreader.utils import get_db
 import os
 
-mongo = get_db()
+import controllers.dbreader.dbreader as dbreader
+from utils import db
 
 class ImageReader(dbreader.DBReader):
     def __init__(self):
         pass
 
-    def read_db(self, username, start_time, end_time, cams, max_lag=5, skip_absent=False, filtered=True):    
+    def read_db(self, username, start_time, end_time, cams, max_lag=5, skip_absent=False):
         query = {"user_name": username, "cam_id": {"$in": cams}, "pose":{"$exists": True}, "detections":{"$exists": True}, "time": {"$gte": start_time, "$lt": end_time}}
-        cursor = mongo.images.find(query).sort([("time", 1)])
+        cursor = db.images.find(query).sort([("time", 1)])
 
         re_data = []
         times = []
@@ -31,15 +30,10 @@ class ImageReader(dbreader.DBReader):
                 contains_person = False
             
                 for cam_image in current_data:
-                    for det in cam_image["detections"]:
-                        if filtered:
-                            if det["label"] == "person" and det["passed"] and "pose_body_index" in det:
-                                contains_person = True
-                                break
-                        else:
-                            if det["label"] == "person":
-                                contains_person = True
-                                break
+                    if len(cam_image["persons"]) > 0 \
+                            and cam_image["detections"][cam_image["persons"][0]["det_index"]]["confidence"] > 0.8:
+                        contains_person = True
+                        break
                        
                 if not contains_person:
                     skip = True

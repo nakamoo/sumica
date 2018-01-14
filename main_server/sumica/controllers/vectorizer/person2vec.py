@@ -1,6 +1,7 @@
 import numpy as np
+
 import controllers.vectorizer.vectorizer as vectorizer
-#from controllers.vectorizer import utils
+from controllers.utils import sort_persons
 
 def area(b):
     return (b[2]-b[0])*(b[3]-b[1])
@@ -24,16 +25,15 @@ class Person2Vec(vectorizer.Vectorizer):
                 act_vec = np.zeros(1024)
                 pose_vec = np.zeros(18*3)
                 top_person = None
-                
-                for det in view["detections"]:
-                    if det["label"] == "person" and "passed" in det and "pose_body_index" in det:
-                        if top_person is None or area(det["box"]) > area(top_person["box"]):
-                            top_person = det
-                 
-                if top_person is not None:
+
+                if len(view["persons"]) > 0:
+                    det_index = view["persons"][0]["det_index"]
+                    pose_index = view["persons"][0]["pose_index"]
+                    top_person = view["detections"][det_index]
+
                     if "pose_body_index" in top_person: # doesnt contain if no filter
-                        pose_vec = np.array(view["pose"]["body"][top_person["pose_body_index"]]).flatten()
-                    
+                        pose_vec = np.array(view["pose"]["body"][pose_index]).flatten()
+
                     if "action_vector" in top_person:
                         act_vec = np.array(top_person["action_vector"])
                         

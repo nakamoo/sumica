@@ -10,6 +10,7 @@ import coloredlogs
 import logging
 
 from utils import db
+from controllers.utils import sort_persons
 from controllers.controller import Controller
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,10 @@ class FeatureExtractor(Controller):
                 return
 
             features = json.loads(r.text)
+            persons = sort_persons(features)
+
             new_data.update(features)
+            new_data.update({"persons": persons})
             new_data["history.features_recorded"] = time.time()
 
             db.images.update_one({"_id": data["_id"]}, {'$set': new_data}, upsert=False)

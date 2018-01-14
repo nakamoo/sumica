@@ -46,8 +46,19 @@ def feed():
 
 @bp.route('/timeline', methods=['POST'])
 def timeline():
-    data = {}
-    data["timeline"] = [[12345, 12348], [12348, 12350], [12351, 12352]]
-    print(cm.cons["sean"]["activitylearner"].breaks)
+    data = dict()
+    breaks = cm.cons["sean"]["activitylearner"].breaks
+    times = cm.cons["sean"]["activitylearner"].times
+    breaks = list(zip([0] + breaks[:-1], breaks))
+    tl = list()
 
+    for a, b in breaks:
+        row = {}
+        print(a, b, len(times))
+        row["start_time"] = times[a]
+        row["end_time"] = times[b-1]
+        row["count"] = b - a
+        tl.append(row)
+
+    data["timeline"] = tl
     return jsonify(data)

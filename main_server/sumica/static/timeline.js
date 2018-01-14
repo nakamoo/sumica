@@ -15,7 +15,12 @@ function drawChart() {
     dataTable.addRows(rows);
 
     var options = {
-      timeline: { showRowLabels: false }
+        //timeline: { showRowLabels: false },
+        width: 2000
+        //backgroundColor: '#000',
+        //hAxis: {
+        //    textStyle:{color: '#F00'}
+        //}
     };
 
     chart.draw(dataTable, options);
@@ -35,12 +40,17 @@ var updateTimeline = function() {
 
             for (var i in tldata) {
                 var seg = tldata[i];
-                rows.push(['timeline', ""+i, new Date(seg[0]*1000.0), new Date(seg[1]*1000.0)]);
+                var start = new Date(seg["start_time"]*1000.0);
+                var end = new Date(seg["end_time"]*1000.0);
+                start.setMilliseconds(0);
+                end.setMilliseconds(0);
+                var count = seg["count"];
+                rows.push(['clips', count + " images", start, end]);
             }
 
             drawChart();
 
-            setTimeout(updateTimeline, 100);
+            setTimeout(updateTimeline, 1000);
         },
         error: function(data, status) {
 

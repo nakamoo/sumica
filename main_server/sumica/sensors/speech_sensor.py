@@ -16,15 +16,10 @@ coloredlogs.install(level='DEBUG', logger=logger)
 @bp.route('/data/speech', methods=['POST'])
 def post_speech_data():
     data = request.form.to_dict()
-
     data["time"] = float(data["time"])
-
     db.speech.insert_one(data)
-
     cm.trigger_controllers(data['user_name'], "speech", data)
-
     data.pop("_id")
-
     return jsonify(data), 201
 
 

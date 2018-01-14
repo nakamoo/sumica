@@ -5,7 +5,7 @@ import sys
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
-app.config.from_object('config.ConfigKoki')
+app.config.from_object('config.Config')
 
 with app.app_context():
     import controllermanager

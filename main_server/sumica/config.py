@@ -12,9 +12,9 @@ class Config(object):
 
     DEBUG = True
 
-    CONTEXT = ('/etc/letsencrypt/live/homeai.ml/cert.pem', '/etc/letsencrypt/live/homeai.ml/privkey.pem')
+    CONTEXT = ('/etc/letsencrypt/live/homeai.ml/fullchain.pem', '/etc/letsencrypt/live/homeai.ml/privkey.pem')
 
-    FB_TOKEN = 'EAAF0dXCeCJwBAC6DIb0KgrR0ZBY0TcgqfzNC2YSO2K6LIJn6PGFWfU9EkHvOqLtOMLQmUEfyhOP7BwG02DTW1BRYNiI3qR1Wu8KIjKwz5DLdWeXqAZCy0vvj1TdXZB0XFQYk1LM1KCDup2bpqHrhrttrxW0jdWk7hFygjzzHR9GZBQN4KckU'
+    FB_TOKEN = 'EAACPbD64AjUBAMqt3CZCn21n317xcIqAhipHKnAQbeHcjRqUZCpnyZBzbA2xAIjEZA0ErGPE9GUgUXo7asZBwu0ZCEg1OMSXH86qZCXkiFu9c0DOaNj2Ct2exkNZAYVZA6LPRkNFoxXy3amy94LMBG52xSlWaY3HNsgmZCcjTo4NRON2ooPVqNNVXY'
     FB_BOT_ID = '318910425200757'
 
     PRESERVE_CONTEXT_ON_EXCEPTION = False

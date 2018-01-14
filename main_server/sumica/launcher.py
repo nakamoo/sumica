@@ -24,7 +24,7 @@ def execute_controllers():
     user_id = request.form['user_name']
     response = []
 
-    for controller in cm.cons[user_id]:
+    for controller in cm.cons[user_id].values():
         commands = controller.execute()
         for command in commands:
             response.append(command)

@@ -4,6 +4,7 @@ import traceback
 import importlib
 import threading
 from _thread import start_new_thread
+from collections import OrderedDict
 
 from flask import Flask, current_app
 
@@ -13,6 +14,7 @@ import logging
 from controllers.features import FeatureExtractor
 from controllers.chatbot import Chatbot
 from controllers.speechbot import Speechbot
+from controllers.activitylearner import ActivityLearner
 
 
 logger = logging.getLogger(__name__)
@@ -26,14 +28,19 @@ def global_event(event, data):
 
 
 def standard_controllers(user_name):
-    return [FeatureExtractor(user_name), Chatbot(user_name), Speechbot(user_name)]
+    return OrderedDict([
+        ("featureextractor", FeatureExtractor(user_name)),
+        ("chatbot", Chatbot(user_name)),
+        ("speechbot", Speechbot(user_name)),
+        ("activitylearner", ActivityLearner(user_name))
+    ])
 
 
 def trigger_controllers(user, event, data):
     if user is None:
         global_event(event, data)
     else:
-        for c in cons[user]:
+        for c in cons[user].values():
             c.on_event(event, data)
 
 

@@ -41,6 +41,13 @@ def feed():
             encoded_string = encoded_string.decode("utf-8")
             images.append({"name": cam, "img": encoded_string})
 
-    data = jsonify(images)
+    return jsonify(images)
 
-    return data
+
+@bp.route('/timeline', methods=['POST'])
+def timeline():
+    data = {}
+    data["timeline"] = [[12345, 12348], [12348, 12350], [12351, 12352]]
+    print(cm.cons["sean"]["activitylearner"].breaks)
+
+    return jsonify(data)

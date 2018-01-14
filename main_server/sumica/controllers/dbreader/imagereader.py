@@ -1,8 +1,7 @@
-import controllers.dbreader.dbreader as dbreader
-from controllers.dbreader.utils import get_db
 import os
 
-mongo = get_db()
+import controllers.dbreader.dbreader as dbreader
+from utils import db
 
 class ImageReader(dbreader.DBReader):
     def __init__(self):
@@ -10,7 +9,7 @@ class ImageReader(dbreader.DBReader):
 
     def read_db(self, username, start_time, end_time, cams, max_lag=5, skip_absent=False, filtered=True):    
         query = {"user_name": username, "cam_id": {"$in": cams}, "pose":{"$exists": True}, "detections":{"$exists": True}, "time": {"$gte": start_time, "$lt": end_time}}
-        cursor = mongo.images.find(query).sort([("time", 1)])
+        cursor = db.images.find(query).sort([("time", 1)])
 
         re_data = []
         times = []

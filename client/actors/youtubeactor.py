@@ -8,10 +8,10 @@ import logging
 import sys, os
 pardir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pardir)
-import utils.tts as tts
-from utils.speechrecognition import confirm
 import traceback
 
+import utils.tts as tts
+from utils.speechrecognition import confirm_and_post_result
 from actors.actor import Actor
 
 class YoutubeActor(Actor):
@@ -23,21 +23,14 @@ class YoutubeActor(Actor):
         for act in acts:
             if act["platform"] == "play_youtube":
                 if "confirmation" in act:
-                    logging.debug("confirm: " + act['confirmation'])
-                    ans = confirm(act['confirmation'])
-                    logging.debug("answer: " + str(ans))
-                    data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
-                                    'confirmation': act['confirmation'], 'answer': ans}
-
-                    if ans is None:
-                        tts.say("上手く聞こえませんでした")
+                    phrases = [
+                        '',
+                        'わかりました，操作をキャンセルします',
+                        '上手く聞こえませんでした'
+                    ]
+                    approved = confirm_and_post_result(act, self.user, self.ip, phrases)
+                    if not approved:
                         return
-                    elif not ans:
-                        tts.say("わかりました，再生をキャンセルします")
-                        return
-
-                    r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False)
-                    logging.debug(r)
 
                 try:
                     Popen('pkill -9 mpv', shell=True)
@@ -57,21 +50,15 @@ class YoutubeActor(Actor):
 
             if act["platform"] == "stop_youtube":
                 if "confirmation" in act:
-                    logging.debug("confirm: " + act['confirmation'])
-                    ans = confirm(act['confirmation'])
-                    logging.debug("answer: " + str(ans))
-                    data_confirm = {'platform': act['platform'], 'data': act['data'], 'user_name': self.user,
-                                    'confirmation': act['confirmation'], 'answer': ans}
-
-                    if ans is None:
-                        tts.say("上手く聞こえませんでした")
-                        return
-                    elif not ans:
-                        tts.say("わかりました，操作をキャンセルします")
+                    phrases = [
+                        '音楽の再生を終了します',
+                        'わかりました，操作をキャンセルします',
+                        '上手く聞こえませんでした'
+                    ]
+                    approved = confirm_and_post_result(act, self.user, self.ip, phrases)
+                    if not approved:
                         return
 
-                    r = requests.post("%s/data/confirmation" % self.ip, data=data_confirm, verify=False)
-                    logging.debug(r)
                 try:
                     Popen('pkill -9 mpv', shell=True)
                 except:

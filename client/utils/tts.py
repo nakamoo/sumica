@@ -23,7 +23,11 @@ def make_stereo(file1, output):
     ofile.writeframes(stereo.tostring())
     ofile.close()
 
+
 def say(text):
+    if not text:
+        return
+
     path = "tts_cache/%s.wav" % text
 
     if os.path.exists(path):

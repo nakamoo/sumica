@@ -2,10 +2,10 @@ import importlib
 import os
 import sys
 
-from flask import Flask
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
-app.config.from_object('config.Config')
+app.config.from_object('config.ConfigKoki')
 
 with app.app_context():
     import controllermanager
@@ -22,7 +22,7 @@ def execute_controllers():
     user_id = request.form['user_name']
     response = []
 
-    for controller in controllers_objects[user_id]:
+    for controller in controllermanager.cons[user_id]:
         commands = controller.execute()
         for command in commands:
             response.append(command)

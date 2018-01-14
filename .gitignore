@@ -5,6 +5,7 @@ client/tts_cache/*.wav
 client/hotwords
 client/managers/hotword
 
+main_server/hai/
 main_server/sumica/datafiles
 main_server/images/*
 main_server/sumica/application.cfg

@@ -1,7 +1,8 @@
 from pymongo import MongoClient
 from config import Config
+from flask import current_app
 
-mongo = MongoClient('localhost', Config.DB_PORT)
+mongo = MongoClient('localhost', current_app.config['DB_PORT'])
 db = mongo.sumica
 
 db.images.ensure_index('time')

@@ -4,6 +4,8 @@ import time
 from flask import Blueprint, request, current_app, render_template, jsonify
 import coloredlogs
 import logging
+from PIL import Image
+from io import BytesIO
 
 from utils import db
 import controllermanager as cm
@@ -35,9 +37,15 @@ def feed():
     for cam in cams:
         query = {"user_name": "sean", "time": {"$gt": start_time, "$lt": end_time}, "cam_id": cam}
         result = db.images.find(query).limit(1).sort([("time", -1)])[0]
+        impath = current_app.config["RAW_IMG_DIR"] + result["filename"]
 
-        with open(current_app.config["RAW_IMG_DIR"] + result["filename"], "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read())
+        with BytesIO() as output:
+            with Image.open(impath) as img:
+                img = img.resize((img.width // 2, img.height // 2))
+                img.save(output, "JPEG", quality=50)
+            data = output.getvalue()
+
+            encoded_string = base64.b64encode(data)
             encoded_string = encoded_string.decode("utf-8")
             images.append({"name": cam, "img": encoded_string})
 
@@ -47,18 +55,65 @@ def feed():
 @bp.route('/timeline', methods=['POST'])
 def timeline():
     data = dict()
-    breaks = cm.cons["sean"]["activitylearner"].breaks
-    times = cm.cons["sean"]["activitylearner"].times
-    breaks = list(zip([0] + breaks[:-1], breaks))
+
+    misc = cm.cons["sean"]["activitylearner"].misc
     tl = list()
 
-    for a, b in breaks:
-        row = {}
-        print(a, b, len(times))
-        row["start_time"] = times[a]
-        row["end_time"] = times[b-1]
-        row["count"] = b - a
-        tl.append(row)
+    if misc is not None:
+        breaks = misc["train_labels"]["activity"]["intervals"]
+        times = misc["times"]
+
+
+        for a, b in breaks:
+            row = {}
+            row["start_time"] = times[a]
+            row["end_time"] = times[b-1]
+            row["count"] = b - a
+            tl.append(row)
 
     data["timeline"] = tl
+    return jsonify(data)
+
+
+@bp.route('/knowledge', methods=['POST'])
+def knowledge():
+    data = dict()
+    #labels = ["勉強", "睡眠", "食事", "テレビ", "パソコン", "スマホ", "読書", "留守"]
+
+    al = cm.cons["sean"]["activitylearner"]
+    misc = al.misc
+
+    if misc is not None:
+        #mapping = misc["train_labels"]["activity"]["mapping"]
+        intervals = misc["train_labels"]["activity"]["intervals"]
+        labels = al.labels
+        classes = list(set(labels))
+        data["classes"] = classes
+        label_indices = []
+
+        icons = []
+        for label, (start, end) in zip(labels, intervals):
+            mid = (start + end) // 2
+            cam_num = 1
+            d = misc["raw_data"][mid][cam_num]
+            impath = current_app.config["RAW_IMG_DIR"] + d["filename"]
+
+            with BytesIO() as output:
+                with Image.open(impath) as img:
+                    img = img.resize((img.width // 2, img.height // 2))
+                    img.save(output, "JPEG", quality=50)
+                bytedata = output.getvalue()
+
+                encoded_string = base64.b64encode(bytedata)
+                encoded_string = encoded_string.decode("utf-8")
+                icons.append(encoded_string)
+                label_indices.append(classes.index(label))
+
+        data["icons"] = icons
+        data["mapping"] = label_indices
+    else:
+        data["classes"] = []
+        data["icons"] = []
+        data["mapping"] = []
+
     return jsonify(data)

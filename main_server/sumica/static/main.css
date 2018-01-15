@@ -88,6 +88,11 @@ body {
     transition: box-shadow 0.15s ease-in;
 }
 
+.itemimage {
+    max-width: 100%;
+    height: auto;
+}
+
 .item:hover {
     background-color: #059;
     color: white;

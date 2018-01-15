@@ -52,7 +52,48 @@ jsPlumb.ready(function () {
             isTarget: true
         };
 
+    var initLabelNode = function(el) {
+        instance.addEndpoint(el, labelTargetEndpoint, {anchor: ["LeftMiddle"], uuid: el.id});
+    };
+
+    var newLabelNode = function(x, y, label) {
+        var d = document.createElement("div");
+        var id = jsPlumbUtil.uuid();
+
+        instance.draggable(d, { grid: [20, 20] , containment:true});
+        d.className = "item";
+        d.id = id;
+        d.innerHTML = label;
+        d.style.left = x + "px";
+        d.style.top = y + "px";
+        instance.getContainer().appendChild(d);
+        initLabelNode(d);
+
+        return d;
+    };
+
+    var initImageNode = function(el) {
+        instance.addEndpoint(el, imageSourceEndpoint, {anchor: ["RightMiddle"], uuid: el.id});
+    };
+
+    var newImageNode = function(x, y, imdata) {
+        var d = document.createElement("div");
+        var id = jsPlumbUtil.uuid();
+
+        instance.draggable(d, { grid: [20, 20] , containment:true});
+        d.className = "item";
+        d.id = id;
+        d.innerHTML = '<img class="itemimage" src=' + 'data:image/jpeg;base64,' + imdata + '>';
+        d.style.left = x + "px";
+        d.style.top = y + "px";
+        instance.getContainer().appendChild(d);
+        initImageNode(d);
+
+        return d;
+    };
+
     instance.batch(function () {
+        /*
         instance.addEndpoint("label1", imageSourceEndpoint, {
             anchor: ["RightMiddle"], uuid: "label1right"});
 
@@ -65,6 +106,7 @@ jsPlumb.ready(function () {
         instance.draggable(jsPlumb.getSelector(".item"), { grid: [20, 20] , containment:true});
 
         instance.connect({uuids: ["label1right", "label2left"], editable: true});
+        */
 
         instance.bind("click", function (conn, originalEvent) {
             instance.deleteConnection(conn);
@@ -82,4 +124,41 @@ jsPlumb.ready(function () {
             console.log("connection " + params.connection.id + " was moved");
         });
     });
+
+    var updateFlowchart = function() {
+        $.ajax({
+            type: "POST",
+            url: "https://homeai.ml:5000/knowledge",
+            success: function(data, status) {
+                var labels = data["classes"];
+
+                var labelIds  = [];
+
+                for (var i in labels) {
+                    var x = 600 + Math.floor(i / 4) * 100;
+                    var y = 50 + (i % 4) * 100;
+
+                    labelIds.push(newLabelNode(x, y, labels[i]).id);
+                }
+
+                var images = data["icons"];
+                var mapping = data["mapping"];
+
+                for (var i in images) {
+                    var x = 100 + Math.floor(i / 4) * 100;
+                    var y = 50 + (i % 4) * 100;
+
+                    var el = newImageNode(x, y, images[i]);
+                    var labelId = labelIds[mapping[i]];
+
+                    instance.connect({uuids: [el.id, labelId], editable: true});
+                }
+            },
+            error: function(data, status) {
+
+            }
+        });
+    };
+
+    updateFlowchart();
 });

@@ -1,9 +1,11 @@
 import json
 import utils
+import time
 
 from controllers.controller import Controller
 from server_actors import chatbot_actor
 import controllermanager as cm
+from utils import db
 
 
 class Chatbot(Controller):
@@ -32,6 +34,9 @@ class Chatbot(Controller):
                 self.lights = False
             elif msg.split()[0] == "say":
                 self.cmds.append({"platform": "tts", "data": "".join(msg.strip().split()[1:])})
+            elif msg.split()[0] == "label":
+                db.labels.insert_one({"username": self.username, "time": time.time(), "label": msg.split()[1]})
+                chatbot_actor.send_fb_message(self.fb_id, "「{}」を記録しました".format(msg.split()[1]))
             else:
                 chatbot_actor.send_fb_message(self.fb_id, "どうも！")
 
@@ -59,21 +64,21 @@ class Chatbot(Controller):
         self.cmds = []
 
 
-def on_global_event(event, data):
-    if event == "chat":
-        msg = data["message"]["text"].lower()
-        fb_id = data["sender"]["id"]
+    def on_global_event(event, data):
+        if event == "chat":
+            msg = data["message"]["text"].lower()
+            fb_id = data["sender"]["id"]
 
-        if msg.startswith("私は"):
-            username = msg.split("私は")[-1]
+            if msg.startswith("私は"):
+                username = msg.split("私は")[-1]
 
-            if username in db.cons.keys():
-                data = {"fb_id": fb_id, "username": username}
-                db.fb_users.insert_one(data)
-                chatbot_actor.send_fb_message(fb_id, username + "さんこんにちは！")
+                if username in db.cons.keys():
+                    data = {"fb_id": fb_id, "username": username}
+                    db.fb_users.insert_one(data)
+                    chatbot_actor.send_fb_message(fb_id, username + "さんこんにちは！")
+                else:
+                    chatbot_actor.send_fb_message(fb_id, _id + " はデータベースに入っていません")
+            elif msg.startswith("私は誰？"):
+                chatbot_actor.send_fb_message(fb_id, "わからないです")
             else:
-                chatbot_actor.send_fb_message(fb_id, _id + " はデータベースに入っていません")
-        elif msg.startswith("私は誰？"):
-            chatbot_actor.send_fb_message(fb_id, "わからないです")
-        else:
-            chatbot_actor.send_fb_message(fb_id, "誰ですか？（私は〜〜）")
+                chatbot_actor.send_fb_message(fb_id, "誰ですか？（私は〜〜）")

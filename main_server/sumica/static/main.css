@@ -17,19 +17,35 @@ body {
     padding:0;
 }
 
+.height100 {
+    height: 100%;
+}
+
+.width100 {
+    width: 100%;
+}
+
 .feedimg {
     max-width:100%;
 }
 
-#timelinecontainer {
+.left-panel {
     position: relative;
-    overflow-y: auto;
-    height: 20vh;
+}
+
+#timelinecontainer {
 }
 
 #timeline {
-    position: absolute;
 }
+
+#timeline .vis-text {
+    color: white;
+}
+
+#timeline .vis-time-axis {
+    background: #555;
+  }
 
 #flowchartcontainer {
     height:70vh;

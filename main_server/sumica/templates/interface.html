@@ -13,6 +13,11 @@
     <script src="https://www.gstatic.com/charts/loader.js"></script>
 
     <link rel="stylesheet" type="text/css" href="static/main.css">
+
+    <script src="static/vis.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="static/vis.min.css">
+
+    <script src="static/masonry.pkgd.min.js"></script>
 </head>
 <body>
 <nav class="navbar navbar-expand-sm navbar-dark" style="background-color: #000000;">
@@ -20,27 +25,29 @@
 </nav>
 
 <div class="container-fluid content">
-    <div class="row fill-parent">
-        <div class="col-sm-9 padding-0">
-            <div class="container" id="flowchartcontainer">
-                <div id="flowchartcanvas">
-                    <!--
-                    <div class="item itemlabel" id="label1">LABEL 1
-                        <div class="ep"></div>
+    <div class="row height100">
+        <div class="col-sm-9 left-panel">
+            <div class="row height100">
+                <div class="col-sm-12" id="flowchartcontainer">
+                    <div id="flowchartcanvas">
+                        <!--
+                        <div class="item itemlabel" id="label1">LABEL 1
+                            <div class="ep"></div>
+                        </div>
+                        <div class="item itemlabel" id="label2">LABEL 2
+                            <div class="ep"></div>
+                        </div>
+                        <div class="item itemimg" id="image1">
+                            <img src="https://via.placeholder.com/50x50"></img>
+                            <div class="ep"></div>
+                        </div>
+                        -->
                     </div>
-                    <div class="item itemlabel" id="label2">LABEL 2
-                        <div class="ep"></div>
-                    </div>
-                    <div class="item itemimg" id="image1">
-                        <img src="https://via.placeholder.com/50x50"></img>
-                        <div class="ep"></div>
-                    </div>
-                    -->
                 </div>
-            </div>
-            <div class="container" id="timelinecontainer">
-                <div id="timeline"></div>
-                <div id="reception"></div>
+                <div class="col-sm-12" id="timelinecontainer">
+                    <div id="timeline"></div>
+                    <div id="reception"></div>
+                </div>
             </div>
         </div>
         <div class="col-sm-3 padding-0">

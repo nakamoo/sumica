@@ -1,38 +1,23 @@
-google.charts.load('current', {'packages':['timeline']});
-google.charts.setOnLoadCallback(drawChart);
+// DOM element where the Timeline will be attached
+var container = document.getElementById('timeline');
 
-var rows = [['null', '0', new Date(0), new Date(1)]];
+// Create a DataSet (allows two way data-binding)
+var items = new vis.DataSet([]);
 
-function drawChart(mintime, maxtime) {
-    var container = document.getElementById('timeline');
-    var chart = new google.visualization.Timeline(container);
-    var dataTable = new google.visualization.DataTable();
+var startdate = new Date();
+startdate.setHours(startdate.getHours() - 6);
+var enddate = new Date();
+startdate.setHours(startdate.getHours() + 1);
 
-    dataTable.addColumn({type: 'string', id: 'timeline'});
-    dataTable.addColumn({type: 'string', id: 'segment'});
-    dataTable.addColumn({type: 'date', id: 'Start'});
-    dataTable.addColumn({type: 'date', id: 'End'});
-    dataTable.addRows(rows);
+// Configuration for the Timeline
+var options = {
+    min: startdate,
+    max: enddate,
+    height: 100%
+};
 
-    var options = {
-        //timeline: { showRowLabels: false },
-        width: 2000,
-        //backgroundColor: '#000',
-        //hAxis: {
-        //    textStyle:{color: '#F00'}
-        //}
-        hAxis: {
-            minValue: new Date(mintime*1000.0),
-            maxValue: new Date(maxtime*1000.0)
-        }
-    };
-
-    chart.draw(dataTable, options);
-}
-
-$(window).resize(function(){
-    drawChart(0, 1);
-});
+// Create a Timeline
+var timeline = new vis.Timeline(container, items, options);
 
 var updateTimeline = function() {
     $.ajax({
@@ -51,14 +36,18 @@ var updateTimeline = function() {
                     start.setMilliseconds(0);
                     end.setMilliseconds(0);
                     var count = seg["count"];
-                    rows.push(['clips', count + " images", start, end]);
+                    var row = {id: i, content: '', start: start, end: end};
+                    rows.push(row);
                 }
 
-                drawChart(data.time_range.min, data.time_range.max);
+                console.log(rows);
+
+                items.clear();
+                items.add(rows);
+                //timeline.redraw();
             } else {
                 alert("no data for timeline.");
             }
-
 
             //setTimeout(updateTimeline, 1000);
         },

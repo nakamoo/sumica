@@ -8,6 +8,22 @@ import os
 import pickle
 from collections import Counter
 
+def get_segment_indices(y_times, segments):
+    segment_indices = []
+
+    for y in y_times:
+        found = False
+        for i, (s, e) in enumerate(segments):
+            if y >= s and y < e:
+                found = True
+                segment_indices.append(i)
+                break
+
+        if not found:
+            segment_indices.append(-1)
+
+    return np.array(segment_indices)
+
 class Learner:
     def __init__(self, username, cams):
         self.models = {}
@@ -15,61 +31,41 @@ class Learner:
         self.username = username
         self.cams = cams
 
-    def learn_model(self, x_times, x, label_set, breaks):
-        y_times = [t[0] for t in label_set]
-        y = [t[1] for t in label_set]
+    def learn_model(self, x_times, x, label_set, segments, segment_times):
+        y_times = np.array([t[0] for t in label_set])
+        y_indices = np.searchsorted(x_times, y_times)
+        seg_indices = get_segment_indices(y_times, segment_times)
+        y = np.array([t[1] for t in label_set])
+
+        # only use labels that have corresponding segment
+        y = y[seg_indices >= 0]
+        y_times = y_times[seg_indices >= 0]
+        seg_indices = seg_indices[seg_indices >= 0]
+
+        # label prioritization in case of conflict
         counts = Counter(y)
         assigned = {t: 0 for t in list(set(y))}
-        x_indices = np.searchsorted(x_times, y_times)
+
+        # find where to insert labels
+        y_indices = np.searchsorted(x_times, y_times)
         # no label = -1
         label_mat = np.ones(x.shape[0], dtype=np.int32) * -1
-        intervals = [[] for _ in range(len(label_set))]
-
-        _breaks = [0] + breaks
-
-        #  label augmentation
-        # choose which breakpoint to assign
-        #clusters = np.searchsorted(_breaks, x_indices)
-
-
-        alpha = 0 # threshold
-        beta = alpha # new break
-        new_breaks = []
         
-        """
-        for i, c in enumerate(clusters):
-            if x_indices[i] == 0:
-                c += 1
-                
-            past = x_indices[i] - _breaks[c-1]
-
-            if past > alpha:
-                new_breaks.append(x_indices[i]-beta)
-        
-        _breaks = _breaks + new_breaks
-        _breaks.sort()
-        """
-        
-        clusters = np.searchsorted(_breaks, x_indices)
-        
-        for i, xx in enumerate(x_indices):
-            label_mat[xx - 1] = y[i]
+        label_mat[y_indices] = y
         sparse_labels = label_mat.copy()
 
-        for i, c in enumerate(clusters):
+        for i, segment_i in enumerate(seg_indices):
             # special case for 0
-            if x_indices[i] == 0:
-                c += 1
+            #if x_indices[i] == 0:
+            #    c += 1
                 
-            prev_label = label_mat[_breaks[c-1]]
+            prev_label = label_mat[y_indices[i]]
 
             if prev_label != -1 and (counts[y[i]] < counts[prev_label] or (counts[y[i]] == counts[prev_label] and assigned[y[i]] < assigned[prev_label])):
                 print("warning: overwriting segment w/ label {} ({}) to {} ({})".format(prev_label, counts[prev_label], y[i], counts[y[i]]))
                 assigned[prev_label] -= 1
-                intervals[prev_label] = []
 
-            label_mat[_breaks[c-1]:_breaks[c]] = y[i]
-            intervals[i] = [_breaks[c-1], _breaks[c]]
+            label_mat[segments[segment_i][0]:segments[segment_i][1]] = y[i]
             assigned[y[i]] += 1
 
         # take out remaining unlabeled data
@@ -78,16 +74,19 @@ class Learner:
         labeled_x = x[labeled_mask]
         train_labels = label_mat[labeled_mask]
 
-        clf = RandomForestClassifier(n_estimators=20)
-        clf.fit(labeled_x, train_labels)
+        if len(labeled_x) > 0:
+            clf = RandomForestClassifier(n_estimators=20)
+            clf.fit(labeled_x, train_labels)
+        else:
+            clf = None
 
-        return clf, {"raw": sparse_labels, "augmented": label_mat, "intervals": intervals,
-                     "indices": x_indices, "mapping": clusters.tolist()}, _breaks[1:]
+        return clf, {"raw": sparse_labels, "augmented": label_mat,
+                     "indices": y_indices, "mapping": seg_indices.tolist()}, None
 
     def get_down_times(self, times):
         down_threshold = 30
 
-        t = np.array(times[1:]) - np.array([0] + times[:-1])
+        t = np.array(times[1:]) - np.array(times[:-1])
         downs = t > down_threshold
 
         return downs
@@ -99,24 +98,25 @@ class Learner:
 
         return mat, meta
 
-    def calculate_intervals(self, X, times):
-        downs = np.where(self.get_down_times(times))
-        ups = [0] + (downs + 1)
-        partitions = []
-        for start, end in zip(ups, downs):
-            partitions.append(X[start:end])
+    def calculate_segments(self, X, times):
+        downs = (np.where(self.get_down_times(times))[0]+1).tolist()
+        starts = [0] + downs
+        ends = downs + [len(times)]
 
-        intervals = []
+        segments = []
 
-        for i, part in enumerate(partitions):
-            offset = ups[i]
+        for start, end in zip(starts, ends):
+            part = X[start:end]
             model = "l1"  # "l2", "rbf"
-            algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(X)
-            breaks = algo.predict(pen=np.log(X.shape[0])*X.shape[1]*2**2)
-            breaks += offset
-            intervals.append(zip([0] + breaks[:-1], breaks[1:]))
+            algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
+            breaks = algo.predict(pen=np.log(part.shape[0])*part.shape[1]*2**2)
+            breaks = (np.array(breaks) + start).tolist()
+            part_intervals = list(zip([start] + breaks[:-1], breaks[1:] + [end]))
+            segments.extend(part_intervals)
 
-        return intervals
+        segment_times = [(times[s], times[e-1]) for s, e in segments]
+
+        return segments, segment_times
 
     def update_models(self, labels, start_time, end_time=None):
         imreader = ImageReader()
@@ -130,7 +130,7 @@ class Learner:
             return None, None
         else:
             X, meta = self.create_image_matrix(imdata)
-            intervals = self.calculate_intervals(X, times)
+            segments, segment_times = self.calculate_segments(X, times)
             train_labels = {}
 
             for mode, label_set in labels.items():
@@ -138,20 +138,20 @@ class Learner:
                     label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
                     m, m_breaks = None, []
                 else:
-                    m, label_data, m_breaks = self.learn_model(times, X, label_set, breaks)
+                    m, label_data, m_breaks = self.learn_model(times, X, label_set, segments, segment_times)
 
                 self.models[mode] = m
                 train_labels[mode] = label_data
-                mode_breaks[mode] = m_breaks
 
             misc = {}
             misc["matrix"] = X
             misc["times"] = times
             misc["raw_data"] = imdata
             misc["meta"] = meta
-            misc["breaks"] = breaks
+            misc["segments"] = segments
+            misc["segment_times"] = segment_times
             misc["train_labels"] = train_labels
-            misc["mode_breaks"] = mode_breaks
+            misc["time_range"] = {"min": start_time, "max": end_time}
 
             return self.models, misc
 

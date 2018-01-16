@@ -3,7 +3,7 @@ google.charts.setOnLoadCallback(drawChart);
 
 var rows = [['null', '0', new Date(0), new Date(1)]];
 
-function drawChart() {
+function drawChart(mintime, maxtime) {
     var container = document.getElementById('timeline');
     var chart = new google.visualization.Timeline(container);
     var dataTable = new google.visualization.DataTable();
@@ -16,18 +16,22 @@ function drawChart() {
 
     var options = {
         //timeline: { showRowLabels: false },
-        width: 2000
+        width: 2000,
         //backgroundColor: '#000',
         //hAxis: {
         //    textStyle:{color: '#F00'}
         //}
+        hAxis: {
+            minValue: new Date(mintime*1000.0),
+            maxValue: new Date(maxtime*1000.0)
+        }
     };
 
     chart.draw(dataTable, options);
 }
 
 $(window).resize(function(){
-    drawChart();
+    drawChart(0, 1);
 });
 
 var updateTimeline = function() {
@@ -35,7 +39,7 @@ var updateTimeline = function() {
         type: "POST",
         url: "https://homeai.ml:5000/timeline",
         success: function(data, status) {
-            var tldata = data["timeline"];
+            var tldata = data.timeline;
 
             if (tldata.length > 0) {
                 rows = [];
@@ -50,7 +54,7 @@ var updateTimeline = function() {
                     rows.push(['clips', count + " images", start, end]);
                 }
 
-                drawChart();
+                drawChart(data.time_range.min, data.time_range.max);
             } else {
                 alert("no data for timeline.");
             }

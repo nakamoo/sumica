@@ -20,6 +20,7 @@ var updateFeed = function() {
                 }
 
                 feed.innerHTML = imgs;
+                setTimeout(updateFeed, 100);
             } else {
                 feed.innerHTML =
                     "<div class='card text-white bg-dark text-center'>" +
@@ -27,9 +28,8 @@ var updateFeed = function() {
                     "<p class='card-text'>NO FEED</p>" +
                     "</div>" +
                     "</div>";
+                setTimeout(updateFeed, 1000);
             }
-
-            setTimeout(updateFeed, 100);
         },
         error: function(data, status) {
 

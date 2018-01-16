@@ -60,17 +60,18 @@ def timeline():
     tl = list()
 
     if misc is not None:
-        breaks = misc["train_labels"]["activity"]["intervals"]
-        times = misc["times"]
+        segment_times = misc["segment_times"]
+        segments = misc["segments"]
 
 
-        for a, b in breaks:
+        for i in range(len(segments)):
             row = {}
-            row["start_time"] = times[a]
-            row["end_time"] = times[b-1]
-            row["count"] = b - a
+            row["start_time"] = segment_times[i][0]
+            row["end_time"] = segment_times[i][1]
+            row["count"] = misc["segments"][i][1] - misc["segments"][i][0]
             tl.append(row)
 
+    data["time_range"] = misc["time_range"]
     data["timeline"] = tl
     return jsonify(data)
 

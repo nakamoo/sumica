@@ -92,19 +92,12 @@ class Learner:
 
         return downs
 
-    def create_image_matrix(self, start_time, end_time=None):
-        imreader = ImageReader()
-
-        if end_time is None:
-            end_time = time.time()
-
-        imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
-
+    def create_image_matrix(self, imdata):
         pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True)
 
         mat = np.concatenate([act_mat, pose_mat], axis=1)
 
-        return mat, times, imdata, meta
+        return mat, meta
 
     def calculate_intervals(self, X, times):
         downs = np.where(self.get_down_times(times))
@@ -126,31 +119,41 @@ class Learner:
         return intervals
 
     def update_models(self, labels, start_time, end_time=None):
-        X, times, imdata, meta = self.create_image_matrix(start_time, end_time)
-        intervals = self.calculate_intervals(X, times)
-        train_labels = {}
+        imreader = ImageReader()
 
-        for mode, label_set in labels.items():
-            if len(label_set) <= 0:
-                label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
-                m, m_breaks = None, []
-            else: 
-                m, label_data, m_breaks = self.learn_model(times, X, label_set, breaks)
-                
-            self.models[mode] = m
-            train_labels[mode] = label_data
-            mode_breaks[mode] = m_breaks
+        if end_time is None:
+            end_time = time.time()
 
-        misc = {}
-        misc["matrix"] = X
-        misc["times"] = times
-        misc["raw_data"] = imdata
-        misc["meta"] = meta
-        misc["breaks"] = breaks
-        misc["train_labels"] = train_labels
-        misc["mode_breaks"] = mode_breaks
+        imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
 
-        return self.models, misc
+        if len(imdata) == 0:
+            return None, None
+        else:
+            X, meta = self.create_image_matrix(imdata)
+            intervals = self.calculate_intervals(X, times)
+            train_labels = {}
+
+            for mode, label_set in labels.items():
+                if len(label_set) <= 0:
+                    label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
+                    m, m_breaks = None, []
+                else:
+                    m, label_data, m_breaks = self.learn_model(times, X, label_set, breaks)
+
+                self.models[mode] = m
+                train_labels[mode] = label_data
+                mode_breaks[mode] = m_breaks
+
+            misc = {}
+            misc["matrix"] = X
+            misc["times"] = times
+            misc["raw_data"] = imdata
+            misc["meta"] = meta
+            misc["breaks"] = breaks
+            misc["train_labels"] = train_labels
+            misc["mode_breaks"] = mode_breaks
+
+            return self.models, misc
 
     def predict(self, mode, images):
         clf = self.models[mode]

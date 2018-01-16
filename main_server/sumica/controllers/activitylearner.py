@@ -44,6 +44,7 @@ class ActivityLearner(Controller):
 
         # start loop separate from flask thread
         self.thread = threading.Thread(target=self.loop)
+        self.thread.daemon = True
         self.thread.start()
 
     def loop(self):
@@ -52,7 +53,7 @@ class ActivityLearner(Controller):
                 if self.update:
                     self.start_time = time.time() - 3600
                     end_time = time.time()
-                    results =db.labels.find(
+                    results = db.labels.find(
                         {"username": self.username, "time": {"$gt": self.start_time, "$lt": end_time}})
                     label_types = results.distinct("label")
                     results = list(results)

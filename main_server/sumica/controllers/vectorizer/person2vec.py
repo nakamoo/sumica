@@ -14,7 +14,6 @@ class Person2Vec(vectorizer.Vectorizer):
         pose_mat = []
         act_mat = []
         meta = []
-        n_cams = len(imdata[0])
         
         for scene in imdata:
             scene_pose_vec = []

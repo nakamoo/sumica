@@ -1,150 +1,164 @@
 jsPlumb.ready(function () {
-    var endpoint1 = {
-        endpoint: ["Dot", {radius: 10}],
-        paintStyle: {fill: "dodgerblue"},
-        hoverPaintStyle: {fill: "white"},
-        connectorOverlays: [["PlainArrow", {width: 15, length: 15, location: 0.5}]],
-        isSource: true,
-        //scope: "green",
-        connectorStyle: {stroke: "lightgray", strokeWidth: 6},
-        connectorHoverStyle: {stroke: "white", strokeWidth: 6},
-        connector: ["Bezier"],
-        maxConnections: 1,
-        isTarget: false,
-        anchors: ["Right"],
-        scope: "image"
-        //dropOptions: exampleDropOptions
+    var instance = window.jsp = jsPlumb.getInstance({
+        DragOptions: { cursor: 'pointer', zIndex: 2000 },
+
+        ConnectionOverlays: [
+            [ "Arrow", {
+                location: 0.5,
+                visible:true,
+                width:11,
+                length:11,
+                id:"ARROW",
+                events:{
+                }
+            } ]
+        ],
+        Container: "flowchartcontainer"
+    });
+
+    var connectorPaintStyle = {
+            strokeWidth: 2,
+            stroke: "orange",
+            joinstyle: "round"
+        },
+
+        connectorHoverStyle = {
+            strokeWidth: 3,
+            stroke: "white"
+        },
+        endpointHoverStyle = {
+            fill: "white"
+        },
+        imageSourceEndpoint = {
+            endpoint: "Dot",
+            paintStyle: {
+                fill: "dodgerblue",
+                radius: 7
+            },
+            isSource: true,
+            connector: [ "Bezier", { stub: [40, 60], gap: 10, cornerRadius: 5, alwaysRespectStubs: true } ],
+            connectorStyle: connectorPaintStyle,
+            hoverPaintStyle: endpointHoverStyle,
+            connectorHoverStyle: connectorHoverStyle,
+            dragOptions: {},
+            maxConnections: -1
+        },
+        labelTargetEndpoint = {
+            endpoint: "Dot",
+            paintStyle: { fill: "orange", radius: 7 },
+            hoverPaintStyle: endpointHoverStyle,
+            maxConnections: -1,
+            dropOptions: { hoverClass: "hover", activeClass: "active" },
+            isTarget: true
+        };
+
+    var initLabelNode = function(el) {
+        instance.addEndpoint(el, labelTargetEndpoint, {anchor: ["LeftMiddle"], uuid: el.id});
     };
 
-    var endpoint2 = {
-        endpoint: ["Dot", {radius: 10}],
-        paintStyle: {fill: "orange"},
-        hoverPaintStyle: {fill: "white"},
-        connectorOverlays: [["PlainArrow", {width: 15, length: 15, location: 0.5}]],
-        isSource: false,
-        //scope: "green",
-        connectorStyle: {stroke: "lightgray", strokeWidth: 6},
-        connectorHoverStyle: {stroke: "white", strokeWidth: 6},
-        connector: ["Bezier"],
-        maxConnections: -1,
-        isTarget: true,
-        anchors: ["Left"],
-        scope: "image"
-        //dropOptions: exampleDropOptions
-    };
-
-    var endpoint3 = {
-        endpoint: ["Dot", {radius: 10}],
-        paintStyle: {fill: "orange"},
-        hoverPaintStyle: {fill: "white"},
-        connectorOverlays: [["PlainArrow", {width: 15, length: 15, location: 0.5}]],
-        isSource: true,
-        //scope: "green",
-        connectorStyle: {stroke: "lightgray", strokeWidth: 6},
-        connectorHoverStyle: {stroke: "white", strokeWidth: 6},
-        connector: ["Bezier"],
-        maxConnections: -1,
-        isTarget: false,
-        anchors: ["Right"],
-        scope: "action"
-        //dropOptions: exampleDropOptions
-    };
-
-    var endpoint4 = {
-        endpoint: ["Dot", {radius: 10}],
-        paintStyle: {fill: "tomato"},
-        hoverPaintStyle: {fill: "white"},
-        connectorOverlays: [["PlainArrow", {width: 15, length: 15, location: 0.5}]],
-        isSource: false,
-        //scope: "green",
-        connectorStyle: {stroke: "lightgray", strokeWidth: 6},
-        connectorHoverStyle: {stroke: "white", strokeWidth: 6},
-        connector: ["Bezier"],
-        maxConnections: -1,
-        isTarget: true,
-        anchors: ["Left"],
-        scope: "action"
-        //dropOptions: exampleDropOptions
-    };
-
-    dragcommon = {containment: true, grid: [20, 20]}
-
-    /*jsPlumb.draggable("img1", dragcommon);
-    jsPlumb.draggable("img2", dragcommon);
-    jsPlumb.draggable("img3", dragcommon);
-    jsPlumb.draggable("label1", dragcommon);
-    jsPlumb.draggable("label2", dragcommon);
-    jsPlumb.draggable("action1", dragcommon);
-
-    jsPlumb.addEndpoint("img1", endpoint1);
-    jsPlumb.addEndpoint("img2", endpoint1);
-    jsPlumb.addEndpoint("img3", endpoint1);
-    jsPlumb.addEndpoint("label1", endpoint2);
-    jsPlumb.addEndpoint("label2", endpoint2);
-
-    jsPlumb.addEndpoint("label1", endpoint3);
-    jsPlumb.addEndpoint("label2", endpoint3);
-    jsPlumb.addEndpoint("action1", endpoint4);
-
-    jsPlumb.makeSource("img1", endpoint1);
-    jsPlumb.makeSource("img2", endpoint1);
-    jsPlumb.makeSource("img3", endpoint1);
-    jsPlumb.makeTarget("label1", endpoint2);
-    jsPlumb.makeTarget("label2", endpoint2);
-
-    jsPlumb.makeSource("label1", endpoint3);
-    jsPlumb.makeSource("label2", endpoint3);
-    jsPlumb.makeSource("action1", endpoint4);
-
-    jsPlumb.connect({
-        source: "img2",
-        target: "label1",
-        overlays: [["PlainArrow", {width: 15, length: 15, location: 0.5}]],
-        //detachable:false
-    });*/
-
-    var newNode = function (x, y) {
+    var newLabelNode = function(x, y, label) {
         var d = document.createElement("div");
         var id = jsPlumbUtil.uuid();
-        d.className = "labelitem";
-        d.id = id;
-        d.innerHTML = "<p>LABEL</p>";
-        //d.style.left = x + "px";
-        //d.style.top = y + "px";
-        jsPlumb.getContainer().appendChild(d);
-        //initNode(d);
-        jsPlumb.draggable(d.id);
 
-        jsPlumb.addEndpoint(d.id, endpoint2);
-        jsPlumb.makeTarget(d.id, endpoint2);
+        instance.draggable(d, { grid: [20, 20] , containment:true});
+        d.className = "item";
+        d.id = id;
+        d.innerHTML = label;
+        d.style.left = x + "px";
+        d.style.top = y + "px";
+        instance.getContainer().appendChild(d);
+        initLabelNode(d);
 
         return d;
     };
 
-    var canvas = document.getElementById("flowchart");
+    var initImageNode = function(el) {
+        instance.addEndpoint(el, imageSourceEndpoint, {anchor: ["RightMiddle"], uuid: el.id});
+    };
 
-    jsPlumb.on(canvas, "dblclick", function (e) {
-        newNode(e.offsetX, e.offsetY);
+    var newImageNode = function(x, y, imdata) {
+        var d = document.createElement("div");
+        var id = jsPlumbUtil.uuid();
+
+        instance.draggable(d, { grid: [20, 20] , containment:true});
+        d.className = "item";
+        d.id = id;
+        d.innerHTML = '<img class="itemimage" src=' + 'data:image/jpeg;base64,' + imdata + '>';
+        d.style.left = x + "px";
+        d.style.top = y + "px";
+        instance.getContainer().appendChild(d);
+        initImageNode(d);
+
+        return d;
+    };
+
+    instance.batch(function () {
+        /*
+        instance.addEndpoint("label1", imageSourceEndpoint, {
+            anchor: ["RightMiddle"], uuid: "label1right"});
+
+        instance.addEndpoint("label2", labelTargetEndpoint, {
+            anchor: ["LeftMiddle"], uuid: "label2left"});
+
+        instance.addEndpoint("image1", labelTargetEndpoint, {
+            anchor: ["RightMiddle"], uuid: "image1right"});
+
+        instance.draggable(jsPlumb.getSelector(".item"), { grid: [20, 20] , containment:true});
+
+        instance.connect({uuids: ["label1right", "label2left"], editable: true});
+        */
+
+        instance.bind("click", function (conn, originalEvent) {
+            instance.deleteConnection(conn);
+        });
+
+        instance.bind("connectionDrag", function (connection) {
+            console.log("connection " + connection.id + " is being dragged. suspendedElement is ", connection.suspendedElement, " of type ", connection.suspendedElementType);
+        });
+
+        instance.bind("connectionDragStop", function (connection) {
+            console.log("connection " + connection.id + " was dragged");
+        });
+
+        instance.bind("connectionMoved", function (params) {
+            console.log("connection " + params.connection.id + " was moved");
+        });
     });
 
-    jsPlumb.bind("click", function (c) {
-        jsPlumb.deleteConnection(c);
-    });
+    var updateFlowchart = function() {
+        $.ajax({
+            type: "POST",
+            url: "https://homeai.ml:5000/knowledge",
+            success: function(data, status) {
+                var labels = data["classes"];
 
-    jsPlumb.bind("connection", function (info, originalEvent) {
-        if (originalEvent) {
-            //alert("connection created");
-        }
-    });
+                var labelIds  = [];
 
-    jsPlumb.bind("connectionDetached", function (info, originalEvent) {
-        if (originalEvent) {
-            //alert("connection detached");
-        }
-    });
+                for (var i in labels) {
+                    var x = 600 + Math.floor(i / 4) * 100;
+                    var y = 50 + (i % 4) * 100;
 
-    jsPlumb.bind("beforeDrop", function (connection) {
-        console.log(connection);
-        return connection.sourceId !== connection.targetId;
-    });
+                    labelIds.push(newLabelNode(x, y, labels[i]).id);
+                }
+
+                var images = data["icons"];
+                var mapping = data["mapping"];
+
+                for (var i in images) {
+                    var x = 100 + Math.floor(i / 4) * 100;
+                    var y = 50 + (i % 4) * 100;
+
+                    var el = newImageNode(x, y, images[i]);
+                    var labelId = labelIds[mapping[i]];
+
+                    instance.connect({uuids: [el.id, labelId], editable: true});
+                }
+            },
+            error: function(data, status) {
+
+            }
+        });
+    };
+
+    updateFlowchart();
 });

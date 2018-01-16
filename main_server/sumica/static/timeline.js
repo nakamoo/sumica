@@ -1,7 +1,7 @@
 google.charts.load('current', {'packages':['timeline']});
 google.charts.setOnLoadCallback(drawChart);
 
-var rows = [['null', Date.now(), Date.now()]]
+var rows = [['null', '0', new Date(0), new Date(1)]];
 
 function drawChart() {
     var container = document.getElementById('timeline');
@@ -36,21 +36,27 @@ var updateTimeline = function() {
         url: "https://homeai.ml:5000/timeline",
         success: function(data, status) {
             var tldata = data["timeline"];
-            rows = [];
 
-            for (var i in tldata) {
-                var seg = tldata[i];
-                var start = new Date(seg["start_time"]*1000.0);
-                var end = new Date(seg["end_time"]*1000.0);
-                start.setMilliseconds(0);
-                end.setMilliseconds(0);
-                var count = seg["count"];
-                rows.push(['clips', count + " images", start, end]);
+            if (tldata.length > 0) {
+                rows = [];
+
+                for (var i in tldata) {
+                    var seg = tldata[i];
+                    var start = new Date(seg["start_time"]*1000.0);
+                    var end = new Date(seg["end_time"]*1000.0);
+                    start.setMilliseconds(0);
+                    end.setMilliseconds(0);
+                    var count = seg["count"];
+                    rows.push(['clips', count + " images", start, end]);
+                }
+
+                drawChart();
+            } else {
+                alert("no data for timeline.");
             }
 
-            drawChart();
 
-            setTimeout(updateTimeline, 1000);
+            //setTimeout(updateTimeline, 1000);
         },
         error: function(data, status) {
 

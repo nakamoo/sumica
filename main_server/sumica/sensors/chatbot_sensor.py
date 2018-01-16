@@ -7,6 +7,7 @@ import logging
 
 from server_actors import chatbot_actor
 import controllermanager as cm
+from utils import db
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
@@ -14,7 +15,7 @@ coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 bp = Blueprint("chatbot", __name__)
 
 bot_id = current_app.config['FB_BOT_ID']
-VERIFY_TOKEN = 'my_voice_is_my_password_verify_me'
+VERIFY_TOKEN = 'verify'
 
 
 @bp.route('/data/fb', methods=['GET'])
@@ -38,23 +39,17 @@ def handle_messages():
 
         username = None
 
-        result = db.mongo.fb_users.find_one({"fb_id": fb_id})
+        result = db.fb_users.find_one({"fb_id": fb_id})
         if result:
-            username = result["id"]
-            
-        logger.debug("new message: " + str(event))
+            username = result["username"]
 
-        # ignore messages by self
         if fb_id != bot_id:
-            em.trigger_controllers(username, "chat", event)
+            cm.trigger_controllers(username, "chat", event)
 
     return "ok", 200
 
 
 def messaging_events(payload):
-    # Generate tuples of (sender_id, message_text) from the
-    # provided payload.
-
     events = payload["entry"][0]["messaging"]
 
     for event in events:

@@ -34,7 +34,7 @@ class FeatureExtractor(Controller):
             r = requests.post("http://" + current_app.config['FEATURES_SERVER_URL'] + "/extract_features", data={'path': os.path.abspath(image_path), 'detection_threshold': 0.5, 'nms_threshold': 0.5})
 
             if r.status_code != 200:
-                logger.debug(r.status_code, r.text)
+                logger.debug(str(r.status_code) + " " + r.text)
                 return
 
             features = json.loads(r.text)

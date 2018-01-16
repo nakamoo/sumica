@@ -134,7 +134,7 @@ def sort_persons(data):
     indices = [r[0] for r in results]
     for i, det in enumerate(dets):
         if i not in indices and det["label"] == "person":
-            results.append([best_index, -1, dets[best_index]["confidence"]])
+            results.append([i, -1, dets[i]["confidence"]])
 
     # sort by pose first, then detection confidence
     results = sorted(results, key=lambda x: (int(x[1] is None), -x[2]))

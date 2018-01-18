@@ -1,3 +1,4 @@
+import os
 import cv2
 import colorsys
 import numpy as np
@@ -6,6 +7,9 @@ from config import Config
 import pymongo
 import traceback
 from PIL import Image
+from io import BytesIO
+import base64
+import uuid
 
 keypoint_labels = [
     "Nose",
@@ -28,6 +32,29 @@ keypoint_labels = [
     "LEar",
     "Bkg"
 ]
+
+def impath2base64(impath, scale=0.5, quality=50):
+    with BytesIO() as output:
+        with Image.open(impath) as img:
+            img = img.resize((int(img.width * scale), int(img.height * scale)))
+            img.save(output, "JPEG", quality=quality)
+        bytedata = output.getvalue()
+
+        encoded_string = base64.b64encode(bytedata)
+        encoded_string = encoded_string.decode("utf-8")
+
+        return encoded_string
+
+def saveimgtostatic(imname, impath, scale=0.5, quality=50):
+    imname = "s{}-q{}-{}".format(scale, quality, imname)
+    path = os.path.join("static", "images", imname)
+
+    if not os.path.exists(path):
+        with Image.open(impath) as img:
+            img = img.resize((int(img.width * scale), int(img.height * scale)))
+            img.save(path, "JPEG", quality=quality)
+
+    return path
 
 def safe_next(imgs):
     while True:

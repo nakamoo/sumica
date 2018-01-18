@@ -106,16 +106,23 @@ class Learner:
         segments = []
 
         for start, end in zip(starts, ends):
-            part = X[start:end]
-            model = "l1"  # "l2", "rbf"
-            algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
-            breaks = algo.predict(pen=np.log(part.shape[0])*part.shape[1]*2**2)
-            breaks = (np.array(breaks) + start).tolist()
-            part_intervals = list(zip([start] + breaks[:-1], breaks[1:] + [end]))
-            segments.extend(part_intervals)
+            if end - start > 1:
+                part = X[start:end]
+                model = "l1"  # "l2", "rbf"
+                algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
+                breaks = algo.predict(pen=np.log(part.shape[0])*part.shape[1]*2**2)
+                breaks = (np.array(breaks) + start).tolist()
+                breaks[-1] -= 1
+                part_intervals = list(zip([start] + breaks[:-1], breaks))
+                segments.extend(part_intervals)
+            else:
+                segments.append((start, end-1))
 
-        segment_times = [(times[s], times[e-1]) for s, e in segments]
-
+        # remove last segment because index out of range
+        #if len(segments) > 0:
+        #segments = segments[:-1]
+        #    segments[-1] = (segments[-1][0], segments[-1][1]-1)
+        segment_times = [(times[s], times[e]) for s, e in segments]
         return segments, segment_times
 
     def update_models(self, labels, start_time, end_time=None):

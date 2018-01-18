@@ -130,6 +130,10 @@ jsPlumb.ready(function () {
             type: "POST",
             url: "https://homeai.ml:5000/knowledge",
             success: function(data, status) {
+                //instance.deleteEveryEndpoint();
+                //instance.detachEveryConnection();
+                //instance.empty(instance.getContainer());
+                //instance.reset();
                 var labels = data["classes"];
 
                 var labelIds  = [];
@@ -153,6 +157,8 @@ jsPlumb.ready(function () {
 
                     instance.connect({uuids: [el.id, labelId], editable: true});
                 }
+
+                //setTimeout(updateFlowchart, 5000);
             },
             error: function(data, status) {
 

@@ -1,42 +1,70 @@
-body {
-    width:100%;
+html, body {
     height:100%;
-    margin:0;
-    background-color: #777
+    background-color: #111;
 }
 
-.content {
-    height:calc(100vh - 56px);
-}
-
-.fill-parent {
-    min-height: 100%;
-}
-
-.padding-0 {
-    padding:0;
-}
-
-.height100 {
+#page {
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.width100 {
-    width: 100%;
+#mynav {
 }
 
-.feedimg {
-    max-width:100%;
+#content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
 }
 
-.left-panel {
+#leftpane {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+}
+
+#flowchartcontainer {
     position: relative;
+    flex: 3;
 }
 
 #timelinecontainer {
+    position: relative;
+    flex: 1;
+}
+
+#rightpane {
+    position: relative;
+    flex: 1;
+    /*display: flex;
+    flex-direction: column;
+    justify-content: space-between;*/
+}
+
+#info {
+    background: #555;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    min-height: 20%;
+    border-style: solid;
+    border-color: white;
+    border-width: thin;
+}
+
+.info-text {
+    color: white;
+}
+
+#feed {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
 }
 
 #timeline {
+    height: 100%;
 }
 
 #timeline .vis-text {
@@ -45,11 +73,14 @@ body {
 
 #timeline .vis-time-axis {
     background: #555;
-  }
+}
 
-#flowchartcontainer {
-    height:70vh;
-    position: relative;
+#timeline .vis-inner {
+    color: white;
+}
+
+#timeline .vis-left {
+    background-color: #333;
 }
 
 #flowchartcanvas {
@@ -62,18 +93,9 @@ body {
     repeat;
 }
 
-#feed {
+/*#feed {
     min-width: 100%;
-}
-
-#nofeedpanel {
-    background-color:black;
-}
-
-#nofeedtext {
-    color: white;
-    font-size: 2em;
-}
+}*/
 
 .item {
     border: 1px solid #346789;

@@ -33,6 +33,7 @@ class ActivityLearner(Controller):
         self.learner = Learner(self.username, self.cams)
         self.misc = None
         self.labels = []
+        self.label_data = []
 
         # start loop separate from flask thread
         self.thread = threading.Thread(target=self.loop)
@@ -50,6 +51,7 @@ class ActivityLearner(Controller):
                     label_types = results.distinct("label")
                     results = list(results)
 
+                    self.label_data = results
                     self.labels = [r["label"] for r in results]
                     results = [(r["time"], label_types.index(r["label"])) for r in results]
                     labels = {"activity": results}

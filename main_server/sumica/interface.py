@@ -8,6 +8,7 @@ from PIL import Image
 from io import BytesIO
 
 from utils import db
+from controllers.utils import impath2base64, saveimgtostatic
 import controllermanager as cm
 
 logger = logging.getLogger(__name__)
@@ -56,23 +57,35 @@ def feed():
 def timeline():
     data = dict()
 
-    misc = cm.cons["sean"]["activitylearner"].misc
+    al = cm.cons["sean"]["activitylearner"]
+    misc = al.misc
     tl = list()
+
+    label_data = al.label_data
+    label_data = [{"time": r["time"], "label": r["label"]} for r in label_data]
 
     if misc is not None:
         segment_times = misc["segment_times"]
         segments = misc["segments"]
-
 
         for i in range(len(segments)):
             row = {}
             row["start_time"] = segment_times[i][0]
             row["end_time"] = segment_times[i][1]
             row["count"] = misc["segments"][i][1] - misc["segments"][i][0]
+
+            midpoint = (misc["segments"][i][1] + misc["segments"][i][0]) // 2
+            imname = misc["raw_data"][midpoint][0]["filename"]
+            impath = current_app.config["RAW_IMG_DIR"] + imname
+            impath = saveimgtostatic(imname, impath, scale=0.2, quality=50)
+            row["img"] = "https://homeai.ml:5000/" + impath
+
             tl.append(row)
 
     data["time_range"] = misc["time_range"]
     data["timeline"] = tl
+    data["label_data"] = label_data
+
     return jsonify(data)
 
 
@@ -86,7 +99,7 @@ def knowledge():
 
     if misc is not None:
         #mapping = misc["train_labels"]["activity"]["mapping"]
-        intervals = misc["train_labels"]["activity"]["intervals"]
+        intervals = misc["segments"]
         labels = al.labels
         classes = list(set(labels))
         data["classes"] = classes
@@ -95,7 +108,7 @@ def knowledge():
         icons = []
         for label, (start, end) in zip(labels, intervals):
             mid = (start + end) // 2
-            cam_num = 1
+            cam_num = 0
             d = misc["raw_data"][mid][cam_num]
             impath = current_app.config["RAW_IMG_DIR"] + d["filename"]
 

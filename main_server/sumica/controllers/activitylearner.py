@@ -1,6 +1,7 @@
 import time
 import threading
 import traceback
+import datetime
 
 from flask import current_app
 import coloredlogs
@@ -19,11 +20,11 @@ coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 
 class ActivityLearner(Controller):
-    def __init__(self, username):
+    def __init__(self, username, start_thread=True):
         super().__init__(username)
 
         # declare start_time for imagereader
-        self.start_time = time.time() - 3600*10
+        self.start_time = time.mktime(datetime.date(2018, 1, 16).timetuple())
 
         self.cams = ActivityLearner.get_cams(username, self.start_time, time.time())
 
@@ -34,31 +35,41 @@ class ActivityLearner(Controller):
         self.misc = None
         self.labels = []
         self.label_data = []
+        self.predictions, self.classes, self.confidences = None, None, None
 
-        # start loop separate from flask thread
-        self.thread = threading.Thread(target=self.loop)
-        self.thread.daemon = True
-        self.thread.start()
+        if start_thread:
+            # start loop separate from flask thread
+            self.thread = threading.Thread(target=self.loop)
+            self.thread.daemon = True
+            self.thread.start()
+
+    def update_learner(self):
+        end_time = time.time()
+        results = db.labels.find(
+            {"username": self.username, "time": {"$gt": self.start_time, "$lt": end_time}})
+        classes = results.distinct("label")
+        results = list(results)
+
+        self.label_data = results
+        self.labels = [r["label"] for r in results]
+        results = [(r["time"], classes.index(r["label"])) for r in results]
+        labels = {"activity": results}
+
+        logger.debug("labels: {}".format(labels))
+
+        models, misc = self.learner.update_models(labels, self.start_time, end_time)
+        raw_pred = models["activity"].predict_proba(misc["matrix"])
+        self.confidences = np.max(raw_pred, axis=1).tolist()
+        self.predictions = np.argmax(raw_pred, axis=1).tolist()
+        self.classes = classes
+
+        self.misc = misc
 
     def loop(self):
         while True:
             try:
                 if self.update:
-                    self.start_time = time.time() - 3600*10
-                    end_time = time.time()
-                    results = db.labels.find(
-                        {"username": self.username, "time": {"$gt": self.start_time, "$lt": end_time}})
-                    label_types = results.distinct("label")
-                    results = list(results)
-
-                    self.label_data = results
-                    self.labels = [r["label"] for r in results]
-                    results = [(r["time"], label_types.index(r["label"])) for r in results]
-                    labels = {"activity": results}
-
-                    _, misc = self.learner.update_models(labels, self.start_time, end_time)
-
-                    self.misc = misc
+                    self.update_learner()
 
                     self.update = False
             except:

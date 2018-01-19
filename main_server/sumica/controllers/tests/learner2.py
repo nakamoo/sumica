@@ -1,12 +1,21 @@
-from controllers.dbreader.imagereader import ImageReader
-from controllers.vectorizer.person2vec import Person2Vec
-import ruptures as rpt
 import time
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 import os
 import pickle
 from collections import Counter
+
+from flask import current_app
+import ruptures as rpt
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+import coloredlogs
+import logging
+
+from controllers.dbreader.imagereader import ImageReader
+from controllers.vectorizer.person2vec import Person2Vec
+from utils import db
+
+logger = logging.getLogger(__name__)
+coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 def get_segment_indices(y_times, segments):
     segment_indices = []
@@ -23,6 +32,42 @@ def get_segment_indices(y_times, segments):
             segment_indices.append(-1)
 
     return np.array(segment_indices)
+
+def check_recorded_segments(times, username, start_time, end_time, min_fit_size):
+    results = db.segments.find({'username': username, "end_time": {"$gte": start_time, "$lt": end_time}}).sort([("end_time", 1)])
+    results = list(results)
+
+    latest_start_fit_index = max(0, len(times) - min_fit_size)
+
+    if len(results) > 0:
+        logger.debug("last recorded segment: {}".format(results[-1]))
+        last_fixed_index = times.index(results[-1]["end_time"])#np.searchsorted(times, results[-1]["time"])
+    else:
+        last_fixed_index = 0
+
+    start_fit_index = min(latest_start_fit_index, last_fixed_index)
+    segments = np.array([[r["start_time"], r["end_time"]] for r in results])
+    segments = np.searchsorted(times, segments.flatten()).reshape([-1, 2]).tolist()
+
+    return segments, last_fixed_index, start_fit_index
+
+def record_segments(username, segments, segment_times, start_record, end_record):
+    data = []
+    misc = []
+
+    for i, (start, end) in enumerate(segment_times):
+        if start >= start_record and end < end_record:
+            d = {'username': username, 'start_time': start, 'end_time': end}
+            data.append(d)
+            misc.append(segments[i])
+
+    #logger.debug("newly recorded segments: {}".format(misc))
+    logger.debug("stored {} new segments".format(len(data)))
+
+    if len(data) > 0:
+        db.segments.insert_many(data)
+        logger.debug("last segment: {}".format(data[-1]))
+
 
 class Learner:
     def __init__(self, username, cams):
@@ -98,32 +143,54 @@ class Learner:
 
         return mat, meta
 
-    def calculate_segments(self, X, times):
+    def calculate_segments(self, X, times, start_time, end_time):
+        min_fit_size = 1000
+        recorded_segments, last_fixed_index, start_fit_index = \
+            check_recorded_segments(times, self.username, start_time, end_time, min_fit_size)
+
+        #logger.debug("already recorded: {}".format(str(recorded_segments)))
+        logger.debug("last fixed: {}, start fit: {}".format(last_fixed_index, start_fit_index))
+
+        # TODO inefficient repetition
         downs = (np.where(self.get_down_times(times))[0]+1).tolist()
+        starts = [0] + downs
+        ends = downs + [len(times)]
+        cam_segments = [list(a) for a in zip(starts, ends)]
+        downs = (np.where(self.get_down_times(times[start_fit_index:]))[0] + 1).tolist()
         starts = [0] + downs
         ends = downs + [len(times)]
 
         segments = []
 
         for start, end in zip(starts, ends):
+            start += start_fit_index
+            end += start_fit_index
+
             if end - start > 1:
                 part = X[start:end]
                 model = "l1"  # "l2", "rbf"
                 algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
                 breaks = algo.predict(pen=np.log(part.shape[0])*part.shape[1]*2**2)
                 breaks = (np.array(breaks) + start).tolist()
-                breaks[-1] -= 1
-                part_intervals = list(zip([start] + breaks[:-1], breaks))
+                breaks[-1] -= 1 # avoid index out of range
+                part_intervals = [list(a) for a in zip([start] + breaks[:-1], breaks)]
                 segments.extend(part_intervals)
             else:
-                segments.append((start, end-1))
+                # avoid index out of range
+                end -= 1
+                segments.append((start, end))
 
-        # remove last segment because index out of range
-        #if len(segments) > 0:
-        #segments = segments[:-1]
-        #    segments[-1] = (segments[-1][0], segments[-1][1]-1)
+        segments = [(max(s, last_fixed_index), e) for s, e in segments if e > last_fixed_index]
         segment_times = [(times[s], times[e]) for s, e in segments]
-        return segments, segment_times
+
+        fix_threshold = len(times) - min_fit_size // 2
+        logger.debug("new segments: {}".format(segments))
+        record_segments(self.username, segments, segment_times, times[last_fixed_index], times[fix_threshold])
+
+        segments = recorded_segments + segments
+        segment_times = [(times[s], times[e]) for s, e in segments]
+
+        return segments, segment_times, cam_segments, times[last_fixed_index]
 
     def update_models(self, labels, start_time, end_time=None):
         imreader = ImageReader()
@@ -133,11 +200,13 @@ class Learner:
 
         imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
 
+        logger.debug("dataset size: {}".format(len(imdata)))
+
         if len(imdata) == 0:
             return None, None
         else:
             X, meta = self.create_image_matrix(imdata)
-            segments, segment_times = self.calculate_segments(X, times)
+            segments, segment_times, cam_segments, fixed_time = self.calculate_segments(X, times, start_time, end_time)
             train_labels = {}
 
             for mode, label_set in labels.items():
@@ -157,6 +226,8 @@ class Learner:
             misc["meta"] = meta
             misc["segments"] = segments
             misc["segment_times"] = segment_times
+            misc["segments_last_fixed"] = fixed_time
+            misc["cam_segments"] = cam_segments
             misc["train_labels"] = train_labels
             misc["time_range"] = {"min": start_time, "max": end_time}
 

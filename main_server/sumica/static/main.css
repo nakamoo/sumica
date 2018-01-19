@@ -31,7 +31,7 @@ html, body {
 
 #timelinecontainer {
     position: relative;
-    flex: 1;
+    flex: 2;
 }
 
 #rightpane {
@@ -63,8 +63,23 @@ html, body {
     width: 100%;
 }
 
+#confidence {
+    height: 40%;
+}
+
+#confidence .vis-panel.vis-bottom {
+    display: none;
+}
+#confidence .vis-timeline{
+    border-bottom: none;
+}
+
+#confidence .vis-line-graph {
+    /*background: #555;*/
+}
+
 #timeline {
-    height: 100%;
+    height: 60%;
 }
 
 #timeline .vis-text {
@@ -81,6 +96,25 @@ html, body {
 
 #timeline .vis-left {
     background-color: #333;
+}
+
+#timeline .vis-custom-time {
+    pointer-events: none;
+}
+
+#timeline .vis-item.vis-line {
+    z-index: 10;
+    border-width: 3px;
+    border-color: white;
+}
+
+#timeline .vis-item.vis-box {
+    background-color: white;
+    border-color: white;
+}
+
+#timeline .vis-item.vis-dot {
+    border-color: white;
 }
 
 #flowchartcanvas {

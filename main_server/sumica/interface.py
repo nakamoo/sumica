@@ -30,13 +30,13 @@ def feed():
     max_lag = 10
     start_time = time.time() - max_lag
     end_time = time.time()
-    query = {"user_name": "sean", "time": {"$gt": start_time, "$lt": end_time}}
+    query = {"user_name": current_app.config["USER"], "time": {"$gt": start_time, "$lt": end_time}}
     results = db.images.find(query)
     cams = results.distinct("cam_id")
     cams.sort()
 
     for cam in cams:
-        query = {"user_name": "sean", "time": {"$gt": start_time, "$lt": end_time}, "cam_id": cam}
+        query = {"user_name": current_app.config["USER"], "time": {"$gt": start_time, "$lt": end_time}, "cam_id": cam}
         result = db.images.find(query).limit(1).sort([("time", -1)])[0]
         impath = current_app.config["RAW_IMG_DIR"] + result["filename"]
 
@@ -53,16 +53,43 @@ def feed():
     return jsonify(images)
 
 
+def points2segments(predictions, times, cam_segments):
+    segments = []
+
+    logger.debug(str(cam_segments))
+
+    for start_cam, end_cam in cam_segments:
+        current = None
+        start = None
+
+        seq = predictions[start_cam:end_cam]
+        for i, p in enumerate(seq):
+            if current != p or i == len(seq)-1:
+                if current is not None:
+                    segments.append({
+                        "start_time": times[start_cam + start],
+                        "end_time": times[start_cam + i],
+                        "class": current
+                    })
+                start = i
+
+            current = p
+
+    return segments
+
 @bp.route('/timeline', methods=['POST'])
 def timeline():
     data = dict()
 
-    al = cm.cons["sean"]["activitylearner"]
+    al = cm.cons[current_app.config["USER"]]["activitylearner"]
     misc = al.misc
     tl = list()
 
     label_data = al.label_data
     label_data = [{"time": r["time"], "label": r["label"]} for r in label_data]
+    data["predictions"] = []
+    data["time_range"] = []
+    data["segments_last_fixed"] = 0
 
     if misc is not None:
         segment_times = misc["segment_times"]
@@ -72,7 +99,7 @@ def timeline():
             row = {}
             row["start_time"] = segment_times[i][0]
             row["end_time"] = segment_times[i][1]
-            row["count"] = misc["segments"][i][1] - misc["segments"][i][0]
+            row["count"] = misc["segments"][i][1] - misc["segments"][i][0] + 1
 
             midpoint = (misc["segments"][i][1] + misc["segments"][i][0]) // 2
             imname = misc["raw_data"][midpoint][0]["filename"]
@@ -82,7 +109,14 @@ def timeline():
 
             tl.append(row)
 
-    data["time_range"] = misc["time_range"]
+        data["predictions"] = points2segments(al.predictions, misc["times"], misc["cam_segments"])
+        data["classes"] = al.classes
+        data["confidences"] = al.confidences[::100]
+        data["times"] = misc["times"][::100]
+
+        data["time_range"] = misc["time_range"]
+        data["segments_last_fixed"] = misc["segments_last_fixed"]
+
     data["timeline"] = tl
     data["label_data"] = label_data
 
@@ -94,7 +128,7 @@ def knowledge():
     data = dict()
     #labels = ["勉強", "睡眠", "食事", "テレビ", "パソコン", "スマホ", "読書", "留守"]
 
-    al = cm.cons["sean"]["activitylearner"]
+    al = cm.cons[current_app.config["USER"]]["activitylearner"]
     misc = al.misc
 
     if misc is not None:

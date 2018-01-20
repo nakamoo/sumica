@@ -73,36 +73,38 @@ var updateFeed = function() {
 
                 feed.innerHTML = imgs;
 
-                // is js retarded?
-                if (myChart.data.labels.join(',') == data.classes.join(',')) {
-                    // only update values if labels are the same
-                    myChart.data.datasets[0].data = data.predictions;
+                if (data.classes.length > 0) {
+                    // is js retarded?
+                    if (myChart.data.labels.join(',') == data.classes.join(',')) {
+                        // only update values if labels are the same
+                        myChart.data.datasets[0].data = data.predictions;
 
-                    myChart.update();
-                } else {
-                    // update everything if different
-                    myChart.config.data = {
-                        labels: data.classes,
-                        datasets: [{
-                            data: data.predictions,
-                            borderWidth: 1
-                        }]
-                    };
+                        myChart.update();
+                    } else {
+                        // update everything if different
+                        myChart.config.data = {
+                            labels: data.classes,
+                            datasets: [{
+                                data: data.predictions,
+                                borderWidth: 1
+                            }]
+                        };
 
-                    var bgColors = [];
-                    var bColors = [];
+                        var bgColors = [];
+                        var bColors = [];
 
-                    for (var i = 0; i < data.predictions.length; i++) {
-                        var rgb = hslToRgb(i*100 / 360.0 % 1.0, 0.75, 0.5);
-                        var str = 'rgba(' + rgb[0] + ', ' + rgb[1] + ', ' + rgb[2];
-                        bgColors.push(str + ', 0.5)');
-                        bColors.push(str + ', 1.0)');
+                        for (var i = 0; i < data.predictions.length; i++) {
+                            var rgb = hslToRgb(i * 100 / 360.0 % 1.0, 0.75, 0.5);
+                            var str = 'rgba(' + rgb[0] + ', ' + rgb[1] + ', ' + rgb[2];
+                            bgColors.push(str + ', 0.5)');
+                            bColors.push(str + ', 1.0)');
+                        }
+
+                        myChart.data.datasets[0].borderColor = bColors;
+                        myChart.data.datasets[0].backgroundColor = bgColors;
+
+                        myChart.update();
                     }
-
-                    myChart.data.datasets[0].borderColor = bColors;
-                    myChart.data.datasets[0].backgroundColor = bgColors;
-
-                    myChart.update();
                 }
 
                 setTimeout(updateFeed, 500);

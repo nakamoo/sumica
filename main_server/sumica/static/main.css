@@ -191,6 +191,7 @@ html, body {
 #prediction {
     background-color: #555;
     padding: 10px;
+    border: 1px solid white;
 }
 
 #predCanvas {

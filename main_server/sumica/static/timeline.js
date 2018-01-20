@@ -7,7 +7,7 @@ var container = document.getElementById('timeline');
 var items = new vis.DataSet([]);
 
 var startdate = new Date();
-startdate.setHours(startdate.getHours() - 24);
+startdate.setHours(startdate.getHours() - 12);
 var enddate = new Date();
 enddate.setHours(enddate.getHours() + 1);
 
@@ -63,6 +63,9 @@ var updateTimeline = function() {
     $.ajax({
         type: "POST",
         url: "https://homeai.ml:5000/timeline",
+        data: JSON.stringify({
+            start_time: startdate.getTime() / 1000
+        }),
         success: function(data, status) {
             var tldata = data.timeline;
 

@@ -78,6 +78,9 @@ def points2segments(predictions, times, cam_segments):
 def timeline():
     data = dict()
 
+    args = request.get_json(force=True)
+    start_time = args['start_time']
+
     al = cm.cons[current_app.config["USER"]]["activitylearner"]
     misc = al.misc
     tl = list()
@@ -94,46 +97,56 @@ def timeline():
         segments = misc["segments"]
 
         for i in range(len(segments)):
-            row = {}
-            row["start_time"] = segment_times[i][0]
-            row["end_time"] = segment_times[i][1]
-            row["count"] = misc["segments"][i][1] - misc["segments"][i][0] + 1
+            if segment_times[i][1] >= start_time:
+                row = {}
+                row["start_time"] = segment_times[i][0]
+                row["end_time"] = segment_times[i][1]
+                row["count"] = misc["segments"][i][1] - misc["segments"][i][0] + 1
 
-            midpoint = (misc["segments"][i][1] + misc["segments"][i][0]) // 2
-            imname = misc["raw_data"][midpoint][0]["filename"]
-            impath = current_app.config["RAW_IMG_DIR"] + imname
-            impath = saveimgtostatic(imname, impath, scale=0.2, quality=50)
-            row["img"] = "https://homeai.ml:5000/" + impath
+                midpoint = (misc["segments"][i][1] + misc["segments"][i][0]) // 2
+                imname = misc["raw_data"][midpoint][0]["filename"]
+                impath = current_app.config["RAW_IMG_DIR"] + imname
+                impath = saveimgtostatic(imname, impath, scale=0.2, quality=50)
+                row["img"] = "https://homeai.ml:5000/" + impath
 
-            tl.append(row)
+                tl.append(row)
 
         data["time_range"] = misc["time_range"]
         data["segments_last_fixed"] = misc["segments_last_fixed"]
 
     if al.predictions is not None:
-        data["predictions"] = points2segments(al.predictions, misc["times"], misc["cam_segments"])
+        preds = points2segments(al.predictions, misc["times"], misc["cam_segments"])
+        data_preds = []
+
+        for i, p in enumerate(preds):
+            if p["end_time"] >= start_time:
+                data_preds.append(p)
+
+        data["predictions"] = data_preds
         data["classes"] = al.classes
 
         times = misc["times"]
         conf = []
         conf_times = []
         step = 10
+
         for s, e in misc["cam_segments"]:
-            seg = []
-            tseg = []
-            block = al.confidences[s:e]
-            seg.append(block[0])
-            tseg.append(times[s])
+            if times[e - 1] >= start_time:
+                seg = []
+                tseg = []
+                block = al.confidences[s:e]
+                seg.append(block[0])
+                tseg.append(times[s])
 
-            for i in range(step, len(block), step):
-                seg.append(np.mean(block[max(0, i - step):i]))
-                tseg.append(times[s + i])
+                for i in range(step, len(block), step):
+                    seg.append(np.mean(block[max(0, i - step):i]))
+                    tseg.append(times[s + i])
 
-            seg.append(block[-1])
-            tseg.append(times[e - 1])
+                seg.append(block[-1])
+                tseg.append(times[e - 1])
 
-            conf.append(seg)
-            conf_times.append(tseg)
+                conf.append(seg)
+                conf_times.append(tseg)
 
         data["confidences"] = conf
         data["conf_times"] = conf_times

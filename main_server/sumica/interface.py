@@ -6,6 +6,7 @@ import coloredlogs
 import logging
 from PIL import Image
 from io import BytesIO
+import numpy as np
 
 from utils import db
 from controllers.utils import impath2base64, saveimgtostatic
@@ -111,8 +112,30 @@ def timeline():
 
         data["predictions"] = points2segments(al.predictions, misc["times"], misc["cam_segments"])
         data["classes"] = al.classes
-        data["confidences"] = al.confidences[::100]
-        data["times"] = misc["times"][::100]
+
+        times = misc["times"]
+        conf = []
+        conf_times = []
+        step = 10
+        for s, e in misc["cam_segments"]:
+            seg = []
+            tseg = []
+            block = al.confidences[s:e]
+            seg.append(block[0])
+            tseg.append(times[s])
+
+            for i in range(step, len(block), step):
+                seg.append(np.mean(block[max(0, i-step):i]))
+                tseg.append(times[s + i])
+
+            seg.append(block[-1])
+            tseg.append(times[e-1])
+
+            conf.append(seg)
+            conf_times.append(tseg)
+
+        data["confidences"] = conf
+        data["conf_times"] = conf_times
 
         data["time_range"] = misc["time_range"]
         data["segments_last_fixed"] = misc["segments_last_fixed"]

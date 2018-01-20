@@ -172,11 +172,6 @@ def sort_persons(data):
 def draw_object(frame, result):
             det = result["box"]
             name = result["label"] + ": " + "%.2f" % result["confidence"]
-            
-            
-
-            if "passed" in result and not result["passed"]:
-                return
 
             i = sum([ord(x) for x in result["label"]])
             c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
@@ -186,12 +181,12 @@ def draw_object(frame, result):
             
             label_offsetx = det[0]
 
-            if "passed" in result:
-                name += "; " + result["action"] + ": " + "%.2f" % result["action_confidence"]
+            if "action_crop" in result:
+                name += "; " + result["action_label"] + ": " + "%.2f" % result["action_confidence"]
                 act_box = result["action_crop"]
                 
                 label_offsetx = act_box[0]
-                cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), c, 2)
+                cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 6)
                 cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
             else:
                 cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)

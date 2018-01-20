@@ -1,3 +1,5 @@
+console.log("loading timeline");
+
 // DOM element where the Timeline will be attached
 var container = document.getElementById('timeline');
 
@@ -5,7 +7,7 @@ var container = document.getElementById('timeline');
 var items = new vis.DataSet([]);
 
 var startdate = new Date();
-startdate.setHours(startdate.getHours() - 6);
+startdate.setHours(startdate.getHours() - 24);
 var enddate = new Date();
 enddate.setHours(enddate.getHours() + 1);
 
@@ -16,10 +18,18 @@ var options2 = {
     start: startdate,
     end: enddate,
     height: '100%',
-    drawPoints: false//,
-    //interpolation: {enabled:false}
+    drawPoints: false,
+    interpolation: {enabled:false},
+    shaded: {
+        orientation: 'bottom'
+    },
+
+    //left: {range: {min:0, max:1}}
 };
 var graph2d = new vis.Graph2d(document.getElementById('confidence'), dataset_graph, options2);
+
+var groups2 = new vis.DataSet();
+graph2d.setGroups(groups2);
 
 // Configuration for the Timeline
 var options = {
@@ -73,6 +83,7 @@ var updateTimeline = function() {
                 };
             }
 
+
             items.clear();
             dataset_graph.clear();
 
@@ -94,8 +105,10 @@ var updateTimeline = function() {
                 }
 
                 // predictions
-                for (var i = 0; i < data.predictions.length; i) {
-                    var seg = data.predictions[i];
+                var preds = data.predictions;
+
+                for (var i = 0; i < preds.length; i++) {
+                    var seg = preds[i];
                     var start = new Date(seg["start_time"]*1000.0);
                     var end = new Date(seg["end_time"]*1000.0);
                     var c = seg["class"];
@@ -109,9 +122,15 @@ var updateTimeline = function() {
                 items.add(rows);
 
                 var graph_rows = [];
+                groups2.clear();
                 for (var i = 0; i < data.confidences.length; i++) {
-                    var row = {x: new Date(data.times[i]*1000.0), y: data.confidences[i]};
-                    graph_rows.push(row);
+                    var gid = i;//rng();
+                    groups2.add({id: gid, content: "", className: "areachart"});
+
+                    for (var k = 0; k < data.confidences[i].length; k++) {
+                        var row = {x: new Date(data.conf_times[i][k] * 1000.0), y: data.confidences[i][k], group: gid};
+                        graph_rows.push(row);
+                    }
                 }
 
                 dataset_graph.add(graph_rows);
@@ -138,12 +157,10 @@ var updateTimeline = function() {
             //setTimeout(updateTimeline, 5000);
         },
         error: function(data, status) {
-
+            console.log(status);
         }
     });
 };
-
-updateTimeline();
 
 //$(window).resize(function(){
 //    timeline.redraw();
@@ -206,4 +223,5 @@ function visLabelSameWidth() {
     }
 }
 
+updateTimeline();
 visLabelSameWidth();

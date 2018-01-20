@@ -17,6 +17,7 @@ from utils import db
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
+
 def get_segment_indices(y_times, segments):
     segment_indices = []
 
@@ -33,15 +34,17 @@ def get_segment_indices(y_times, segments):
 
     return np.array(segment_indices)
 
+
 def check_recorded_segments(times, username, start_time, end_time, min_fit_size):
-    results = db.segments.find({'username': username, "end_time": {"$gte": start_time, "$lt": end_time}}).sort([("end_time", 1)])
+    results = db.segments.find({'username': username, "end_time": {"$gte": start_time, "$lt": end_time}}).sort(
+        [("end_time", 1)])
     results = list(results)
 
     latest_start_fit_index = max(0, len(times) - min_fit_size)
 
     if len(results) > 0:
         logger.debug("last recorded segment: {}".format(results[-1]))
-        last_fixed_index = times.index(results[-1]["end_time"])#np.searchsorted(times, results[-1]["time"])
+        last_fixed_index = times.index(results[-1]["end_time"])  # np.searchsorted(times, results[-1]["time"])
     else:
         last_fixed_index = 0
 
@@ -51,17 +54,24 @@ def check_recorded_segments(times, username, start_time, end_time, min_fit_size)
 
     return segments, last_fixed_index, start_fit_index
 
+
 def record_segments(username, segments, segment_times, start_record, end_record):
     data = []
     misc = []
+    accum = 0
 
-    for i, (start, end) in enumerate(segment_times):
-        if start >= start_record and end < end_record:
+    for i, (start, end) in enumerate(segment_times[::-1]):
+        seg_len = end - start
+
+        if start >= start_record and (end < end_record or accum+seg_len > 2000):
             d = {'username': username, 'start_time': start, 'end_time': end}
             data.append(d)
             misc.append(segments[i])
+            accum += seg_len
 
-    #logger.debug("newly recorded segments: {}".format(misc))
+    data = data[::-1]
+    misc = misc[::-1]
+    # logger.debug("newly recorded segments: {}".format(misc))
     logger.debug("stored {} new segments".format(len(data)))
 
     if len(data) > 0:
@@ -95,19 +105,22 @@ class Learner:
         y_indices = np.searchsorted(x_times, y_times)
         # no label = -1
         label_mat = np.ones(x.shape[0], dtype=np.int32) * -1
-        
+
         label_mat[y_indices] = y
         sparse_labels = label_mat.copy()
 
         for i, segment_i in enumerate(seg_indices):
             # special case for 0
-            #if x_indices[i] == 0:
+            # if x_indices[i] == 0:
             #    c += 1
-                
+
             prev_label = label_mat[y_indices[i]]
 
-            if prev_label != -1 and (counts[y[i]] < counts[prev_label] or (counts[y[i]] == counts[prev_label] and assigned[y[i]] < assigned[prev_label])):
-                print("warning: overwriting segment w/ label {} ({}) to {} ({})".format(prev_label, counts[prev_label], y[i], counts[y[i]]))
+            if prev_label != -1 and (counts[y[i]] < counts[prev_label] or (
+                    counts[y[i]] == counts[prev_label] and assigned[y[i]] < assigned[prev_label])):
+                print(
+                "warning: overwriting segment w/ label {} ({}) to {} ({})".format(prev_label, counts[prev_label], y[i],
+                                                                                  counts[y[i]]))
                 assigned[prev_label] -= 1
 
             label_mat[segments[segment_i][0]:segments[segment_i][1]] = y[i]
@@ -148,31 +161,33 @@ class Learner:
         recorded_segments, last_fixed_index, start_fit_index = \
             check_recorded_segments(times, self.username, start_time, end_time, min_fit_size)
 
-        #logger.debug("already recorded: {}".format(str(recorded_segments)))
+        # logger.debug("already recorded: {}".format(str(recorded_segments)))
         logger.debug("last fixed: {}, start fit: {}".format(last_fixed_index, start_fit_index))
 
         # TODO inefficient repetition
-        downs = (np.where(self.get_down_times(times))[0]+1).tolist()
+        downs = (np.where(self.get_down_times(times))[0] + 1).tolist()
         starts = [0] + downs
         ends = downs + [len(times)]
         cam_segments = [list(a) for a in zip(starts, ends)]
         downs = (np.where(self.get_down_times(times[start_fit_index:]))[0] + 1).tolist()
-        starts = [0] + downs
-        ends = downs + [len(times)]
+        starts = (np.array([0] + downs) + start_fit_index).tolist()
+        ends = (np.array(downs + [len(times)]) + start_fit_index).tolist()
 
         segments = []
 
+        #logger.debug(str(recorded_segments[-1]))
+        #logger.debug("calculating breakpoints, {}".format(list(zip(starts, ends))))
+
         for start, end in zip(starts, ends):
-            start += start_fit_index
-            end += start_fit_index
+            #logger.debug("{} -> {}".format(start, end))
 
             if end - start > 1:
                 part = X[start:end]
                 model = "l1"  # "l2", "rbf"
                 algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
-                breaks = algo.predict(pen=np.log(part.shape[0])*part.shape[1]*2**2)
+                breaks = algo.predict(pen=np.log(part.shape[0]) * part.shape[1] * 2 ** 2)
                 breaks = (np.array(breaks) + start).tolist()
-                breaks[-1] -= 1 # avoid index out of range
+                breaks[-1] -= 1  # avoid index out of range
                 part_intervals = [list(a) for a in zip([start] + breaks[:-1], breaks)]
                 segments.extend(part_intervals)
             else:

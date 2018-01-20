@@ -44,6 +44,8 @@ class ActivityLearner(Controller):
             self.thread.start()
 
     def update_learner(self):
+        logger.debug("updating learner")
+
         end_time = time.time()
         results = db.labels.find(
             {"username": self.username, "time": {"$gt": self.start_time, "$lt": end_time}})
@@ -64,6 +66,8 @@ class ActivityLearner(Controller):
         self.classes = classes
 
         self.misc = misc
+
+        logger.debug("learner updated")
 
     def loop(self):
         while True:

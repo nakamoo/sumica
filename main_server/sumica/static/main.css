@@ -64,22 +64,39 @@ html, body {
 }
 
 #confidence {
-    height: 40%;
+    height: 30%;
+    background-color: #555;
+}
+
+#confidence .vis-y-axis {
+    color: white;
+}
+
+#confidence .vis-panel.vis-left {
+    background-color: #333;
 }
 
 #confidence .vis-panel.vis-bottom {
     display: none;
 }
+
 #confidence .vis-timeline{
     border-bottom: none;
 }
 
-#confidence .vis-line-graph {
-    /*background: #555;*/
+#timeline {
+    height: 70%;
 }
 
-#timeline {
-    height: 60%;
+.areachart {
+    fill-opacity: 0;
+    fill: #fff;
+    stroke-width:1px;
+    stroke: #fff;
+}
+
+.areachart.vis-fill {
+    fill-opacity:0.7 !important;
 }
 
 #timeline .vis-text {

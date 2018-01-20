@@ -37,9 +37,8 @@ html, body {
 #rightpane {
     position: relative;
     flex: 1;
-    /*display: flex;
+    display: flex;
     flex-direction: column;
-    justify-content: space-between;*/
 }
 
 #info {
@@ -57,11 +56,6 @@ html, body {
     color: white;
 }
 
-#feed {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-}
 
 #confidence {
     height: 30%;
@@ -144,10 +138,6 @@ html, body {
     repeat;
 }
 
-/*#feed {
-    min-width: 100%;
-}*/
-
 .item {
     border: 1px solid #346789;
     box-shadow: 2px 2px 19px #aaa;
@@ -189,4 +179,23 @@ html, body {
 
 .dragHover {
     border: 2px solid orange;
+}
+
+#frombottom {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+#prediction {
+    background-color: #555;
+    padding: 10px;
+}
+
+#predCanvas {
+}
+
+#feed {
+    width: 100%;
 }

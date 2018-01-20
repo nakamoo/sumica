@@ -59,16 +59,16 @@ def saveimgtostatic(imname, impath, scale=0.5, quality=50):
 def safe_next(imgs):
     while True:
         img = imgs.next()
+
         try:
             Image.open(Config.RAW_IMG_DIR + img["filename"]).verify()
             break
-        except Exception as e:
+        except:
             traceback.print_exc()
+
     return img
 
-def get_current_images(user, cam_ids):
-    db = get_db()
-    
+def get_newest_images(user, cam_ids):
     images = []
     for id in cam_ids:
         imgs = db.images.find({'user_name': user, 'cam_id': id, 'detections': {'$exists': True},

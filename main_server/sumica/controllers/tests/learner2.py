@@ -1,38 +1,20 @@
 import time
 import os
 import pickle
-from collections import Counter
 
 from flask import current_app
 import ruptures as rpt
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 import coloredlogs
 import logging
 
 from controllers.dbreader.imagereader import ImageReader
 from controllers.vectorizer.person2vec import Person2Vec
 from utils import db
+from controllers.tests.trainer import Trainer
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
-
-
-def get_segment_indices(y_times, segments):
-    segment_indices = []
-
-    for y in y_times:
-        found = False
-        for i, (s, e) in enumerate(segments):
-            if y >= s and y < e:
-                found = True
-                segment_indices.append(i)
-                break
-
-        if not found:
-            segment_indices.append(-1)
-
-    return np.array(segment_indices)
 
 
 def check_recorded_segments(times, username, start_time, end_time, min_fit_size):
@@ -43,7 +25,7 @@ def check_recorded_segments(times, username, start_time, end_time, min_fit_size)
     latest_start_fit_index = max(0, len(times) - min_fit_size)
 
     if len(results) > 0:
-        logger.debug("last recorded segment: {}".format(results[-1]))
+        #logger.debug("last recorded segment: {}".format(results[-1]))
         last_fixed_index = times.index(results[-1]["end_time"])  # np.searchsorted(times, results[-1]["time"])
     else:
         last_fixed_index = 0
@@ -57,7 +39,7 @@ def check_recorded_segments(times, username, start_time, end_time, min_fit_size)
 
 def record_segments(username, segments, segment_times, start_record, end_record):
     data = []
-    misc = []
+    #misc = []
     accum = 0
 
     for i, (start, end) in enumerate(segment_times[::-1]):
@@ -66,17 +48,14 @@ def record_segments(username, segments, segment_times, start_record, end_record)
         if start >= start_record and (end < end_record or accum+seg_len > 2000):
             d = {'username': username, 'start_time': start, 'end_time': end}
             data.append(d)
-            misc.append(segments[i])
+            #misc.append(segments[i])
             accum += seg_len
 
     data = data[::-1]
-    misc = misc[::-1]
-    # logger.debug("newly recorded segments: {}".format(misc))
-    logger.debug("stored {} new segments".format(len(data)))
+    #misc = misc[::-1]
 
     if len(data) > 0:
         db.segments.insert_many(data)
-        logger.debug("last segment: {}".format(data[-1]))
 
 
 class Learner:
@@ -85,61 +64,7 @@ class Learner:
         self.data2vec = Person2Vec()
         self.username = username
         self.cams = cams
-
-    def learn_model(self, x_times, x, label_set, segments, segment_times):
-        y_times = np.array([t[0] for t in label_set])
-        y_indices = np.searchsorted(x_times, y_times)
-        seg_indices = get_segment_indices(y_times, segment_times)
-        y = np.array([t[1] for t in label_set])
-
-        # only use labels that have corresponding segment
-        y = y[seg_indices >= 0]
-        y_times = y_times[seg_indices >= 0]
-        seg_indices = seg_indices[seg_indices >= 0]
-
-        # label prioritization in case of conflict
-        counts = Counter(y)
-        assigned = {t: 0 for t in list(set(y))}
-
-        # find where to insert labels
-        y_indices = np.searchsorted(x_times, y_times)
-        # no label = -1
-        label_mat = np.ones(x.shape[0], dtype=np.int32) * -1
-
-        label_mat[y_indices] = y
-        sparse_labels = label_mat.copy()
-
-        for i, segment_i in enumerate(seg_indices):
-            # special case for 0
-            # if x_indices[i] == 0:
-            #    c += 1
-
-            prev_label = label_mat[y_indices[i]]
-
-            if prev_label != -1 and (counts[y[i]] < counts[prev_label] or (
-                    counts[y[i]] == counts[prev_label] and assigned[y[i]] < assigned[prev_label])):
-                print(
-                "warning: overwriting segment w/ label {} ({}) to {} ({})".format(prev_label, counts[prev_label], y[i],
-                                                                                  counts[y[i]]))
-                assigned[prev_label] -= 1
-
-            label_mat[segments[segment_i][0]:segments[segment_i][1]] = y[i]
-            assigned[y[i]] += 1
-
-        # take out remaining unlabeled data
-        labeled_mask = label_mat != -1
-
-        labeled_x = x[labeled_mask]
-        train_labels = label_mat[labeled_mask]
-
-        if len(labeled_x) > 0:
-            clf = RandomForestClassifier(n_estimators=20)
-            clf.fit(labeled_x, train_labels)
-        else:
-            clf = None
-
-        return clf, {"raw": sparse_labels, "augmented": label_mat,
-                     "indices": y_indices, "mapping": seg_indices.tolist()}, None
+        self.trainers = {}
 
     def get_down_times(self, times):
         down_threshold = 30
@@ -161,17 +86,14 @@ class Learner:
         recorded_segments, last_fixed_index, start_fit_index = \
             check_recorded_segments(times, self.username, start_time, end_time, min_fit_size)
 
-        # logger.debug("already recorded: {}".format(str(recorded_segments)))
-        logger.debug("last fixed: {}, start fit: {}".format(last_fixed_index, start_fit_index))
-
         # TODO inefficient repetition
         downs = (np.where(self.get_down_times(times))[0] + 1).tolist()
         starts = [0] + downs
         ends = downs + [len(times)]
         cam_segments = [list(a) for a in zip(starts, ends)]
-        downs = (np.where(self.get_down_times(times[start_fit_index:]))[0] + 1).tolist()
-        starts = (np.array([0] + downs) + start_fit_index).tolist()
-        ends = (np.array(downs + [len(times)]) + start_fit_index).tolist()
+        downs = (np.where(self.get_down_times(times[start_fit_index:]))[0] + 1 + start_fit_index).tolist()
+        starts = [start_fit_index] + downs
+        ends = downs + [len(times)]
 
         segments = []
 
@@ -199,7 +121,7 @@ class Learner:
         segment_times = [(times[s], times[e]) for s, e in segments]
 
         fix_threshold = len(times) - min_fit_size // 2
-        logger.debug("new segments: {}".format(segments))
+        #logger.debug("new segments: {}".format(segments))
         record_segments(self.username, segments, segment_times, times[last_fixed_index], times[fix_threshold])
 
         segments = recorded_segments + segments
@@ -215,8 +137,6 @@ class Learner:
 
         imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
 
-        logger.debug("dataset size: {}".format(len(imdata)))
-
         if len(imdata) == 0:
             return None, None
         else:
@@ -225,11 +145,17 @@ class Learner:
             train_labels = {}
 
             for mode, label_set in labels.items():
+                if mode not in self.trainers:
+                    self.trainers[mode] = Trainer()
+
                 if len(label_set) <= 0:
                     label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
                     m, m_breaks = None, []
                 else:
-                    m, label_data, m_breaks = self.learn_model(times, X, label_set, segments, segment_times)
+                    m, label_data, update_model = self.trainers[mode].learn_model(times, X, label_set, segments, segment_times)
+
+                    if update_model:
+                        logger.debug("model <{}> updated.".format(mode))
 
                 self.models[mode] = m
                 train_labels[mode] = label_data
@@ -254,6 +180,5 @@ class Learner:
         input_mat = np.concatenate([act_mat, pose_mat], axis=1)
         probs = clf.predict_proba(input_mat)
         pred_labels = clf.classes_[np.argmax(probs, axis=1)]
-        confidences = np.max(probs, axis=1)
 
-        return pred_labels, confidences
+        return pred_labels, probs

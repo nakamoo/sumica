@@ -123,6 +123,7 @@ var updateTimeline = function() {
 
                 var graph_rows = [];
                 groups2.clear();
+
                 for (var i = 0; i < data.confidences.length; i++) {
                     var gid = i;//rng();
                     groups2.add({id: gid, content: "", className: "areachart"});
@@ -135,7 +136,7 @@ var updateTimeline = function() {
 
                 dataset_graph.add(graph_rows);
             } else {
-                alert("no data for timeline.");
+                console.log("no data for timeline.");
             }
 
             var labels = data.label_data;
@@ -154,7 +155,7 @@ var updateTimeline = function() {
             timeline.addCustomTime(new Date(data.segments_last_fixed * 1000.0), "lastFixed");
 
             firstUpdate = false;
-            //setTimeout(updateTimeline, 5000);
+            setTimeout(updateTimeline, 5000);
         },
         error: function(data, status) {
             console.log(status);

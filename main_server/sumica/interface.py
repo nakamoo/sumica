@@ -26,38 +26,34 @@ def interface():
 
 @bp.route('/feed', methods=['POST'])
 def feed():
-    images = []
+    data = {}
+
     #username = request.args.get('username')
-    max_lag = 10
-    start_time = time.time() - max_lag
-    end_time = time.time()
-    query = {"user_name": current_app.config["USER"], "time": {"$gt": start_time, "$lt": end_time}}
-    results = db.images.find(query)
-    cams = results.distinct("cam_id")
-    cams.sort()
 
-    for cam in cams:
-        query = {"user_name": current_app.config["USER"], "time": {"$gt": start_time, "$lt": end_time}, "cam_id": cam}
-        result = db.images.find(query).limit(1).sort([("time", -1)])[0]
-        impath = current_app.config["RAW_IMG_DIR"] + result["filename"]
+    al = cm.cons[current_app.config["USER"]]["activitylearner"]
 
-        with BytesIO() as output:
-            with Image.open(impath) as img:
-                img = img.resize((img.width // 2, img.height // 2))
-                img.save(output, "JPEG", quality=50)
-            data = output.getvalue()
+    if al.current_images is not None:
+        images = []
 
-            encoded_string = base64.b64encode(data)
-            encoded_string = encoded_string.decode("utf-8")
-            images.append({"name": cam, "img": encoded_string})
+        for i, im in enumerate(al.current_images):
+            impath = current_app.config["RAW_IMG_DIR"] + im["filename"]
 
-    return jsonify(images)
+            encoded_string = impath2base64(impath)
+            images.append({"name": al.cams[i], "img": encoded_string})
+
+        data["predictions"] = al.current_predictions
+        data["images"] = images
+        data["classes"] = al.classes
+    else:
+        data["predictions"] = []
+        data["images"] = []
+        data["classes"] = []
+
+    return jsonify(data)
 
 
 def points2segments(predictions, times, cam_segments):
     segments = []
-
-    logger.debug(str(cam_segments))
 
     for start_cam, end_cam in cam_segments:
         current = None
@@ -89,6 +85,7 @@ def timeline():
     label_data = al.label_data
     label_data = [{"time": r["time"], "label": r["label"]} for r in label_data]
     data["predictions"] = []
+    data["confidences"] = []
     data["time_range"] = []
     data["segments_last_fixed"] = 0
 
@@ -110,6 +107,10 @@ def timeline():
 
             tl.append(row)
 
+        data["time_range"] = misc["time_range"]
+        data["segments_last_fixed"] = misc["segments_last_fixed"]
+
+    if al.predictions is not None:
         data["predictions"] = points2segments(al.predictions, misc["times"], misc["cam_segments"])
         data["classes"] = al.classes
 
@@ -125,20 +126,17 @@ def timeline():
             tseg.append(times[s])
 
             for i in range(step, len(block), step):
-                seg.append(np.mean(block[max(0, i-step):i]))
+                seg.append(np.mean(block[max(0, i - step):i]))
                 tseg.append(times[s + i])
 
             seg.append(block[-1])
-            tseg.append(times[e-1])
+            tseg.append(times[e - 1])
 
             conf.append(seg)
             conf_times.append(tseg)
 
         data["confidences"] = conf
         data["conf_times"] = conf_times
-
-        data["time_range"] = misc["time_range"]
-        data["segments_last_fixed"] = misc["segments_last_fixed"]
 
     data["timeline"] = tl
     data["label_data"] = label_data
@@ -169,16 +167,9 @@ def knowledge():
             d = misc["raw_data"][mid][cam_num]
             impath = current_app.config["RAW_IMG_DIR"] + d["filename"]
 
-            with BytesIO() as output:
-                with Image.open(impath) as img:
-                    img = img.resize((img.width // 2, img.height // 2))
-                    img.save(output, "JPEG", quality=50)
-                bytedata = output.getvalue()
-
-                encoded_string = base64.b64encode(bytedata)
-                encoded_string = encoded_string.decode("utf-8")
-                icons.append(encoded_string)
-                label_indices.append(classes.index(label))
+            encoded_string = impath2base64(impath)
+            icons.append(encoded_string)
+            label_indices.append(classes.index(label))
 
         data["icons"] = icons
         data["mapping"] = label_indices

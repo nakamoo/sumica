@@ -14,6 +14,7 @@ from controllers.controller import Controller
 from controllers.vectorizer.person2vec import Person2Vec
 from controllers.dbreader.imagereader import ImageReader
 from controllers.tests.learner2 import Learner
+from controllers.utils import get_newest_images
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
@@ -24,7 +25,7 @@ class ActivityLearner(Controller):
         super().__init__(username)
 
         # declare start_time for imagereader
-        self.start_time = time.mktime(datetime.date(2018, 1, 16).timetuple())
+        self.start_time = time.mktime(datetime.datetime(2018, 1, 20, 20).timetuple())
 
         self.cams = ActivityLearner.get_cams(username, self.start_time, time.time())
 
@@ -36,6 +37,7 @@ class ActivityLearner(Controller):
         self.labels = []
         self.label_data = []
         self.predictions, self.classes, self.confidences = None, None, None
+        self.current_images, self.current_predictions = None, None
 
         if start_thread:
             # start loop separate from flask thread
@@ -44,8 +46,6 @@ class ActivityLearner(Controller):
             self.thread.start()
 
     def update_learner(self):
-        logger.debug("updating learner")
-
         end_time = time.time()
         results = db.labels.find(
             {"username": self.username, "time": {"$gt": self.start_time, "$lt": end_time}})
@@ -57,17 +57,15 @@ class ActivityLearner(Controller):
         results = [(r["time"], classes.index(r["label"])) for r in results]
         labels = {"activity": results}
 
-        logger.debug("labels: {}".format(labels))
-
         models, misc = self.learner.update_models(labels, self.start_time, end_time)
-        raw_pred = models["activity"].predict_proba(misc["matrix"])
-        self.confidences = np.max(raw_pred, axis=1).tolist()
-        self.predictions = np.argmax(raw_pred, axis=1).tolist()
-        self.classes = classes
+
+        if models["activity"] is not None:
+            raw_pred = models["activity"].predict_proba(misc["matrix"])
+            self.confidences = np.max(raw_pred, axis=1).tolist()
+            self.predictions = np.argmax(raw_pred, axis=1).tolist()
+            self.classes = classes
 
         self.misc = misc
-
-        logger.debug("learner updated")
 
     def loop(self):
         while True:
@@ -83,6 +81,13 @@ class ActivityLearner(Controller):
         if event == "image":
             # request update
             self.update = True
+
+            self.current_images = get_newest_images(self.username, self.cams)
+
+            # if model is ready
+            if "activity" in self.learner.models:
+                pred, pred_probs = self.learner.predict("activity", [self.current_images])
+                self.current_predictions = pred_probs[0].tolist()
 
     def execute(self):
         return []

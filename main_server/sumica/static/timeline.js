@@ -7,9 +7,11 @@ var container = document.getElementById('timeline');
 var items = new vis.DataSet([]);
 
 var startdate = new Date();
-startdate.setHours(startdate.getHours() - 12);
+startdate.setHours(startdate.getHours() - 24);
 var enddate = new Date();
 enddate.setHours(enddate.getHours() + 1);
+
+var labelBlacklist = [];
 
 var dataset_graph = new vis.DataSet([]);
 var options2 = {
@@ -19,7 +21,7 @@ var options2 = {
     end: enddate,
     height: '100%',
     drawPoints: false,
-    interpolation: {enabled:false},
+    interpolation: {enabled: false},
     shaded: {
         orientation: 'bottom'
     },
@@ -38,10 +40,51 @@ var options = {
     height: '100%',
     stack: false,
     tooltip: {
-      followMouse: true,
-      overflowMethod: 'cap'
+        followMouse: true,
+        overflowMethod: 'cap'
+    },
+    editable: {
+        add: true,
+        updateTime: false,
+        updateGroup: false,
+        remove: true
+    },
+    snap: function (date, scale, step) {
+        var second = 1000;
+        return Math.round(date / second) * second;
+    },
+    onAdd: function (item, callback) {
+        if (item.group != 0) {
+            callback(null);
+        } else {
+            prettyPrompt('New label', 'Enter name:', function (value) {
+                if (value) {
+                    item.content = value;
+                    item.myType = "label";
+                    item.id = rng();
+                    callback(item); // send back adjusted new item
+                    addLabel(item.id, item.content, item.start.getTime() / 1000);
+                } else {
+                    callback(null); // cancel item creation
+                }
+            });
+        }
+    },
+    onRemove: function (item, callback) {
+        removeLabel(item.id);
+        callback(item); // confirm deletion
     }
 };
+
+function prettyPrompt(title, text, callback) {
+    swal({
+        title: title,
+        text: text,
+        type: 'input',
+        showCancelButton: true,
+        inputPlaceholder: '読書'
+    }, callback);
+}
 
 var groups = new vis.DataSet([
     {id: 0, content: 'events'},
@@ -57,16 +100,18 @@ timeline.setGroups(groups);
 
 var firstUpdate = true;
 
-var rng = function() {  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); };
+var rng = function () {
+    return Math.random().toString(16).substring(2, 14) + Math.random().toString(16).substring(2, 14);
+};
 
-var updateTimeline = function() {
+var updateTimeline = function () {
     $.ajax({
         type: "POST",
         url: "https://homeai.ml:5000/timeline",
         data: JSON.stringify({
             start_time: startdate.getTime() / 1000
         }),
-        success: function(data, status) {
+        success: function (data, status) {
             var tldata = data.timeline;
 
             if (firstUpdate) {
@@ -86,8 +131,14 @@ var updateTimeline = function() {
                 };
             }
 
+            // dont clear labels
+            var nonlabels = items.get({
+                filter: function (item) {
+                    return (item.myType != "label");
+                }
+            });
+            items.remove(nonlabels);
 
-            items.clear();
             dataset_graph.clear();
 
             if (tldata.length > 0) {
@@ -96,14 +147,17 @@ var updateTimeline = function() {
 
                 for (var i = 0; i < tldata.length; i++) {
                     var seg = tldata[i];
-                    var start = new Date(seg["start_time"]*1000.0);
-                    var end = new Date(seg["end_time"]*1000.0);
+                    var start = new Date(seg["start_time"] * 1000.0);
+                    var end = new Date(seg["end_time"] * 1000.0);
                     start.setMilliseconds(0);
                     end.setMilliseconds(0);
                     var count = seg["count"];
                     var tooltip = '<img src="' + seg["img"] + '" >';
                     tooltip += "<p>" + count + " images</p>";
-                    var row = {id: rng(), group: 2, content: '', start: start, end: end, title: tooltip, color: "hsl(" + i*100 + ", 75%, 50%)"};
+                    var row = {
+                        id: rng(), group: 2, content: '', start: start, end: end, title: tooltip,
+                        color: "hsl(" + i * 100 + ", 75%, 50%)", myType: "segment", editable: false
+                    };
                     rows.push(row);
                 }
 
@@ -112,13 +166,16 @@ var updateTimeline = function() {
 
                 for (var i = 0; i < preds.length; i++) {
                     var seg = preds[i];
-                    var start = new Date(seg["start_time"]*1000.0);
-                    var end = new Date(seg["end_time"]*1000.0);
+                    var start = new Date(seg["start_time"] * 1000.0);
+                    var end = new Date(seg["end_time"] * 1000.0);
                     var c = seg["class"];
                     var tooltip = data.classes[c];
                     start.setMilliseconds(0);
                     end.setMilliseconds(0);
-                    var row = {id: rng(), group: 1, content: '', start: start, end: end, title: tooltip, color: "hsl(" + c*100 + ", 75%, 50%)"};
+                    var row = {
+                        id: rng(), group: 1, content: '', start: start, end: end, title: tooltip,
+                        color: "hsl(" + c * 100 + ", 75%, 50%)", myType: "prediction", editable: false
+                    };
                     rows.push(row);
                 }
 
@@ -142,13 +199,20 @@ var updateTimeline = function() {
                 console.log("no data for timeline.");
             }
 
+
             var labels = data.label_data;
 
+            // for labels, add only new labels
             for (var i = 0; i < labels.length; i++) {
-                items.add([{id: rng(), group: 0, content: labels[i]["label"],
-                    start: new Date(labels[i]["time"]*1000.0)
-                    //subgroup: Math.floor(Math.random() * 10000000)
-                }]);
+                if (items.get(labels[i]["id"]) == null && !labelBlacklist.includes(labels[i]["id"])) {
+                    items.add([{
+                        id: labels[i]["id"], group: 0, content: labels[i]["label"],
+                        start: new Date(labels[i]["time"] * 1000.0),
+                        //subgroup: Math.floor(Math.random() * 10000000),
+                        myType: "label"
+                    }]);
+                } else {
+                }
             }
 
             if (!firstUpdate) {
@@ -160,7 +224,7 @@ var updateTimeline = function() {
             firstUpdate = false;
             setTimeout(updateTimeline, 5000);
         },
-        error: function(data, status) {
+        error: function (data, status) {
             console.log(status);
         }
     });
@@ -173,38 +237,38 @@ var updateTimeline = function() {
 // stacking charts
 function onChangeGraph(range) {
     if (!range.byUser) {
-      return;
+        return;
     }
 
     timeline.setOptions({
-      start: range.start,
-      end: range.end,
-      height: '100%'
-  });
+        start: range.start,
+        end: range.end,
+        height: '100%'
+    });
 }
 
 function onChangeTimeline(range) {
     if (!range.byUser) {
-      return;
+        return;
     }
 
     graph2d.setOptions({
-      start: range.start,
-      end: range.end,
-      height: '100%'
-  });
+        start: range.start,
+        end: range.end,
+        height: '100%'
+    });
 }
 
 graph2d.on('rangechange', onChangeGraph);
 timeline.on('rangechange', onChangeTimeline);
 
 
-graph2d.on('_change', function() {
-  visLabelSameWidth();
+graph2d.on('_change', function () {
+    visLabelSameWidth();
 });
 
-$(window).resize(function(){
-  visLabelSameWidth();
+$(window).resize(function () {
+    visLabelSameWidth();
 });
 
 // Vis same width label.
@@ -223,9 +287,41 @@ function visLabelSameWidth() {
         $("#confidence .vis-content")[1].style.width = ylabel_width;
     }
     else {
-        $("#timeline .vis-labelset .vis-label").width(w1+"px");
+        $("#timeline .vis-labelset .vis-label").width(w1 + "px");
     }
 }
 
 updateTimeline();
 visLabelSameWidth();
+
+var addLabel = function (id, name, time) {
+    console.log("adding label " + id);
+    console.log(time);
+
+    $.ajax({
+        type: "POST",
+        url: "https://homeai.ml:5000/label",
+        data: JSON.stringify({
+            type: 'add',
+            username: 'sean',
+            time: time,
+            id: id,
+            label: name
+        })
+    });
+};
+
+var removeLabel = function(id) {
+    console.log("removing label " + id);
+    labelBlacklist.push(id);
+
+    $.ajax({
+        type: "POST",
+        url: "https://homeai.ml:5000/label",
+        data: JSON.stringify({
+            type: 'remove',
+            username: 'sean',
+            id: id
+        })
+    });
+}

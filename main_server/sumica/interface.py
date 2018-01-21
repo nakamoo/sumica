@@ -7,6 +7,8 @@ import logging
 from PIL import Image
 from io import BytesIO
 import numpy as np
+from scipy import stats
+from bson.objectid import ObjectId
 
 from utils import db
 from controllers.utils import impath2base64, saveimgtostatic
@@ -16,6 +18,9 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 bp = Blueprint("interface", __name__)
+
+PREDICTION_SMOOTH = 10
+CONFIDENCE_SMOOTH = 30
 
 
 @bp.route('/interface', methods=['GET'])
@@ -43,16 +48,43 @@ def feed():
 
         data["predictions"] = al.current_predictions
         data["images"] = images
-        data["classes"] = al.classes
     else:
         data["predictions"] = []
         data["images"] = []
+
+    if al.classes is not None:
+        data["classes"] = al.classes
+    else:
         data["classes"] = []
 
     return jsonify(data)
 
+def smooth_predictions(predictions, times):
+    preds = np.array(predictions)
+    times = np.array(times)
+    #smooth = []
+    data = []
+    k = PREDICTION_SMOOTH
+
+    for i in range(len(preds)):
+        start = max(0, i-k)
+        end = min(len(preds), i+k)
+        x = preds[start:end]
+
+        if len(x) < k*2:
+            if start == 0:
+                x = np.pad(x, (k*2-len(x), 0), 'edge')
+            else:
+                x = np.pad(x, (0, k*2-len(x)), 'edge')
+
+        data.append(x)
+
+    modes = stats.mode(data, axis=1)[0]
+
+    return modes.tolist()
 
 def points2segments(predictions, times, cam_segments):
+    predictions = smooth_predictions(predictions, times)
     segments = []
 
     for start_cam, end_cam in cam_segments:
@@ -86,10 +118,11 @@ def timeline():
     tl = list()
 
     label_data = al.label_data
-    label_data = [{"time": r["time"], "label": r["label"]} for r in label_data]
+    label_data = [{"time": r["time"], "label": r["label"], "id": str(r["_id"])} for r in label_data]
     data["predictions"] = []
     data["confidences"] = []
     data["time_range"] = []
+    data["classes"] = []
     data["segments_last_fixed"] = 0
 
     if misc is not None:
@@ -128,7 +161,7 @@ def timeline():
         times = misc["times"]
         conf = []
         conf_times = []
-        step = 10
+        step = CONFIDENCE_SMOOTH
 
         for s, e in misc["cam_segments"]:
             if times[e - 1] >= start_time:
@@ -192,3 +225,23 @@ def knowledge():
         data["mapping"] = []
 
     return jsonify(data)
+
+
+@bp.route('/label', methods=['POST'])
+def change_label():
+    args = request.get_json(force=True)
+    logger.debug(str(args))
+
+    action = args['type']
+    username = args['username']
+
+    if action == 'remove':
+        id_ = args['id']
+        db.labels.delete_one({"_id": ObjectId(id_)})
+        logger.debug('removed label')
+    elif action == 'add':
+        db.labels.insert_one({"_id": ObjectId(args['id']), "username": username,
+                              "time": args['time'], "label": args['label']})
+        logger.debug('added label')
+
+    return "ok", 201

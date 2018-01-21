@@ -119,14 +119,14 @@ html, body {
     border-color: white;
 }
 
-#timeline .vis-item.vis-box {
+/*#timeline .vis-item.vis-box {
     background-color: white;
     border-color: white;
 }
 
 #timeline .vis-item.vis-dot {
     border-color: white;
-}
+}*/
 
 #flowchartcanvas {
     top: 0;

@@ -62,6 +62,7 @@ class Chatbot(Controller):
         yield self.cmds
 
         self.cmds = []
+        self.lights = None
 
 
     def on_global_event(event, data):

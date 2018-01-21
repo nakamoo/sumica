@@ -38,6 +38,7 @@ class ActivityLearner(Controller):
         self.label_data = []
         self.predictions, self.classes, self.confidences = None, None, None
         self.current_images, self.current_predictions = None, None
+        self.current_activity = None
 
         if start_thread:
             # start loop separate from flask thread
@@ -88,6 +89,7 @@ class ActivityLearner(Controller):
             if "activity" in self.learner.models:
                 pred, pred_probs = self.learner.predict("activity", [self.current_images])
                 self.current_predictions = pred_probs[0].tolist()
+                self.current_activity = self.classes[np.argmax(self.current_predictions)]
 
     def execute(self):
         return []

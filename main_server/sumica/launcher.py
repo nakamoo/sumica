@@ -2,10 +2,15 @@ import importlib
 import os
 import sys
 
+import coloredlogs
+import logging
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
+
+logger = logging.getLogger(__name__)
+coloredlogs.install(level=app.config['LOG_LEVEL'], logger=logger)
 
 with app.app_context():
     import controllermanager as cm
@@ -28,6 +33,9 @@ def execute_controllers():
         commands = controller.execute()
         for command in commands:
             response.append(command)
+
+    if sum([len(r) for r in response]) > 0:
+        logger.debug(response)
 
     return jsonify(response), 201
 

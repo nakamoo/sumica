@@ -35,10 +35,10 @@ class ModuleManager(object):
             thread_stream.start()
 
     def execute_actor_mods(self, acts):
-        for inp in self.actor_mods:
-            try:
-                inp.execute(acts)
-            except:
-                traceback.print_exc()
-                pass
-
+        for act in acts:
+            for inp in self.actor_mods:
+                try:
+                    inp.execute(act)
+                except:
+                    traceback.print_exc()
+                    pass

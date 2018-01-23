@@ -5,22 +5,22 @@ client/tts_cache/*.wav
 client/hotwords
 client/managers/hotword
 
-main_server/hai/images/*
+main_server/hai/
+main_server/sumica/datafiles
 main_server/images/*
-main_server/hai/application.cfg
-main_server/hai/pose_tmp/*
-main_server/hai/static/*.png
-main_server/hai/static/*.jpg
-main_server/hai/classifier.pkl
-# ^^?
-main_server/hai/pose_data/*
-main_server/hai/image_features/*
-main_server/hai/object_features/*
+main_server/sumica/static/images
+main_server/sumica/application.cfg
+main_server/sumica/pose_tmp/*
+main_server/sumica/static/*.png
+main_server/sumica/static/*.jpg
+main_server/sumica/pose_data/*
+main_server/sumica/image_features/*
+main_server/sumica/object_features/*
 !.gitkeep
-main_server/hai/application.cfg
+main_server/sumica/application.cfg
 
-main_server/hai/*.png
-main_server/hai/*.jpg
+main_server/sumica/*.png
+main_server/sumica/*.jpg
 client/utils/hue_state.json
 client/utils/hue_user.txt
 client/*.png

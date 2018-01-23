@@ -1,0 +1,202 @@
+html, body {
+    height:100%;
+    background-color: #111;
+}
+
+#page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#mynav {
+}
+
+#content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+}
+
+#leftpane {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+}
+
+#flowchartcontainer {
+    position: relative;
+    flex: 3;
+}
+
+#timelinecontainer {
+    position: relative;
+    flex: 2;
+}
+
+#rightpane {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#info {
+    background: #555;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    min-height: 20%;
+    border-style: solid;
+    border-color: white;
+    border-width: thin;
+}
+
+.info-text {
+    color: white;
+}
+
+
+#confidence {
+    height: 30%;
+    background-color: #555;
+}
+
+#confidence .vis-y-axis {
+    color: white;
+}
+
+#confidence .vis-panel.vis-left {
+    background-color: #333;
+}
+
+#confidence .vis-panel.vis-bottom {
+    display: none;
+}
+
+#confidence .vis-timeline{
+    border-bottom: none;
+}
+
+#timeline {
+    height: 70%;
+}
+
+.areachart {
+    fill-opacity: 0;
+    fill: #fff;
+    stroke-width:1px;
+    stroke: #fff;
+}
+
+.areachart.vis-fill {
+    fill-opacity:0.7 !important;
+}
+
+#timeline .vis-text {
+    color: white;
+}
+
+#timeline .vis-time-axis {
+    background: #555;
+}
+
+#timeline .vis-inner {
+    color: white;
+}
+
+#timeline .vis-left {
+    background-color: #333;
+}
+
+#timeline .vis-custom-time {
+    pointer-events: none;
+}
+
+#timeline .vis-item.vis-line {
+    z-index: 10;
+    border-width: 3px;
+    border-color: white;
+}
+
+/*#timeline .vis-item.vis-box {
+    background-color: white;
+    border-color: white;
+}
+
+#timeline .vis-item.vis-dot {
+    border-color: white;
+}*/
+
+#flowchartcanvas {
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    left: 0;
+    right: 0;
+    background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIElEQVQoU2MMCAj4z0AEYAQpfPDgAUGlowrxBhHRwQMAN38rARkDmvwAAAAASUVORK5CYII=)
+    repeat;
+}
+
+.item {
+    border: 1px solid #346789;
+    box-shadow: 2px 2px 19px #aaa;
+    -o-box-shadow: 2px 2px 19px #aaa;
+    -webkit-box-shadow: 2px 2px 19px #aaa;
+    -moz-box-shadow: 2px 2px 19px #aaa;
+    -moz-border-radius: 0.5em;
+    border-radius: 0.5em;
+    opacity: 0.8;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    text-align: center;
+    z-index: 20;
+    position: absolute;
+    background-color: #eeeeef;
+    color: black;
+    font-family: helvetica, sans-serif;
+    padding: 0.5em;
+    font-size: 0.9em;
+    -webkit-transition: -webkit-box-shadow 0.15s ease-in;
+    -moz-transition: -moz-box-shadow 0.15s ease-in;
+    -o-transition: -o-box-shadow 0.15s ease-in;
+    transition: box-shadow 0.15s ease-in;
+}
+
+.itemimage {
+    max-width: 100%;
+    height: auto;
+}
+
+.item:hover {
+    background-color: #059;
+    color: white;
+}
+
+.dragHover {
+    border: 2px solid orange;
+}
+
+#frombottom {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+#prediction {
+    background-color: #555;
+    padding: 10px;
+    border: 1px solid white;
+}
+
+#predCanvas {
+}
+
+#feed {
+    width: 100%;
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>sumica interface</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.6/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.js"></script>
+
+    <script src="static/jsplumb.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="static/main.css">
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.css" rel="stylesheet" type="text/css" />
+
+    <script src="static/masonry.pkgd.min.js"></script>
+</head>
+<body>
+
+<div id="page">
+    <div id="mynav">
+        <nav class="navbar navbar-expand-sm navbar-dark " style="background-color: #000000;">
+            <a class="navbar-brand" href="#">sumica interface</a>
+        </nav>
+    </div>
+    <div id="content">
+        <div id="leftpane">
+            <div id="flowchartcontainer">
+                <div id="flowchartcanvas">
+                    <!--
+                    <div class="item itemlabel" id="label1">LABEL 1
+                        <div class="ep"></div>
+                    </div>
+                    <div class="item itemlabel" id="label2">LABEL 2
+                        <div class="ep"></div>
+                    </div>
+                    <div class="item itemimg" id="image1">
+                        <img src="https://via.placeholder.com/50x50"></img>
+                        <div class="ep"></div>
+                    </div>
+                    -->
+                </div>
+            </div>
+            <div id="timelinecontainer">
+                <div id="confidence"></div>
+                <div id="timeline"></div>
+            </div>
+        </div>
+        <div id="rightpane">
+            <!--<div id="info">
+                <div class="container">
+                    <div class="row" style="margin-top: 10px;">
+                        <div class="col-sm-12">
+                            <p class="info-text text-left">FOOBAR</p>
+                            <p class="info-text text-left">FOOBAR</p>
+                            <p class="info-text text-left">FOOBAR</p>
+                            <p class="info-text text-left">FOOBAR</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            -->
+            <div id="frombottom">
+                <div id="prediction">
+                    <canvas id="predCanvas">
+
+                    </canvas>
+                </div>
+                <div id="feed">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="static/main.js"></script>
+<script src="static/flowchart.js"></script>
+<script src="static/timeline.js"></script>
+<script src="static/feed.js"></script>
+</body>
+</html>

@@ -61,7 +61,7 @@ class Manager:
                     logging.debug("speech indication: yes")
 
                     data = {"user_name": self.user, "time": time.time(), "type": "yes"}
-                    
+
                     try:
                        requests.post("%s/data/speech" % self.ip, data=data, verify=False)
                     except:
@@ -70,14 +70,14 @@ class Manager:
                     logging.debug("speech indication: no")
 
                     data = {"user_name": self.user, "time": time.time(), "type": "no"}
-                    
+
                     try:
                         requests.post("%s/data/speech" % self.ip, data=data, verify=False, timeout=1)
                     except:
                         logging.error("could not send speech event: no")
             elif ans == 0:
                  last_spoken = time.time()
-           
+
             a = time.time() - listen_start
             if time.time() - last_spoken < 1 and a > 0.5 and a < 5:
                 current_buffer.extend(data)
@@ -135,6 +135,6 @@ if __name__ == "__main__":
     ID = sys.argv[1]
 
     man = Manager(ID, SERVER_IP)
-    thread_stream = threading.Thread(target=man.start) 
+    thread_stream = threading.Thread(target=man.start)
     thread_stream.daemon = False
     thread_stream.start()

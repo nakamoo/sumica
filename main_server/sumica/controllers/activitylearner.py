@@ -22,12 +22,11 @@ class ActivityLearner(Controller):
     def __init__(self, username):
         super().__init__(username)
 
+        self.period = 3600
         # declare start_time for imagereader
-        self.start_time = time.time() - 3600
+        self.start_time = time.time() - self.period
 
         # init cams
-        max_lag = 3600
-        #start_time = time.time() - max_lag
         start_time = self.start_time
         end_time = time.time()
         query = {"user_name": self.username, "time": {"$gt": start_time, "$lt": end_time}}
@@ -50,7 +49,7 @@ class ActivityLearner(Controller):
         while True:
             try:
                 if self.update:
-                    self.start_time = time.time() - 3600
+                    self.start_time = time.time() - self.period
                     end_time = time.time()
                     results =db.labels.find(
                         {"username": self.username, "time": {"$gt": self.start_time, "$lt": end_time}})

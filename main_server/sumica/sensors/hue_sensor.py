@@ -18,7 +18,6 @@ def post_hue_data():
     data = request.form.to_dict()
 
     data["time"] = float(data["time"])
-    data["last_manual"] = float(data["last_manual"])
     data['light_states'] = json.loads(data['lights'])
 
     db.hue.insert_one(data)

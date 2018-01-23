@@ -1,5 +1,6 @@
 import time
 import os
+import random
 import traceback
 import importlib
 import threading
@@ -14,7 +15,10 @@ import logging
 from controllers.features import FeatureExtractor
 from controllers.chatbot import Chatbot
 from controllers.speechbot import Speechbot
+from controllers.reminder import Reminder
+from controllers.alarm import Alarm
 from controllers.activitylearner import ActivityLearner
+from server_actors import hue_actor
 
 
 logger = logging.getLogger(__name__)

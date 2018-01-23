@@ -22,6 +22,27 @@ class Config(object):
     # TODO remove
     USER = "sean"
 
+class Config_koki(object):
+    FEATURES_SERVER_URL = 'localhost:5002'
+    LOG_LEVEL = "debug"
+
+    ENCRYPTION = False
+    HOME = "/home/nakamura/HAI"
+    ENCRYPTED_IMG_DIR = HOME + "/main_server/sumica/datafiles/images/encrypted_images/"
+    RAW_IMG_DIR = HOME + "/main_server/sumica/datafiles/images/raw_images/"
+
+    PORT = 5007
+    DB_PORT = 20202
+
+    CONTEXT = ('/etc/letsencrypt/live/homeai.ml/fullchain.pem', '/etc/letsencrypt/live/homeai.ml/privkey.pem')
+    # CONTEXT = ('/etc/letsencrypt/live/homeai.ml/cert.pem', '/etc/letsencrypt/live/homeai.ml/privkey.pem')
+
+    FB_TOKEN = 'EAACPbD64AjUBAGJsqxY25luPV3J9FsxjNuhKpiILGX8J3yJbJ484ZBuGVKpVg1oq9ZBZC3DkZB6ZBjjeqz3qQi4jcZCRcPma0MDfsLumQokITHbA9LwVthharpUu371rRoVy97xhwPwoZApfGFyYuCGxm26UoeGdml6ecP2k3QgsmtcfO5p8Vw8'
+    FB_BOT_ID = '15769507148651'
+
+    # TODO remove
+    USER = "koki"
+
 class Config2(object): #dummy
     FEATURES_SERVER_URL = 'localhost:5002'
     LOG_LEVEL = "debug"

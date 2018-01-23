@@ -22,7 +22,7 @@ class Config(object):
     # TODO remove
     USER = "sean"
 
-class ConfigKoki(object):
+class Config_koki(object):
     FEATURES_SERVER_URL = 'localhost:5002'
     LOG_LEVEL = "debug"
 
@@ -34,10 +34,11 @@ class ConfigKoki(object):
     PORT = 5007
     DB_PORT = 20202
 
-    CONTEXT = ('/etc/letsencrypt/live/homeai.ml/cert.pem', '/etc/letsencrypt/live/homeai.ml/privkey.pem')
+    CONTEXT = ('/etc/letsencrypt/live/homeai.ml/fullchain.pem', '/etc/letsencrypt/live/homeai.ml/privkey.pem')
+    # CONTEXT = ('/etc/letsencrypt/live/homeai.ml/cert.pem', '/etc/letsencrypt/live/homeai.ml/privkey.pem')
 
-    FB_TOKEN = 'EAAF0dXCeCJwBAC6DIb0KgrR0ZBY0TcgqfzNC2YSO2K6LIJn6PGFWfU9EkHvOqLtOMLQmUEfyhOP7BwG02DTW1BRYNiI3qR1Wu8KIjKwz5DLdWeXqAZCy0vvj1TdXZB0XFQYk1LM1KCDup2bpqHrhrttrxW0jdWk7hFygjzzHR9GZBQN4KckU'
-    FB_BOT_ID = '318910425200757'
+    FB_TOKEN = 'EAACPbD64AjUBAGJsqxY25luPV3J9FsxjNuhKpiILGX8J3yJbJ484ZBuGVKpVg1oq9ZBZC3DkZB6ZBjjeqz3qQi4jcZCRcPma0MDfsLumQokITHbA9LwVthharpUu371rRoVy97xhwPwoZApfGFyYuCGxm26UoeGdml6ecP2k3QgsmtcfO5p8Vw8'
+    FB_BOT_ID = '15769507148651'
 
     # TODO remove
     USER = "koki"

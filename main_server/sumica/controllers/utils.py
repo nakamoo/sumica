@@ -1,3 +1,4 @@
+import os
 import cv2
 import colorsys
 import numpy as np
@@ -6,6 +7,9 @@ from config import Config
 import pymongo
 import traceback
 from PIL import Image
+from io import BytesIO
+import base64
+import uuid
 
 keypoint_labels = [
     "Nose",
@@ -29,19 +33,42 @@ keypoint_labels = [
     "Bkg"
 ]
 
+def impath2base64(impath, scale=0.5, quality=50):
+    with BytesIO() as output:
+        with Image.open(impath) as img:
+            img = img.resize((int(img.width * scale), int(img.height * scale)))
+            img.save(output, "JPEG", quality=quality)
+        bytedata = output.getvalue()
+
+        encoded_string = base64.b64encode(bytedata)
+        encoded_string = encoded_string.decode("utf-8")
+
+        return encoded_string
+
+def saveimgtostatic(imname, impath, scale=0.5, quality=50):
+    imname = "s{}-q{}-{}".format(scale, quality, imname)
+    path = os.path.join("static", "images", imname)
+
+    if not os.path.exists(path):
+        with Image.open(impath) as img:
+            img = img.resize((int(img.width * scale), int(img.height * scale)))
+            img.save(path, "JPEG", quality=quality)
+
+    return path
+
 def safe_next(imgs):
     while True:
         img = imgs.next()
+
         try:
             Image.open(Config.RAW_IMG_DIR + img["filename"]).verify()
             break
-        except Exception as e:
+        except:
             traceback.print_exc()
+
     return img
 
-def get_current_images(user, cam_ids):
-    db = get_db()
-    
+def get_newest_images(user, cam_ids):
     images = []
     for id in cam_ids:
         imgs = db.images.find({'user_name': user, 'cam_id': id, 'detections': {'$exists': True},
@@ -145,11 +172,6 @@ def sort_persons(data):
 def draw_object(frame, result):
             det = result["box"]
             name = result["label"] + ": " + "%.2f" % result["confidence"]
-            
-            
-
-            if "passed" in result and not result["passed"]:
-                return
 
             i = sum([ord(x) for x in result["label"]])
             c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
@@ -159,12 +181,12 @@ def draw_object(frame, result):
             
             label_offsetx = det[0]
 
-            if "passed" in result:
-                name += "; " + result["action"] + ": " + "%.2f" % result["action_confidence"]
+            if "action_crop" in result:
+                name += "; " + result["action_label"] + ": " + "%.2f" % result["action_confidence"]
                 act_box = result["action_crop"]
                 
                 label_offsetx = act_box[0]
-                cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), c, 2)
+                cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 6)
                 cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
             else:
                 cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)

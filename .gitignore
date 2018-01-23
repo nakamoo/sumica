@@ -8,6 +8,7 @@ client/managers/hotword
 main_server/hai/
 main_server/sumica/datafiles
 main_server/images/*
+main_server/sumica/static/images
 main_server/sumica/application.cfg
 main_server/sumica/pose_tmp/*
 main_server/sumica/static/*.png

@@ -174,13 +174,29 @@ def action_recognition(whole_img, data):
         if data["detections"][i]["label"] == "person":
             box = data["detections"][i]["box"]
             im_w, im_h = whole_img.shape[1], whole_img.shape[0]
-            longer_side = max((box[2] - box[0]) * 2.0, (box[3] - box[1]) * 2.0)
+            box_w, box_h = (box[2] - box[0]), (box[3] - box[1])
+            # expand
             cx, cy = (box[0] + box[2]) // 2, (box[1] + box[3]) // 2
-            # make sure to fit the square box inside the image
-            longer_side = np.min([longer_side, cx*2.0, (im_w-cx)*2.0, cy*2.0, (im_h-cy)*2.0])
+            longer_side = max(box_w, box_h) * 2.0
+            constrained_side = min(min(im_w, im_h), longer_side)
+            a = constrained_side / 2.0
 
-            a = int(longer_side // 2)
             x1, y1, x2, y2 = cx - a, cy - a, cx + a, cy + a
+
+            if x1 < 0:
+                x2 -= x1
+                x1 = 0
+            if y1 < 0:
+                y2 -= y1
+                y1 = 0
+            if x2 >= im_w:
+                x1 -= x2 - im_w
+                x2 = im_w
+            if y2 >= im_h:
+                y1 -= y2 - im_h
+                y2 = im_h
+
+            x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
 
             crop = whole_img[y1:y2, x1:x2, :]
             crop = cv2.resize(crop, (224, 224))

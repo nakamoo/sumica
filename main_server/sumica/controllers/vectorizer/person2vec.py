@@ -14,7 +14,6 @@ class Person2Vec(vectorizer.Vectorizer):
         pose_mat = []
         act_mat = []
         meta = []
-        n_cams = len(imdata[0])
         
         for scene in imdata:
             scene_pose_vec = []
@@ -24,7 +23,6 @@ class Person2Vec(vectorizer.Vectorizer):
             for view in scene:
                 act_vec = np.zeros(1024)
                 pose_vec = np.zeros(18*3)
-                top_person = None
 
                 if len(view["persons"]) > 0:
                     det_index = view["persons"][0]["det_index"]
@@ -36,10 +34,13 @@ class Person2Vec(vectorizer.Vectorizer):
 
                     if "action_vector" in top_person:
                         act_vec = np.array(top_person["action_vector"])
+                    scene_meta.append([0])
+                else:
+                    scene_meta.append([-1])
                         
                 scene_pose_vec.append(pose_vec)
                 scene_act_vec.append(act_vec)
-                scene_meta.append(top_person)
+
             
             pose_mat.append(np.concatenate(scene_pose_vec))
             act_mat.append(np.concatenate(scene_act_vec))

@@ -1,40 +1,132 @@
-body {
-    width:100%;
+html, body {
     height:100%;
-    margin:0;
-    background-color: #777
+    background-color: #111;
 }
 
-.content {
-    height:calc(100vh - 56px);
+#page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.fill-parent {
-    min-height: 100%;
+#mynav {
 }
 
-.padding-0 {
-    padding:0;
+#content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
 }
 
-.feedimg {
-    max-width:100%;
+#leftpane {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+}
+
+#flowchartcontainer {
+    position: relative;
+    flex: 3;
 }
 
 #timelinecontainer {
     position: relative;
-    overflow-y: auto;
-    height: 20vh;
+    flex: 2;
+}
+
+#rightpane {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#info {
+    background: #555;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    min-height: 20%;
+    border-style: solid;
+    border-color: white;
+    border-width: thin;
+}
+
+.info-text {
+    color: white;
+}
+
+
+#confidence {
+    height: 30%;
+    background-color: #555;
+}
+
+#confidence .vis-y-axis {
+    color: white;
+}
+
+#confidence .vis-panel.vis-left {
+    background-color: #333;
+}
+
+#confidence .vis-panel.vis-bottom {
+    display: none;
+}
+
+#confidence .vis-timeline{
+    border-bottom: none;
 }
 
 #timeline {
-    position: absolute;
+    height: 70%;
 }
 
-#flowchartcontainer {
-    height:70vh;
-    position: relative;
+.areachart {
+    fill-opacity: 0;
+    fill: #fff;
+    stroke-width:1px;
+    stroke: #fff;
 }
+
+.areachart.vis-fill {
+    fill-opacity:0.7 !important;
+}
+
+#timeline .vis-text {
+    color: white;
+}
+
+#timeline .vis-time-axis {
+    background: #555;
+}
+
+#timeline .vis-inner {
+    color: white;
+}
+
+#timeline .vis-left {
+    background-color: #333;
+}
+
+#timeline .vis-custom-time {
+    pointer-events: none;
+}
+
+#timeline .vis-item.vis-line {
+    z-index: 10;
+    border-width: 3px;
+    border-color: white;
+}
+
+/*#timeline .vis-item.vis-box {
+    background-color: white;
+    border-color: white;
+}
+
+#timeline .vis-item.vis-dot {
+    border-color: white;
+}*/
 
 #flowchartcanvas {
     top: 0;
@@ -44,19 +136,6 @@ body {
     right: 0;
     background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIElEQVQoU2MMCAj4z0AEYAQpfPDgAUGlowrxBhHRwQMAN38rARkDmvwAAAAASUVORK5CYII=)
     repeat;
-}
-
-#feed {
-    min-width: 100%;
-}
-
-#nofeedpanel {
-    background-color:black;
-}
-
-#nofeedtext {
-    color: white;
-    font-size: 2em;
 }
 
 .item {
@@ -100,4 +179,24 @@ body {
 
 .dragHover {
     border: 2px solid orange;
+}
+
+#frombottom {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+#prediction {
+    background-color: #555;
+    padding: 10px;
+    border: 1px solid white;
+}
+
+#predCanvas {
+}
+
+#feed {
+    width: 100%;
 }

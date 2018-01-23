@@ -1,12 +1,62 @@
-from controllers.dbreader.imagereader import ImageReader
-from controllers.vectorizer.person2vec import Person2Vec
-import ruptures as rpt
 import time
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 import os
 import pickle
-from collections import Counter
+
+from flask import current_app
+import ruptures as rpt
+import numpy as np
+import coloredlogs
+import logging
+
+from controllers.dbreader.imagereader import ImageReader
+from controllers.vectorizer.person2vec import Person2Vec
+from utils import db
+from controllers.tests.trainer import Trainer
+
+logger = logging.getLogger(__name__)
+coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
+
+
+def check_recorded_segments(times, username, start_time, end_time, min_fit_size):
+    results = db.segments.find({'username': username, "end_time": {"$gte": start_time, "$lt": end_time}}).sort(
+        [("end_time", 1)])
+    results = list(results)
+
+    latest_start_fit_index = max(0, len(times) - min_fit_size)
+
+    if len(results) > 0:
+        #logger.debug("last recorded segment: {}".format(results[-1]))
+        last_fixed_index = times.index(results[-1]["end_time"])  # np.searchsorted(times, results[-1]["time"])
+    else:
+        last_fixed_index = 0
+
+    start_fit_index = min(latest_start_fit_index, last_fixed_index)
+    segments = np.array([[r["start_time"], r["end_time"]] for r in results])
+    segments = np.searchsorted(times, segments.flatten()).reshape([-1, 2]).tolist()
+
+    return segments, last_fixed_index, start_fit_index
+
+
+def record_segments(username, segments, segment_times, start_record, end_record):
+    data = []
+    #misc = []
+    accum = 0
+
+    for i, (start, end) in enumerate(segment_times[::-1]):
+        seg_len = end - start
+
+        if start >= start_record and (end < end_record or accum+seg_len > 2000):
+            d = {'username': username, 'start_time': start, 'end_time': end}
+            data.append(d)
+            #misc.append(segments[i])
+            accum += seg_len
+
+    data = data[::-1]
+    #misc = misc[::-1]
+
+    if len(data) > 0:
+        db.segments.insert_many(data)
+
 
 class Learner:
     def __init__(self, username, cams):
@@ -14,85 +64,72 @@ class Learner:
         self.data2vec = Person2Vec()
         self.username = username
         self.cams = cams
-
-    def learn_model(self, x_times, x, label_set, breaks):
-        y_times = [t[0] for t in label_set]
-        y = [t[1] for t in label_set]
-        counts = Counter(y)
-        assigned = {t: 0 for t in list(set(y))}
-        x_indices = np.searchsorted(x_times, y_times)
-        # no label = -1
-        label_mat = np.ones(x.shape[0], dtype=np.int32) * -1
-        intervals = [[] for _ in range(len(label_set))]
-
-        _breaks = [0] + breaks
-
-        #  label augmentation
-        # choose which breakpoint to assign
-        #clusters = np.searchsorted(_breaks, x_indices)
-
-
-        alpha = 0 # threshold
-        beta = alpha # new break
-        new_breaks = []
-        
-        """
-        for i, c in enumerate(clusters):
-            if x_indices[i] == 0:
-                c += 1
-                
-            past = x_indices[i] - _breaks[c-1]
-
-            if past > alpha:
-                new_breaks.append(x_indices[i]-beta)
-        
-        _breaks = _breaks + new_breaks
-        _breaks.sort()
-        """
-        
-        clusters = np.searchsorted(_breaks, x_indices)
-        
-        for i, xx in enumerate(x_indices):
-            label_mat[xx - 1] = y[i]
-        sparse_labels = label_mat.copy()
-
-        for i, c in enumerate(clusters):
-            # special case for 0
-            if x_indices[i] == 0:
-                c += 1
-                
-            prev_label = label_mat[_breaks[c-1]]
-
-            if prev_label != -1 and (counts[y[i]] < counts[prev_label] or (counts[y[i]] == counts[prev_label] and assigned[y[i]] < assigned[prev_label])):
-                print("warning: overwriting segment w/ label {} ({}) to {} ({})".format(prev_label, counts[prev_label], y[i], counts[y[i]]))
-                assigned[prev_label] -= 1
-                intervals[prev_label] = []
-
-            label_mat[_breaks[c-1]:_breaks[c]] = y[i]
-            intervals[i] = [_breaks[c-1], _breaks[c]]
-            assigned[y[i]] += 1
-
-        # take out remaining unlabeled data
-        labeled_mask = label_mat != -1
-
-        labeled_x = x[labeled_mask]
-        train_labels = label_mat[labeled_mask]
-
-        clf = RandomForestClassifier(n_estimators=20)
-        clf.fit(labeled_x, train_labels)
-
-        return clf, {"raw": sparse_labels, "augmented": label_mat, "intervals": intervals,
-                     "indices": x_indices, "mapping": clusters.tolist()}, _breaks[1:]
+        self.trainers = {}
 
     def get_down_times(self, times):
         down_threshold = 30
 
-        t = np.array(times[1:]) - np.array([0] + times[:-1])
+        t = np.array(times[1:]) - np.array(times[:-1])
         downs = t > down_threshold
 
         return downs
 
-    def create_image_matrix(self, start_time, end_time=None):
+    def create_image_matrix(self, imdata):
+        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True)
+
+        mat = np.concatenate([act_mat, pose_mat], axis=1)
+
+        return mat, meta
+
+    def calculate_segments(self, X, times, start_time, end_time):
+        min_fit_size = 1000
+        recorded_segments, last_fixed_index, start_fit_index = \
+            check_recorded_segments(times, self.username, start_time, end_time, min_fit_size)
+
+        # TODO inefficient repetition
+        downs = (np.where(self.get_down_times(times))[0] + 1).tolist()
+        starts = [0] + downs
+        ends = downs + [len(times)]
+        cam_segments = [list(a) for a in zip(starts, ends)]
+        downs = (np.where(self.get_down_times(times[start_fit_index:]))[0] + 1 + start_fit_index).tolist()
+        starts = [start_fit_index] + downs
+        ends = downs + [len(times)]
+
+        segments = []
+
+        #logger.debug(str(recorded_segments[-1]))
+        #logger.debug("calculating breakpoints, {}".format(list(zip(starts, ends))))
+
+        for start, end in zip(starts, ends):
+            #logger.debug("{} -> {}".format(start, end))
+
+            if end - start > 1:
+                part = X[start:end]
+                model = "l1"  # "l2", "rbf"
+                algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
+                breaks = algo.predict(pen=np.log(part.shape[0]) * part.shape[1] * 2 ** 2)
+                breaks = (np.array(breaks) + start).tolist()
+                breaks[-1] -= 1  # avoid index out of range
+                part_intervals = [list(a) for a in zip([start] + breaks[:-1], breaks)]
+                segments.extend(part_intervals)
+            else:
+                # avoid index out of range
+                end -= 1
+                segments.append((start, end))
+
+        segments = [(max(s, last_fixed_index), e) for s, e in segments if e > last_fixed_index]
+        segment_times = [(times[s], times[e]) for s, e in segments]
+
+        fix_threshold = len(times) - min_fit_size // 2
+        #logger.debug("new segments: {}".format(segments))
+        record_segments(self.username, segments, segment_times, times[last_fixed_index], times[fix_threshold])
+
+        segments = recorded_segments + segments
+        segment_times = [(times[s], times[e]) for s, e in segments]
+
+        return segments, segment_times, cam_segments, times[last_fixed_index]
+
+    def update_models(self, labels, start_time, end_time=None):
         imreader = ImageReader()
 
         if end_time is None:
@@ -100,57 +137,42 @@ class Learner:
 
         imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
 
-        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True)
+        if len(imdata) == 0:
+            return None, None
+        else:
+            X, meta = self.create_image_matrix(imdata)
+            segments, segment_times, cam_segments, fixed_time = self.calculate_segments(X, times, start_time, end_time)
+            train_labels = {}
 
-        mat = np.concatenate([act_mat, pose_mat], axis=1)
+            for mode, label_set in labels.items():
+                if mode not in self.trainers:
+                    self.trainers[mode] = Trainer()
 
-        return mat, times, imdata, meta
+                if len(label_set) <= 0:
+                    label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
+                    m, m_breaks = None, []
+                else:
+                    m, label_data, update_model = self.trainers[mode].learn_model(times, X, label_set, segments, segment_times)
 
-    def calculate_intervals(self, X, times):
-        downs = np.where(self.get_down_times(times))
-        ups = [0] + (downs + 1)
-        partitions = []
-        for start, end in zip(ups, downs):
-            partitions.append(X[start:end])
+                    if update_model:
+                        logger.debug("model <{}> updated.".format(mode))
 
-        intervals = []
+                self.models[mode] = m
+                train_labels[mode] = label_data
 
-        for i, part in enumerate(partitions):
-            offset = ups[i]
-            model = "l1"  # "l2", "rbf"
-            algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(X)
-            breaks = algo.predict(pen=np.log(X.shape[0])*X.shape[1]*2**2)
-            breaks += offset
-            intervals.append(zip([0] + breaks[:-1], breaks[1:]))
+            misc = {}
+            misc["matrix"] = X
+            misc["times"] = times
+            misc["raw_data"] = imdata
+            misc["meta"] = meta
+            misc["segments"] = segments
+            misc["segment_times"] = segment_times
+            misc["segments_last_fixed"] = fixed_time
+            misc["cam_segments"] = cam_segments
+            misc["train_labels"] = train_labels
+            misc["time_range"] = {"min": start_time, "max": end_time}
 
-        return intervals
-
-    def update_models(self, labels, start_time, end_time=None):
-        X, times, imdata, meta = self.create_image_matrix(start_time, end_time)
-        intervals = self.calculate_intervals(X, times)
-        train_labels = {}
-
-        for mode, label_set in labels.items():
-            if len(label_set) <= 0:
-                label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
-                m, m_breaks = None, []
-            else: 
-                m, label_data, m_breaks = self.learn_model(times, X, label_set, breaks)
-                
-            self.models[mode] = m
-            train_labels[mode] = label_data
-            mode_breaks[mode] = m_breaks
-
-        misc = {}
-        misc["matrix"] = X
-        misc["times"] = times
-        misc["raw_data"] = imdata
-        misc["meta"] = meta
-        misc["breaks"] = breaks
-        misc["train_labels"] = train_labels
-        misc["mode_breaks"] = mode_breaks
-
-        return self.models, misc
+            return self.models, misc
 
     def predict(self, mode, images):
         clf = self.models[mode]
@@ -158,6 +180,5 @@ class Learner:
         input_mat = np.concatenate([act_mat, pose_mat], axis=1)
         probs = clf.predict_proba(input_mat)
         pred_labels = clf.classes_[np.argmax(probs, axis=1)]
-        confidences = np.max(probs, axis=1)
 
-        return pred_labels, confidences
+        return pred_labels, probs

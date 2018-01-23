@@ -92,7 +92,7 @@ class I3DNN:
     def process_image(self, img):
         # (1, _SAMPLE_VIDEO_FRAMES, 224, 224, 3)
         feed_dict = {}
-        feed_dict[self.rgb_input] = img
+        feed_dict[self.rgb_input] = img/128.0 - 1.0
 
         out_logits, out_predictions, out_feats = self.sess.run(
             [self.model_logits, self.model_predictions, self.feats],

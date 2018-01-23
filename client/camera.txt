@@ -1,2 +1,0 @@
-vstarcam https://192.168.11.6:30869 webcam0 password
-vstarcam https://192.168.11.5:702 webcam1 password

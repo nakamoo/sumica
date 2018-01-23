@@ -20,13 +20,16 @@ modules.start_sensor_mods()
 while True:
     try:
         time.sleep(1)
-        logging.debug("getting commands")
+
         try:
             # fetch actions
             r = requests.post(SERVER_IP + "/controllers/execute", data={'user_name': ID}, verify=False)
+            logging.debug("fetched execution commands (actions) from server")
             action_data = json.loads(r.text)
             logging.debug("action data: {}".format(action_data))
             modules.execute_actor_mods(action_data)
+        except requests.exceptions.ConnectionError as e:
+            logging.error('could not connect to server')
         except Exception as e:
             traceback.print_exc()
 

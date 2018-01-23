@@ -28,7 +28,8 @@ def execute_controllers():
         commands = controller.execute()
         for command in commands:
             response.append(command)
-            log_command(command, controller)
+            if command:
+                log_command(command, controller)
 
     return jsonify(response), 201
 

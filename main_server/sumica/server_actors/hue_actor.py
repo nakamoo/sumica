@@ -2,9 +2,6 @@ import requests
 import json
 from flask import Flask
 
-app = Flask(__name__)
-app.config.from_pyfile(filename="../application.cfg")
-
 
 colors = {
     '電球色': {"bri": 254, "hue": 14957, "sat": 141, 'on': True},

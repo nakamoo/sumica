@@ -1,0 +1,2 @@
+class Actor(object):
+    pass

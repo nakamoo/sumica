@@ -27,7 +27,7 @@ def visualize(frame, all_boxes, win_name="frame"):
 #cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 
 class Manager:
-    def __init__(self, user, server_ip, actions):
+    def __init__(self, user, server_ip):
         self.mans = []
 
         try:
@@ -45,9 +45,6 @@ class Manager:
         except:
             exit()
 
-    def execute(self, acts):
-        pass
-
     def start(self):
         for man in self.mans:
             if man.enabled:
@@ -59,9 +56,6 @@ class Manager:
         for man in self.mans:
             man.close()
             print("releasing", man.cam_name)
-
-    def execute(self, acts):
-        pass
 
 
 class CamManager:

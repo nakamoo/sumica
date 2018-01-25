@@ -29,6 +29,21 @@ html, body {
     flex: 3;
 }
 
+#flowchartabscontainer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.panzoom {
+  position: absolute;
+  /*width: 100%;
+    height: 100%;*/
+  overflow: visible;
+}
+
 #timelinecontainer {
     position: relative;
     flex: 2;
@@ -129,13 +144,15 @@ html, body {
 }*/
 
 #flowchartcanvas {
-    top: 0;
-    bottom: 0;
+
     position: absolute;
-    left: 0;
-    right: 0;
+    top: 0px;
+    left: 0px;
+    width: 10000px;
+    height: 10000px;
     background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIElEQVQoU2MMCAj4z0AEYAQpfPDgAUGlowrxBhHRwQMAN38rARkDmvwAAAAASUVORK5CYII=)
     repeat;
+
 }
 
 .item {

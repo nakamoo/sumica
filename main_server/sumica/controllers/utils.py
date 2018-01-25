@@ -35,13 +35,16 @@ keypoint_labels = [
 
 def impath2base64(impath, scale=0.5, quality=50):
     with BytesIO() as output:
-        with Image.open(impath) as img:
-            img = img.resize((int(img.width * scale), int(img.height * scale)))
-            img.save(output, "JPEG", quality=quality)
-        bytedata = output.getvalue()
+        try:
+            with Image.open(impath) as img:
+                img = img.resize((int(img.width * scale), int(img.height * scale)))
+                img.save(output, "JPEG", quality=quality)
+            bytedata = output.getvalue()
 
-        encoded_string = base64.b64encode(bytedata)
-        encoded_string = encoded_string.decode("utf-8")
+            encoded_string = base64.b64encode(bytedata)
+            encoded_string = encoded_string.decode("utf-8")
+        except:
+            encoded_string = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 
         return encoded_string
 

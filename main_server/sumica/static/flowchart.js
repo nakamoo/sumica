@@ -64,46 +64,67 @@ var connectorPaintStyle = {
         isTarget: true
     };
 
-//node creation
-var initLabelNode = function (el) {
-    instance.addEndpoint(el, labelTargetEndpoint, {anchor: ["LeftMiddle"], uuid: el.id});
-    instance.addEndpoint(el, labelSourceEndpoint, {anchor: ["RightMiddle"], uuid: el.id + "source"});
-};
-
-var newLabelNode = function (x, y, label) {
-    var d = document.createElement("div");
+var initGeneralNode = function(x, y) {
+    var node = document.createElement("div");
     var id = jsPlumbUtil.uuid();
 
-    instance.draggable(d, myDragOptions);
-    d.className = "item";
-    d.id = id;
-    d.innerHTML = label;
-    d.style.left = x + "px";
-    d.style.top = y + "px";
-    instance.getContainer().appendChild(d);
-    initLabelNode(d);
+    var body = document.createElement("div");
+    body.className = "itembody";
+    $(node).append($(body));
 
-    return d;
+    node.className = "item";
+    node.id = id;
+    node.style.left = x + "px";
+    node.style.top = y + "px";
+    instance.setDraggable(node, true);
+
+    var $node = $(node);
+    var delButton = $('<button type="button" class="btn btn-circle btn-sm deleteButton">' +
+        '<span class="fa fa-times" aria-hidden="true"></span>' +
+        '</button>');
+    $node.append(delButton);
+    delButton.css("display", "none");
+    delButton.click(
+        function() {
+            instance.remove(node);
+        }
+    );
+
+    $node.mouseover(function() {
+        delButton.css("display", "inline");
+    }).mouseout(function() {
+        delButton.css("display", "none");
+    });
+
+    return {body: body, main: node};
 };
 
-var initImageNode = function (el) {
-    instance.addEndpoint(el, imageSourceEndpoint, {anchor: ["RightMiddle"], uuid: el.id});
+//node creation
+
+var newLabelNode = function (x, y, label) {
+    var n = initGeneralNode(x, y);
+
+    var text = $('<p style="margin: 0;">' + label + '</p>');
+    $(n.body).append(text);
+
+    instance.getContainer().appendChild(n.main);
+
+    instance.addEndpoint(n.main, labelTargetEndpoint, {anchor: ["LeftMiddle"], uuid: n.main.id});
+    instance.addEndpoint(n.main, labelSourceEndpoint, {anchor: ["RightMiddle"], uuid: n.main.id + "source"});
+
+    return n.main;
 };
 
 var newImageNode = function (x, y, imdata) {
-    var d = document.createElement("div");
-    var id = jsPlumbUtil.uuid();
+    var n = initGeneralNode(x, y);
 
-    instance.draggable(d, myDragOptions);
-    d.className = "item";
-    d.id = id;
-    d.innerHTML = '<img class="itemimage" src="' + imdata + '" >';
-    d.style.left = x + "px";
-    d.style.top = y + "px";
-    instance.getContainer().appendChild(d);
-    initImageNode(d);
+    var img = $('<img class="itemimage" src="' + imdata + '" >');
+    $(n.body).append(img);
 
-    return d;
+    instance.getContainer().appendChild(n.main);
+    instance.addEndpoint(n.main, imageSourceEndpoint, {anchor: ["RightMiddle"], uuid: n.main.id});
+
+    return n.main;
 };
 
 // organize layout of graph with dagre
@@ -145,9 +166,47 @@ var dagreLayout = function () {
     instance.repaintEverything();
 };
 
+var addDraggables = function(el) {
+
+    el.draggable({
+        start: function (e) {
+            var pz = $container.find(".panzoom");
+            currentScale = pz.panzoom("getMatrix")[0];
+            $(this).css("cursor", "move");
+            //pz.panzoom("disable");
+            $(this).addClass('noclick');
+        },
+        drag: function (e, ui) {
+            //ui.position.left = Math.round(ui.position.left / currentScale / 20.0) * 20.0;
+            //ui.position.top = Math.round(ui.position.top / currentScale / 20.0) * 20.0;
+            ui.position.left = ui.position.left / currentScale;
+            ui.position.top = ui.position.top / currentScale;
+
+            if ($(this).hasClass("ui-draggable")) {
+                instance.repaint($(this).attr('id'), ui.position);
+            }
+        },
+        stop: function (e, ui) {
+            var nodeId = $(this).attr('id');
+            if ($(this).hasClass("ui-draggable")) {
+                instance.repaint(nodeId, ui.position);
+            }
+            $(this).css("cursor", "");
+            $container.find(".panzoom").panzoom("enable");
+
+            //hacky
+            setTimeout(function() {
+                console.log($(this));
+                $(this).removeClass('noclick');
+            }, 100);
+
+        }//, grid: [20, 20], containment: true
+    });
+};
+
 jsPlumb.ready(function () {
     var minScale = 0.4;
-    var maxScale = 2;
+    var maxScale = 3;
     var incScale = 0.1;
     instance = window.jsp = jsPlumb.getInstance({
         DragOptions: {cursor: 'pointer', zIndex: 2000},
@@ -164,6 +223,18 @@ jsPlumb.ready(function () {
         ],
         Container: "flowchartcanvas"
     });
+
+    function updateBG(matrix) {
+        var followX = -matrix[4] / matrix[0];
+        var followY = -matrix[5] / matrix[0];
+        var screenW = $('#flowchartabscontainer').width() / minScale;
+        var width = screenW * 2.0;
+
+        var interval = 100;
+        $('#flowchartbg').css({left: Math.round(followX / interval) * interval - screenW / 2.0,
+            top: Math.round(followY / interval) * interval - screenW / 2.0, width: width, height: width});
+
+    };
 
     $panzoom = $container.find('.panzoom').panzoom({
         minScale: minScale,//0.4
@@ -191,6 +262,8 @@ jsPlumb.ready(function () {
 
             var matrix = $container.find(".panzoom").panzoom("getMatrix");
             instance.setZoom(matrix[0]);
+
+            updateBG(matrix);
         })
         //on start store initial offsets and mouse coord
         .on("mousedown touchstart", function (ev) {
@@ -213,6 +286,8 @@ jsPlumb.ready(function () {
                 var matrix = $container.find(".panzoom").panzoom("getMatrix");
                 matrix[4] = parseInt(dragstart.dx) - deltaX;
                 matrix[5] = parseInt(dragstart.dy) - deltaY;
+
+                updateBG(matrix);
                 $container.find(".panzoom").panzoom("setMatrix", matrix);
             }
         })
@@ -289,33 +364,7 @@ jsPlumb.ready(function () {
 
                 //setTimeout(updateFlowchart, 5000);
 
-                $container.find(".item").draggable({
-                    start: function (e) {
-                        var pz = $container.find(".panzoom");
-                        currentScale = pz.panzoom("getMatrix")[0];
-                        $(this).css("cursor", "move");
-                        //pz.panzoom("disable");
-                    },
-                    drag: function (e, ui) {
-                        //ui.position.left = Math.round(ui.position.left / currentScale / 20.0) * 20.0;
-                        //ui.position.top = Math.round(ui.position.top / currentScale / 20.0) * 20.0;
-                        ui.position.left = ui.position.left / currentScale;
-                        ui.position.top = ui.position.top / currentScale;
-
-                        if ($(this).hasClass("jtk-connected")) {
-                            instance.repaint($(this).attr('id'), ui.position);
-                        }
-                    },
-                    stop: function (e, ui) {
-                        var nodeId = $(this).attr('id');
-                        if ($(this).hasClass("jtk-connected")) {
-                            instance.repaint(nodeId, ui.position);
-                        }
-                        $(this).css("cursor", "");
-                        $container.find(".panzoom").panzoom("enable");
-                    }//, grid: [20, 20], containment: true
-                });
-
+                addDraggables($container.find(".item"));
                 dagreLayout();
             },
             error: function (data, status) {
@@ -333,9 +382,12 @@ var newNode = function () {
     d.className = "item";
     d.innerHTML = "";
 
-    //instance.getContainer().appendChild(d);
-    //initLabelNode(d);
+    var body = document.createElement("div");
+    body.className = "itembody";
 
+    var $d = $(d);
+
+    $d.append($(body));
     return d;
 };
 
@@ -435,56 +487,47 @@ $('#editPlatform').change(function () {
     }
 });
 
-var initActionNode = function (el) {
+var initActionNode = function (el, body) {
     instance.addEndpoint(el, actionTargetEndpoint, {anchor: ["LeftMiddle"], uuid: el.id});
 
-    $(function () {
-        var isDragging = false;
-        $(el)
-            .mousedown(function () {
-                $(window).mousemove(function () {
-                    isDragging = true;
-                    $(window).unbind("mousemove");
-                });
-            })
-            .mouseup(function () {
-                var wasDragging = isDragging;
-                isDragging = false;
-                $(window).unbind("mousemove");
-                if (!wasDragging) {
-                    var params = $(el).data('params');
+   $(body)
+        .click(function () {
+            console.log('uwot', $(el));
 
-                    $('#editActionName').val(params.actionName);
-                    $('#editPlatform').val(params.platform);
-                    var pName = platforms[parseInt(params.platform)];
-                    $('#editActionParams').html($('#platform-' + pName + ' > .setParameters').html());
-                    window[pName + 'InitSetParameters']();
-                    window[pName + 'InitFromObject'](params);
-                    $("#editActionModal").data('params', params);
-                    $("#editActionModal").modal();
-                }
-            });
-    });
+            if ($(el).hasClass('noclick')) {
+                $(el).removeClass('noclick');
+                return;
+            }
+
+            var params = $(el).data('params');
+
+            $('#editActionName').val(params.actionName);
+            $('#editPlatform').val(params.platform);
+            var pName = platforms[parseInt(params.platform)];
+            $('#editActionParams').html($('#platform-' + pName + ' > .setParameters').html());
+            window[pName + 'InitSetParameters']();
+            window[pName + 'InitFromObject'](params);
+            $("#editActionModal").data('params', params);
+            $("#editActionModal").modal();
+        });
 };
 
 var newActionNode = function (x, y, params) {
-    var d = document.createElement("div");
-    var id = jsPlumbUtil.uuid();
+    var n = initGeneralNode(x, y);
 
-    instance.draggable(d, myDragOptions);
-    d.className = "item";
-    d.id = id;
-    d.innerHTML = params.actionName;
-    d.style.left = x + "px";
-    d.style.top = y + "px";
-    instance.getContainer().appendChild(d);
-    $(d).data('params', params);
-    initActionNode(d);
+    instance.getContainer().appendChild(n.main);
+    var $d = $(n.main);
+    $d.data('params', params);
 
-    return d;
+    var text = $('<p style="margin: 0;">' + params.actionName + '</p>');
+    $(n.body).append(text);
+
+    initActionNode(n.main, n.body);
+
+    return n.main;
 };
 
-var $addLabel = $('#addAction');
+var $addAction = $('#addAction');
 
 $('#addActionModal').on('hidden.bs.modal', function () {
     $('#addActionName').val('');
@@ -494,7 +537,7 @@ $('#addActionModal').on('hidden.bs.modal', function () {
     $('#addActionOk').prop('disabled', true);
 });
 
-$addLabel.draggable({
+$addAction.draggable({
     cursorAt: {top: 0, left: 0},
     start: function (event, ui) {
     },
@@ -514,13 +557,15 @@ $addLabel.draggable({
 
             e.preventDefault();
 
-            newActionNode(x, y, params);
+            var node = newActionNode(x, y, params);
+            addDraggables($(node));
             $("#addActionModal").modal('hide');
         });
 
         $('#testAction').unbind().click(function (e) {
             var pName = platforms[parseInt($('#selectPlatform').val())];
             var params = window[pName + "ToObject"]();
+            params.username = 'sean';
 
             $.ajax({
                 type: "POST",

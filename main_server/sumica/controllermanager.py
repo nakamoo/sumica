@@ -49,3 +49,7 @@ def trigger_controllers(user, event, data):
 # TODO: use DB
 cons = dict()
 cons[current_app.config['USER']] = standard_controllers(current_app.config['USER'])
+
+# for stateless test commands (probably from browser)
+test_execute = dict()
+test_execute[current_app.config['USER']] = []

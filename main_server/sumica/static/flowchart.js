@@ -1,6 +1,7 @@
 var currentScale = 1;
 var $container = $("#page");
 var instance = null;
+var platforms = null;
 
 var myDragOptions = {
     //grid: [20, 20], containment: true
@@ -373,22 +374,34 @@ $addLabel.draggable({
     cancel: false
 });
 
-$('#selectPlatform, #editPlatform').append($('<option>', {
-    value: '1',
-    text: 'Hue'
-})).append($('<option>', {
-    value: '2',
-    text: 'TV'
-}));
+$.get({
+    url: "https://homeai.ml:5000/platforms",
+    success:function(data) {
+        platforms = data;
+        var dropdown = $('#selectPlatform, #editPlatform');
+
+        for (var i = 0; i < data.length; i++) {
+            dropdown.append($('<option>', {
+                value: '' + i,
+                text: data[i]
+            }));
+        }
+        },
+    async:false
+});
 
 $(window).on('load', function () {
     $('body').append('<div id="hiddenStuff" style="display: none;"></div>');
 
-    $('<div id="platform-hue"></div>').load("parameters/hue").appendTo('#hiddenStuff');
+    for (var i = 0; i < platforms.length; i++) {
+        $('<div id="platform-' + platforms[i] + '"></div>').load("parameters/" + platforms[i]).appendTo('#hiddenStuff');
+    }
 });
 
 var checkActionValid = function () {
-    if ($('#selectPlatform').val() != '0' && $('#addActionName').val() != '') {
+    var selectedVal = $('#selectPlatform').val();
+
+    if ((selectedVal != '-1' && selectedVal != null) && $('#addActionName').val() != '') {
         $('#addActionOk').prop('disabled', false);
     } else {
         $('#addActionOk').prop('disabled', true);
@@ -402,26 +415,23 @@ $('#addActionName').keyup(function () {
 $('#selectPlatform').change(function () {
     checkActionValid();
 
-    if ($(this).val() != '0') {
+    if ($(this).val() != '-1') {
+        var pName = platforms[parseInt($(this).val())];
         $('#paramsCard').css('display', 'flex');
-    }
-
-    if ($(this).val() == '1') {
-        $('#actionParams').html($('#platform-hue > .setParameters').html());
-        window['hueInitSetParameters']();
-
-    } else if ($(this).val() == '2') {
-        $('#actionParams').html('<p>foobar</p>')
+        $('#actionParams').html($('#platform-' + pName + ' > .setParameters').html());
+        window[pName + 'InitSetParameters']();
     }
 });
 
 $('#editPlatform').change(function () {
-    if ($(this).val() == '1') {
-        $('#actionParams').html($('#platform-hue > .setParameters').html());
-        window['hueInitSetParameters']();
-        window['hueInitFromObject']($('#editActionParams'), params);
-    } else if ($(this).val() == '2') {
-        $('#actionParams').html('<p>foobar</p>')
+    var params = $("#editActionModal").data('params');
+
+    var pName = platforms[parseInt($(this).val())];
+    $('#editActionParams').html($('#platform-' + pName + ' > .setParameters').html());
+    window[pName + 'InitSetParameters']();
+
+    if (params.platform == $(this).val()) {
+        window[pName + 'InitFromObject'](params);
     }
 });
 
@@ -446,15 +456,15 @@ var initActionNode = function (el) {
 
                     $('#editActionName').val(params.actionName);
                     $('#editPlatform').val(params.platform);
-                    $('#editActionParams').html($('#platform-hue > .setParameters').html());
-                    window['hueInitSetParameters']();
-                    window['hueInitFromObject'](params);
+                    var pName = platforms[parseInt(params.platform)];
+                    $('#editActionParams').html($('#platform-' + pName + ' > .setParameters').html());
+                    window[pName + 'InitSetParameters']();
+                    window[pName + 'InitFromObject'](params);
                     $("#editActionModal").data('params', params);
                     $("#editActionModal").modal();
                 }
             });
     });
-    //window["hueParameters"]()
 };
 
 var newActionNode = function (x, y, params) {
@@ -478,7 +488,7 @@ var $addLabel = $('#addAction');
 
 $('#addActionModal').on('hidden.bs.modal', function () {
     $('#addActionName').val('');
-    $('#selectPlatform').val(0);
+    $('#selectPlatform').val('-1');
     $('#paramsCard').css('display', 'none');
     $('#actionParams').empty();
     $('#addActionOk').prop('disabled', true);
@@ -496,9 +506,10 @@ $addLabel.draggable({
         $("#addActionModal").modal({backdrop: 'static'});
 
         $('#addActionOk').unbind().click(function (e) {
-            var params = window["hueToObject"]();
+            var pName = platforms[parseInt($('#selectPlatform').val())];
+            var params = window[pName + "ToObject"]();
             params.actionName = $('#addActionName').val();
-            params.platform = $('#selectPlatform').val()//$('#selectPlatform option:selected').text();
+            params.platform = $('#selectPlatform').val();//$('#selectPlatform option:selected').text();
             params.username = 'sean';
 
             e.preventDefault();
@@ -508,11 +519,12 @@ $addLabel.draggable({
         });
 
         $('#testAction').unbind().click(function (e) {
-            var params = window["hueToObject"]();
+            var pName = platforms[parseInt($('#selectPlatform').val())];
+            var params = window[pName + "ToObject"]();
 
             $.ajax({
                 type: "POST",
-                url: "https://homeai.ml:5000/browser/hue",
+                url: "https://homeai.ml:5000/test/" + pName,
                 data: JSON.stringify(params)
             });
         });

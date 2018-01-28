@@ -24,7 +24,6 @@ class ActivityLearner(Controller):
     def __init__(self, username, start_thread=True):
         super().__init__(username)
 
-        self.period = 3600
         # declare start_time for imagereader
         self.start_time = time.mktime(datetime.datetime(2018, 1, 20, 20).timetuple())
 

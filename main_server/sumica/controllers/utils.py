@@ -53,9 +53,10 @@ def saveimgtostatic(imname, impath, scale=0.5, quality=50):
     path = os.path.join("static", "images", imname)
 
     if not os.path.exists(path):
-        with Image.open(impath) as img:
-            img = img.resize((int(img.width * scale), int(img.height * scale)))
-            img.save(path, "JPEG", quality=quality)
+        if os.path.exists(impath):
+            with Image.open(impath) as img:
+                img = img.resize((int(img.width * scale), int(img.height * scale)))
+                img.save(path, "JPEG", quality=quality)
 
     return path
 

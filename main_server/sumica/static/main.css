@@ -35,6 +35,7 @@ html, body {
     bottom: 0;
     left: 0;
     right: 0;
+    background-color: #000
 }
 
 .panzoom {
@@ -143,16 +144,19 @@ html, body {
     border-color: white;
 }*/
 
-#flowchartcanvas {
-
+#flowchartbg {
     position: absolute;
     top: 0px;
     left: 0px;
     width: 10000px;
     height: 10000px;
-    background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIElEQVQoU2MMCAj4z0AEYAQpfPDgAUGlowrxBhHRwQMAN38rARkDmvwAAAAASUVORK5CYII=)
-    repeat;
+    /*background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIElEQVQoU2MMCAj4z0AEYAQpfPDgAUGlowrxBhHRwQMAN38rARkDmvwAAAAASUVORK5CYII=)
+    repeat;*/
+    z-index: -10;
+}
 
+#flowchartcanvas {
+    position: absolute;
 }
 
 .item {
@@ -182,6 +186,11 @@ html, body {
     -moz-transition: -moz-box-shadow 0.15s ease-in;
     -o-transition: -o-box-shadow 0.15s ease-in;
     transition: box-shadow 0.15s ease-in;
+
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none;
 }
 
 .itemimage {
@@ -216,4 +225,15 @@ html, body {
 
 #feed {
     width: 100%;
+}
+
+.btn.active {
+    background-color : red;
+}
+
+#toolbar {
+    left: 30px;
+    top: 30px;
+    position: absolute;
+    margin: 10px;
 }

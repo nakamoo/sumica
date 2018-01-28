@@ -199,23 +199,24 @@ def knowledge():
     misc = al.misc
 
     if misc is not None:
-        #mapping = misc["train_labels"]["activity"]["mapping"]
-        intervals = misc["segments"]
+        segs = misc["segments"]
+        seg_indices = misc["train_labels"]["activity"]["seg_mapping"]
         labels = al.labels
-        classes = list(set(labels))
-        data["classes"] = classes
+        data["classes"] = al.classes
         label_indices = []
 
         icons = []
-        for label, (start, end) in zip(labels, intervals):
+        for i, label in enumerate(labels):
+            start, end = segs[seg_indices[i]]
             mid = (start + end) // 2
             cam_num = 0
+
             d = misc["raw_data"][mid][cam_num]
             impath = current_app.config["RAW_IMG_DIR"] + d["filename"]
+            impath = saveimgtostatic(d["filename"], impath, scale=0.2, quality=50)
 
-            encoded_string = impath2base64(impath)
-            icons.append(encoded_string)
-            label_indices.append(classes.index(label))
+            icons.append(impath)
+            label_indices.append(al.classes.index(label))
 
         data["icons"] = icons
         data["mapping"] = label_indices

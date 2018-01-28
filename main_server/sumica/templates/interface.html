@@ -16,25 +16,31 @@
 
     <link rel="stylesheet" type="text/css" href="static/main.css">
 
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.css" rel="stylesheet"
+          type="text/css"/>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.css" rel="stylesheet"
+          type="text/css"/>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js'></script>
+
+    <script src='https://dagrejs.github.io/project/dagre/latest/dagre.min.js'></script>
+
+    <link href="static/bootstrap-colorpicker.min.css" rel="stylesheet"
+              type="text/css"/>
+        <script src='static/bootstrap-colorpicker.min.js'></script>
 </head>
 <body>
 
 <div id="page">
-    <div id="mynav">
-        <nav class="navbar navbar-expand-sm navbar-dark " style="background-color: #000000;">
-            <a class="navbar-brand" href="#">sumica interface</a>
-        </nav>
-    </div>
+
     <div id="content">
         <div id="leftpane">
             <div id="flowchartcontainer">
                 <div id="flowchartabscontainer">
                     <div class="panzoom">
+                        <div id="flowchartbg"></div>
                         <div id="flowchartcanvas">
                             <!--
                             <div class="item itemlabel" id="label1">LABEL 1
@@ -50,6 +56,12 @@
                             -->
                         </div>
                     </div>
+
+                </div>
+
+                <div role="group" id="toolbar">
+                    <!--<button type="button" class="btn btn-outline-primary" id="addLabel">Add label</button><br><br>-->
+                    <button type="button" class="btn btn-outline-primary" id="addAction">Add action</button>
                 </div>
             </div>
             <div id="timelinecontainer">
@@ -84,7 +96,117 @@
     </div>
 </div>
 
-<script src='https://cdn.rawgit.com/YuriGor/jquery.panzoom/ignoreChildrensEvents/dist/jquery.panzoom.min.js'></script>z
+<script src='https://cdn.rawgit.com/YuriGor/jquery.panzoom/ignoreChildrensEvents/dist/jquery.panzoom.min.js'></script>
+
+<div id="addLabelModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add label</h4>
+            </div>
+            <form id="newLabelForm">
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="addLabelName">Set name:</label>
+                        <input type="text" class="form-control" id="addLabelName" placeholder="読書">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="addLabelOk">OK</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<div id="addActionModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add action</h4>
+            </div>
+            <form id="addActionForm">
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="addActionName">Set name:</label>
+                        <input type="text" class="form-control" id="addActionName" placeholder="音楽流す">
+                    </div>
+                    <div class="form-group">
+                        <label for="selectPlatform">Select platform:</label>
+                        <select class="form-control" id="selectPlatform">
+                            <option value="0" disabled selected> -- select a platform -- </option>
+                        </select>
+                    </div>
+                    <div class="card" id="paramsCard" style="display: none;">
+                      <div class="card-header">
+                        Action parameters
+                      </div>
+                      <div class="card-block">
+                          <div class="container" style="">
+                            <div id="actionParams"></div>
+                          </div>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" id="testAction">Test Action</button>
+                        <button type="submit" class="btn btn-primary" id="addActionOk" disabled>OK</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<div id="editActionModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Action</h4>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editActionName">Name</label>
+                    <input type="text" class="form-control" id="editActionName">
+                </div>
+                <div class="form-group">
+                    <label for="editPlatform">Platform</label>
+                    <select class="form-control" id="editPlatform">
+                    </select>
+                </div>
+                <div class="card">
+                  <div class="card-header">
+                    Action parameters
+                  </div>
+                  <div class="card-block">
+                      <div class="container" style="">
+                        <div id="editActionParams"></div>
+                      </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="testAction2">Test Action</button>
+                    <button type="button" class="btn btn-primary">Apply</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="static/main.js"></script>
 <script src="static/flowchart.js"></script>
 <script src="static/timeline.js"></script>

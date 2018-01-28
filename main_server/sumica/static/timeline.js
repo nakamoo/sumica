@@ -224,8 +224,8 @@ var updateTimeline = function () {
             firstUpdate = false;
             setTimeout(updateTimeline, 5000);
         },
-        error: function (data, status) {
-            console.log(status);
+        error: function (err) {
+            console.log(err);
         }
     });
 };

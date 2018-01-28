@@ -1,11 +1,154 @@
 var currentScale = 1;
 var $container = $("#page");
+var instance = null;
+
+var myDragOptions = {
+    //grid: [20, 20], containment: true
+};
+
+// init connector and endpoint types
+var connectorPaintStyle = {
+        strokeWidth: 2,
+        stroke: "orange",
+        joinstyle: "round"
+    },
+
+    connectorHoverStyle = {
+        strokeWidth: 3,
+        stroke: "white"
+    },
+    endpointHoverStyle = {
+        fill: "white"
+    },
+    imageSourceEndpoint = {
+        endpoint: "Dot",
+        paintStyle: {
+            fill: "dodgerblue",
+            radius: 7
+        },
+        isSource: true,
+        connector: ["Bezier", {stub: [40, 60], gap: 10, cornerRadius: 5, alwaysRespectStubs: true}],
+        connectorStyle: connectorPaintStyle,
+        hoverPaintStyle: endpointHoverStyle,
+        connectorHoverStyle: connectorHoverStyle,
+        scope: "image",
+        maxConnections: -1
+    },
+    labelTargetEndpoint = {
+        endpoint: "Dot",
+        paintStyle: {fill: "orange", radius: 7},
+        hoverPaintStyle: endpointHoverStyle,
+        maxConnections: -1,
+        dropOptions: {hoverClass: "hover", activeClass: "active"},
+        scope: "image",
+        isTarget: true
+    },
+    labelSourceEndpoint = {
+        endpoint: "Dot",
+        paintStyle: {fill: "orange", radius: 7},
+        hoverPaintStyle: endpointHoverStyle,
+        maxConnections: -1,
+        scope: "action",
+        isSource: true,
+        connector: ["Bezier", {stub: [40, 60], gap: 10, cornerRadius: 5, alwaysRespectStubs: true}],
+        connectorStyle: connectorPaintStyle,
+        connectorHoverStyle: connectorHoverStyle
+    },
+    actionTargetEndpoint = {
+        endpoint: "Dot",
+        paintStyle: {fill: "tomato", radius: 7},
+        hoverPaintStyle: endpointHoverStyle,
+        maxConnections: -1,
+        scope: "action",
+        isTarget: true
+    };
+
+//node creation
+var initLabelNode = function (el) {
+    instance.addEndpoint(el, labelTargetEndpoint, {anchor: ["LeftMiddle"], uuid: el.id});
+    instance.addEndpoint(el, labelSourceEndpoint, {anchor: ["RightMiddle"], uuid: el.id + "source"});
+};
+
+var newLabelNode = function (x, y, label) {
+    var d = document.createElement("div");
+    var id = jsPlumbUtil.uuid();
+
+    instance.draggable(d, myDragOptions);
+    d.className = "item";
+    d.id = id;
+    d.innerHTML = label;
+    d.style.left = x + "px";
+    d.style.top = y + "px";
+    instance.getContainer().appendChild(d);
+    initLabelNode(d);
+
+    return d;
+};
+
+var initImageNode = function (el) {
+    instance.addEndpoint(el, imageSourceEndpoint, {anchor: ["RightMiddle"], uuid: el.id});
+};
+
+var newImageNode = function (x, y, imdata) {
+    var d = document.createElement("div");
+    var id = jsPlumbUtil.uuid();
+
+    instance.draggable(d, myDragOptions);
+    d.className = "item";
+    d.id = id;
+    d.innerHTML = '<img class="itemimage" src="' + imdata + '" >';
+    d.style.left = x + "px";
+    d.style.top = y + "px";
+    instance.getContainer().appendChild(d);
+    initImageNode(d);
+
+    return d;
+};
+
+// organize layout of graph with dagre
+var dagreLayout = function () {
+    var g = new dagre.graphlib.Graph();
+    g.setGraph({rankdir: 'LR', ranksep: 500});
+    g.setDefaultEdgeLabel(function () {
+        return {};
+    });
+
+    $('.item').each(
+        function (idx, node) {
+            var n = $(node);
+            g.setNode(n.attr('id'), {
+                width: Math.round(n.width()),
+                height: Math.round(n.height())
+            });
+        }
+    );
+
+    instance.getAllConnections().forEach(
+        function (edge) {
+            g.setEdge(
+                edge.source.id,
+                edge.target.id
+            );
+        });
+
+
+    dagre.layout(g);
+
+    // Applying the calculated layout
+    g.nodes().forEach(
+        function (n) {
+            $('#' + n).css('left', g.node(n).x + 'px');
+            $('#' + n).css('top', g.node(n).y + 'px');
+        });
+
+    instance.repaintEverything();
+};
 
 jsPlumb.ready(function () {
     var minScale = 0.4;
     var maxScale = 2;
     var incScale = 0.1;
-    var instance = window.jsp = jsPlumb.getInstance({
+    instance = window.jsp = jsPlumb.getInstance({
         DragOptions: {cursor: 'pointer', zIndex: 2000},
 
         ConnectionOverlays: [
@@ -21,80 +164,43 @@ jsPlumb.ready(function () {
         Container: "flowchartcanvas"
     });
 
-    var myDragOptions = {
-        start: function(e){
-            console.log("sdfsddAA");
-          var pz = $container.find(".panzoom");
-          currentScale = pz.panzoom("getMatrix")[0];
-          $(this).css("cursor","move");
-          pz.panzoom("disable");
-        },
-        drag:function(e){
-            var ui = e.el.style;
-            var pos = $(e.el).position();
-            console.log(pos);
-            ui.position = "absolute";
-            ui.top = pos.top/currentScale + "px";
-            ui.left = pos.left/currentScale + "px";
-            console.log(ui.top);
-          //if($(this).hasClass("jsplumb-connected"))
-          //{
-            instance.repaint(e.el);
-          //}
-        },
-        stop: function(e){
-          var nodeId = $(this).attr('id');
-          //if($(this).hasClass("jsplumb-connected"))
-          //{
-            instance.repaint(e.el);
-          //}
-          $(this).css("cursor","");
-          $container.find(".panzoom").panzoom("enable");
-        }, grid: [20, 20], containment: true
-    };
-
     $panzoom = $container.find('.panzoom').panzoom({
         minScale: minScale,//0.4
         maxScale: maxScale,//2
         increment: incScale,//0.1
         cursor: "",
-        ignoreChildrensEvents:true
+        ignoreChildrensEvents: true
     }).on("panzoomstart", function (e, pz, ev) {
         $panzoom.css("cursor", "move");//set "move" cursor on start only
     })
-    .on("panzoomend", function (e, pz) {
-        $panzoom.css("cursor", "");//restore cursor
-    });
+        .on("panzoomend", function (e, pz) {
+            $panzoom.css("cursor", "");//restore cursor
+        });
     $panzoom.parent()
         .on('mousewheel.focal', function (e) {
             //if Control pressed then zoom
-            if (e.ctrlKey || e.originalEvent.ctrlKey) {
-                e.preventDefault();
-                var delta = e.delta || e.originalEvent.wheelDelta;
-                var zoomOut = delta ? delta < 0 : e.originalEvent.deltaY > 0;
-                $panzoom.panzoom('zoom', zoomOut, {
-                    animate: true,
-                    exponential: false,
-                });
-            } else {//else pan (touchpad and Shift key works)
-                e.preventDefault();
-                var deltaY = e.deltaY || e.originalEvent.wheelDeltaY || (-e.originalEvent.deltaY);
-                var deltaX = e.deltaX || e.originalEvent.wheelDeltaX || (-e.originalEvent.deltaX);
-                $panzoom.panzoom("pan", deltaX / 2, deltaY / 2, {
-                    animate: true,
-                    relative: true,
-                });
-            }
+            e.preventDefault();
+            var delta = e.delta || e.originalEvent.wheelDelta;
+            var zoomOut = delta ? delta < 0 : e.originalEvent.deltaY > 0;
+            $panzoom.panzoom('zoom', zoomOut, {
+                animate: true,
+                exponential: false,
+                focal: e
+            });
+
+            var matrix = $container.find(".panzoom").panzoom("getMatrix");
+            instance.setZoom(matrix[0]);
         })
         //on start store initial offsets and mouse coord
         .on("mousedown touchstart", function (ev) {
-
-            var matrix = $container.find(".panzoom").panzoom("getMatrix");
-            var offsetX = matrix[4];
-            var offsetY = matrix[5];
-            var dragstart = {x: ev.pageX, y: ev.pageY, dx: offsetX, dy: offsetY};
-            $(ev.target).css("cursor", "move");
-            $(this).data('dragstart', dragstart);
+            if (ev.target.id == 'flowchartabscontainer' || ev.target.id == 'flowchartbg') {
+                var matrix = $container.find(".panzoom").panzoom("getMatrix");
+                var offsetX = matrix[4];
+                var offsetY = matrix[5];
+                var dragstart = {x: ev.pageX, y: ev.pageY, dx: offsetX, dy: offsetY};
+                $(ev.target).css("cursor", "move");
+                $(this).data('dragstart', dragstart);
+            }
         })
         //calculate mouse offset from starting pos and apply it to panzoom matrix
         .on("mousemove touchmove", function (ev) {
@@ -110,90 +216,9 @@ jsPlumb.ready(function () {
             }
         })
         .on("mouseup touchend touchcancel", function (ev) {
-            console.log('mouseup touchend touchcancel');
             $(this).data('dragstart', null);
             $(ev.target).css("cursor", "");
         });
-
-    console.log('done');
-
-
-
-    var connectorPaintStyle = {
-            strokeWidth: 2,
-            stroke: "orange",
-            joinstyle: "round"
-        },
-
-        connectorHoverStyle = {
-            strokeWidth: 3,
-            stroke: "white"
-        },
-        endpointHoverStyle = {
-            fill: "white"
-        },
-        imageSourceEndpoint = {
-            endpoint: "Dot",
-            paintStyle: {
-                fill: "dodgerblue",
-                radius: 7
-            },
-            isSource: true,
-            connector: ["Bezier", {stub: [40, 60], gap: 10, cornerRadius: 5, alwaysRespectStubs: true}],
-            connectorStyle: connectorPaintStyle,
-            hoverPaintStyle: endpointHoverStyle,
-            connectorHoverStyle: connectorHoverStyle,
-            dragOptions: {},
-            maxConnections: -1
-        },
-        labelTargetEndpoint = {
-            endpoint: "Dot",
-            paintStyle: {fill: "orange", radius: 7},
-            hoverPaintStyle: endpointHoverStyle,
-            maxConnections: -1,
-            dropOptions: {hoverClass: "hover", activeClass: "active"},
-            isTarget: true
-        };
-
-    var initLabelNode = function (el) {
-        instance.addEndpoint(el, labelTargetEndpoint, {anchor: ["LeftMiddle"], uuid: el.id});
-    };
-
-    var newLabelNode = function (x, y, label) {
-        var d = document.createElement("div");
-        var id = jsPlumbUtil.uuid();
-
-        instance.draggable(d, myDragOptions);
-        d.className = "item";
-        d.id = id;
-        d.innerHTML = label;
-        d.style.left = x + "px";
-        d.style.top = y + "px";
-        instance.getContainer().appendChild(d);
-        initLabelNode(d);
-
-        return d;
-    };
-
-    var initImageNode = function (el) {
-        instance.addEndpoint(el, imageSourceEndpoint, {anchor: ["RightMiddle"], uuid: el.id});
-    };
-
-    var newImageNode = function (x, y, imdata) {
-        var d = document.createElement("div");
-        var id = jsPlumbUtil.uuid();
-
-        instance.draggable(d, myDragOptions);
-        d.className = "item";
-        d.id = id;
-        d.innerHTML = '<img class="itemimage" src=' + 'data:image/jpeg;base64,' + imdata + '>';
-        d.style.left = x + "px";
-        d.style.top = y + "px";
-        instance.getContainer().appendChild(d);
-        initImageNode(d);
-
-        return d;
-    };
 
     instance.batch(function () {
         /*
@@ -242,8 +267,8 @@ jsPlumb.ready(function () {
                 var labelIds = [];
 
                 for (var i in labels) {
-                    var x = 600 + Math.floor(i / 4) * 100;
-                    var y = 50 + (i % 4) * 100;
+                    var x = 800;
+                    var y = 50 + i * 100;
 
                     labelIds.push(newLabelNode(x, y, labels[i]).id);
                 }
@@ -252,8 +277,8 @@ jsPlumb.ready(function () {
                 var mapping = data["mapping"];
 
                 for (var i in images) {
-                    var x = 100 + Math.floor(i / 4) * 100;
-                    var y = 50 + (i % 4) * 100;
+                    var x = 300;
+                    var y = 50 + i * 100;
 
                     var el = newImageNode(x, y, images[i]);
                     var labelId = labelIds[mapping[i]];
@@ -262,6 +287,35 @@ jsPlumb.ready(function () {
                 }
 
                 //setTimeout(updateFlowchart, 5000);
+
+                $container.find(".item").draggable({
+                    start: function (e) {
+                        var pz = $container.find(".panzoom");
+                        currentScale = pz.panzoom("getMatrix")[0];
+                        $(this).css("cursor", "move");
+                        //pz.panzoom("disable");
+                    },
+                    drag: function (e, ui) {
+                        //ui.position.left = Math.round(ui.position.left / currentScale / 20.0) * 20.0;
+                        //ui.position.top = Math.round(ui.position.top / currentScale / 20.0) * 20.0;
+                        ui.position.left = ui.position.left / currentScale;
+                        ui.position.top = ui.position.top / currentScale;
+
+                        if ($(this).hasClass("jtk-connected")) {
+                            instance.repaint($(this).attr('id'), ui.position);
+                        }
+                    },
+                    stop: function (e, ui) {
+                        var nodeId = $(this).attr('id');
+                        if ($(this).hasClass("jtk-connected")) {
+                            instance.repaint(nodeId, ui.position);
+                        }
+                        $(this).css("cursor", "");
+                        $container.find(".panzoom").panzoom("enable");
+                    }//, grid: [20, 20], containment: true
+                });
+
+                dagreLayout();
             },
             error: function (data, status) {
 
@@ -270,4 +324,199 @@ jsPlumb.ready(function () {
     };
 
     updateFlowchart();
+});
+
+
+var newNode = function () {
+    var d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML = "";
+
+    //instance.getContainer().appendChild(d);
+    //initLabelNode(d);
+
+    return d;
+};
+
+var $addLabel = $('#addLabel');
+
+$addLabel.draggable({
+    cursorAt: {top: 0, left: 0},
+    start: function (event, ui) {
+    },
+    stop: function (event, ui) {
+        var matrix = $container.find(".panzoom").panzoom("getMatrix");
+        var x = (ui.offset.left - matrix[4]) / matrix[0];
+        var y = (ui.offset.top - matrix[5]) / matrix[0];
+
+        /*swal({
+            title: "New label",
+            text: "Enter name:",
+            type: 'input',
+            showCancelButton: true,
+            inputPlaceholder: '読書'
+        }, function(value) {
+            if (value) {
+                newLabelNode(x, y, value);
+            }
+        });*/
+        $("#addLabelModal").modal();
+
+        $('#addLabelOk').unbind().click(function (e) {
+            e.preventDefault();
+            newLabelNode(x, y, $('#addLabelName').val());
+            $("#addLabelModal").modal('hide');
+            $('#newLabelForm').trigger('reset');
+        });
+    },
+    helper: newNode,
+    cancel: false
+});
+
+$('#selectPlatform, #editPlatform').append($('<option>', {
+    value: '1',
+    text: 'Hue'
+})).append($('<option>', {
+    value: '2',
+    text: 'TV'
+}));
+
+$(window).on('load', function () {
+    $('body').append('<div id="hiddenStuff" style="display: none;"></div>');
+
+    $('<div id="platform-hue"></div>').load("parameters/hue").appendTo('#hiddenStuff');
+});
+
+var checkActionValid = function () {
+    if ($('#selectPlatform').val() != '0' && $('#addActionName').val() != '') {
+        $('#addActionOk').prop('disabled', false);
+    } else {
+        $('#addActionOk').prop('disabled', true);
+    }
+};
+
+$('#addActionName').keyup(function () {
+    checkActionValid();
+});
+
+$('#selectPlatform').change(function () {
+    checkActionValid();
+
+    if ($(this).val() != '0') {
+        $('#paramsCard').css('display', 'flex');
+    }
+
+    if ($(this).val() == '1') {
+        $('#actionParams').html($('#platform-hue > .setParameters').html());
+        window['hueInitSetParameters']();
+
+    } else if ($(this).val() == '2') {
+        $('#actionParams').html('<p>foobar</p>')
+    }
+});
+
+$('#editPlatform').change(function () {
+    if ($(this).val() == '1') {
+        $('#actionParams').html($('#platform-hue > .setParameters').html());
+        window['hueInitSetParameters']();
+        window['hueInitFromObject']($('#editActionParams'), params);
+    } else if ($(this).val() == '2') {
+        $('#actionParams').html('<p>foobar</p>')
+    }
+});
+
+var initActionNode = function (el) {
+    instance.addEndpoint(el, actionTargetEndpoint, {anchor: ["LeftMiddle"], uuid: el.id});
+
+    $(function () {
+        var isDragging = false;
+        $(el)
+            .mousedown(function () {
+                $(window).mousemove(function () {
+                    isDragging = true;
+                    $(window).unbind("mousemove");
+                });
+            })
+            .mouseup(function () {
+                var wasDragging = isDragging;
+                isDragging = false;
+                $(window).unbind("mousemove");
+                if (!wasDragging) {
+                    var params = $(el).data('params');
+
+                    $('#editActionName').val(params.actionName);
+                    $('#editPlatform').val(params.platform);
+                    $('#editActionParams').html($('#platform-hue > .setParameters').html());
+                    window['hueInitSetParameters']();
+                    window['hueInitFromObject'](params);
+                    $("#editActionModal").data('params', params);
+                    $("#editActionModal").modal();
+                }
+            });
+    });
+    //window["hueParameters"]()
+};
+
+var newActionNode = function (x, y, params) {
+    var d = document.createElement("div");
+    var id = jsPlumbUtil.uuid();
+
+    instance.draggable(d, myDragOptions);
+    d.className = "item";
+    d.id = id;
+    d.innerHTML = params.actionName;
+    d.style.left = x + "px";
+    d.style.top = y + "px";
+    instance.getContainer().appendChild(d);
+    $(d).data('params', params);
+    initActionNode(d);
+
+    return d;
+};
+
+var $addLabel = $('#addAction');
+
+$('#addActionModal').on('hidden.bs.modal', function () {
+    $('#addActionName').val('');
+    $('#selectPlatform').val(0);
+    $('#paramsCard').css('display', 'none');
+    $('#actionParams').empty();
+    $('#addActionOk').prop('disabled', true);
+});
+
+$addLabel.draggable({
+    cursorAt: {top: 0, left: 0},
+    start: function (event, ui) {
+    },
+    stop: function (event, ui) {
+        var matrix = $container.find(".panzoom").panzoom("getMatrix");
+        var x = (ui.offset.left - matrix[4]) / matrix[0];
+        var y = (ui.offset.top - matrix[5]) / matrix[0];
+
+        $("#addActionModal").modal({backdrop: 'static'});
+
+        $('#addActionOk').unbind().click(function (e) {
+            var params = window["hueToObject"]();
+            params.actionName = $('#addActionName').val();
+            params.platform = $('#selectPlatform').val()//$('#selectPlatform option:selected').text();
+            params.username = 'sean';
+
+            e.preventDefault();
+
+            newActionNode(x, y, params);
+            $("#addActionModal").modal('hide');
+        });
+
+        $('#testAction').unbind().click(function (e) {
+            var params = window["hueToObject"]();
+
+            $.ajax({
+                type: "POST",
+                url: "https://homeai.ml:5000/browser/hue",
+                data: JSON.stringify(params)
+            });
+        });
+    },
+    helper: newNode,
+    cancel: false
 });

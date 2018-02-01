@@ -46,11 +46,11 @@ def execute_controllers():
             if command:
                 log_command(command, controller)
 
-    if sum([len(r) for r in response]) > 0:
-        logger.debug(response)
-
     response.extend(cm.test_execute[user_id])
     cm.test_execute[user_id].clear()
+
+    if sum([len(r) for r in response]) > 0:
+        logger.debug(response)
 
     return jsonify(response), 201
 

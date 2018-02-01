@@ -18,6 +18,7 @@ from controllers.speechbot import Speechbot
 from controllers.reminder import Reminder
 from controllers.alarm import Alarm
 from controllers.activitylearner import ActivityLearner
+from controllers.ruleexecutor import RuleExecutor
 from server_actors import hue_actor
 
 
@@ -34,7 +35,8 @@ def standard_controllers(user_name):
         ("featureextractor", FeatureExtractor(user_name)),
         ("chatbot", Chatbot(user_name)),
         ("speechbot", Speechbot(user_name)),
-        ("activitylearner", ActivityLearner(user_name))
+        ("activitylearner", ActivityLearner(user_name)),
+        #("ruleexecutor", RuleExecutor(user_name))
     ])
 
 

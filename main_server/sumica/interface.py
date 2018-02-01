@@ -198,14 +198,20 @@ def knowledge():
     al = cm.cons[current_app.config["USER"]]["activitylearner"]
     misc = al.misc
 
+    data["classes"] = []
+    data["nodes"] = []
+    data["edges"] = []
+
     if misc is not None:
         segs = misc["segments"]
         seg_indices = misc["train_labels"]["activity"]["seg_mapping"]
         labels = al.labels
         data["classes"] = al.classes
-        label_indices = []
 
-        icons = []
+        for c in al.classes:
+            # class name is id
+            data["nodes"].append({"id": c, "type": "label", "text": c})
+
         for i, label in enumerate(labels):
             start, end = segs[seg_indices[i]]
             mid = (start + end) // 2
@@ -215,15 +221,17 @@ def knowledge():
             impath = current_app.config["RAW_IMG_DIR"] + d["filename"]
             impath = saveimgtostatic(d["filename"], impath, scale=0.2, quality=50)
 
-            icons.append(impath)
-            label_indices.append(al.classes.index(label))
+            imid = str(d["_id"])
+            data["nodes"].append({"id": imid, "type": "image", "image": impath})
+            data["edges"].append({"source": imid, "target": label})
 
-        data["icons"] = icons
-        data["mapping"] = label_indices
-    else:
-        data["classes"] = []
-        data["icons"] = []
-        data["mapping"] = []
+        rules = list(db.actions.find())
+
+        for rule in rules:
+            data["nodes"].append({"id": str(rule["_id"]), "type": "action", "text": rule["name"], "data": rule["data"]})
+
+            for inp in rule["data"]["inputs"]:
+                data["edges"].append({"source": inp, "target": str(rule["_id"])})
 
     return jsonify(data)
 
@@ -244,5 +252,29 @@ def change_label():
         db.labels.insert_one({"_id": ObjectId(args['id']), "username": username,
                               "time": args['time'], "label": args['label']})
         logger.debug('added label')
+
+    return "ok", 201
+
+@bp.route('/action', methods=['POST'])
+def change_action():
+    args = request.get_json(force=True)
+    logger.debug(str(args))
+
+    action = args['type']
+    username = args['username']
+
+    if action == 'remove':
+        id_ = args['id']
+        db.actions.delete_one({"_id": ObjectId(id_)})
+        logger.debug('removed action')
+    elif action == 'add':
+        db.actions.insert_one({"_id": ObjectId(args['id']), "username": username,
+                              "creation_time": time.time(), "name": args['name'],
+                               "platform": args['platform'], "data": args['data']})
+    elif action == 'update':
+        db.actions.update_one({"_id": ObjectId(args['id'])}, {"$set": {
+            "name": args['name'],
+            "platform": args['platform'], "data": args['data']
+        }}, upsert=False)
 
     return "ok", 201

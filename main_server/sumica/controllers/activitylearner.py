@@ -10,6 +10,7 @@ import ruptures as rpt
 import numpy as np
 
 from utils import db
+import controllermanager as cm
 from controllers.controller import Controller
 from controllers.vectorizer.person2vec import Person2Vec
 from controllers.dbreader.imagereader import ImageReader
@@ -86,10 +87,11 @@ class ActivityLearner(Controller):
             self.current_images = get_newest_images(self.username, self.cams)
 
             # if model is ready
-            if "activity" in self.learner.models:
+            if "activity" in self.learner.models and self.classes is not None:
                 pred, pred_probs = self.learner.predict("activity", [self.current_images])
                 self.current_predictions = pred_probs[0].tolist()
                 self.current_activity = self.classes[np.argmax(self.current_predictions)]
+                cm.trigger_controllers(self.username, "activity", self.current_activity)
 
     def execute(self):
         return []

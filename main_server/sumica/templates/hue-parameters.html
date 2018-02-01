@@ -40,14 +40,20 @@
     };
 
     var hueInitFromObject = function(params) {
-        $('#lightName').val(params.names);
+        $('#lightName').val(params.hue_names);
         $('#lightOnCheck').prop('checked', params.on);
         $('#colors').data('colorpicker').setValue(params.color);
+
+        if (params.on) {
+            $('#colors').data('colorpicker').enable();
+        } else {
+            $('#colors').data('colorpicker').disable();
+        }
     };
 
     var hueToObject = function() {
         return {
-            names: $('#lightName').val(),
+            hue_names: $('#lightName').val(),
             on: $('#lightOnCheck').is(":checked"),
             color: $('#colors').data('colorpicker').getValue()
         }

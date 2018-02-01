@@ -55,7 +55,7 @@ var feed = document.getElementById("feed");
 var updateFeed = function() {
     $.ajax({
         type: "POST",
-        url: "https://homeai.ml:5000/feed",
+        url: "/feed",
         success: function(data, status) {
             if (data.images.length > 0) {
                 var imgs = "";
@@ -80,7 +80,7 @@ var updateFeed = function() {
                         myChart.data.datasets[0].data = data.predictions;
 
                         myChart.update();
-                    } else {
+                    } else if (data.predictions) {
                         // update everything if different
                         myChart.config.data = {
                             labels: data.classes,
@@ -107,7 +107,7 @@ var updateFeed = function() {
                     }
                 }
 
-                setTimeout(updateFeed, 500);
+                setTimeout(updateFeed, 1000);
             } else {
                 feed.innerHTML =
                     "<div class='card text-white bg-dark text-center'>" +

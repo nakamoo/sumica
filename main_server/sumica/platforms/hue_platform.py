@@ -42,7 +42,7 @@ def test():
     else:
         hue = {'on': False}
 
-    for id in args['names'].split(','):
+    for id in args['hue_names'].split(','):
         data.append({'id': id, 'state': hue})
 
     data = json.dumps(data)

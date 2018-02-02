@@ -36,7 +36,7 @@ def standard_controllers(user_name):
         ("chatbot", Chatbot(user_name)),
         ("speechbot", Speechbot(user_name)),
         ("activitylearner", ActivityLearner(user_name)),
-        #("ruleexecutor", RuleExecutor(user_name))
+        ("ruleexecutor", RuleExecutor(user_name))
     ])
 
 
@@ -47,11 +47,17 @@ def trigger_controllers(user, event, data):
         for c in cons[user].values():
             c.on_event(event, data)
 
-
-# TODO: use DB
+# to be set by launcher
+platforms = None
 cons = dict()
-cons[current_app.config['USER']] = standard_controllers(current_app.config['USER'])
-
 # for stateless test commands (probably from browser)
 test_execute = dict()
 test_execute[current_app.config['USER']] = []
+
+def initialize(platform_mods):
+    global cons, platforms
+
+    platforms = {p.platform_name: p for p in platform_mods}
+
+    # TODO: use DB
+    cons[current_app.config['USER']] = standard_controllers(current_app.config['USER'])

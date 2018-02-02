@@ -19,9 +19,11 @@ with app.app_context():
     import platforms
     from utils import log_command
 
-sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor]
-platform_mods = [platforms.hue_platform, platforms.irkit_platform]
-platform_names = [p.platform_name for p in platform_mods]
+    sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor]
+    platform_mods = [platforms.hue_platform, platforms.irkit_platform]
+    platform_names = [p.platform_name for p in platform_mods]
+
+    cm.initialize(platform_mods)
 
 for sensor in sensor_mods:
     app.register_blueprint(sensor.bp)
@@ -42,15 +44,26 @@ def execute_controllers():
     for controller in cm.cons[user_id].values():
         commands = controller.execute()
         for command in commands:
-            response.append(command)
+            response.extend(command)
             if command:
                 log_command(command, controller)
 
-    response.extend(cm.test_execute[user_id])
+    # prioritize test actions over controllers
+    for test in cm.test_execute[user_id]:
+        p = test['platform']
+
+        # remove conflicting actions
+        response = [r for r in response if p != r['platform']]
+
+        response.append(test)
+
     cm.test_execute[user_id].clear()
 
-    if sum([len(r) for r in response]) > 0:
+    if len(response) > 0:
         logger.debug(response)
+
+    # ???
+    response = [[r] for r in response]
 
     return jsonify(response), 201
 

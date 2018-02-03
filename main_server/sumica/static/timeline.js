@@ -61,7 +61,7 @@ var options = {
                 if (value) {
                     item.content = value;
                     item.myType = "label";
-                    item.id = rng();
+                    item.id = createuuid();
                     callback(item); // send back adjusted new item
                     addLabel(item.id, item.content, item.start.getTime() / 1000);
                 } else {
@@ -100,14 +100,10 @@ timeline.setGroups(groups);
 
 var firstUpdate = true;
 
-var rng = function () {
-    return Math.random().toString(16).substring(2, 14) + Math.random().toString(16).substring(2, 14);
-};
-
 var updateTimeline = function () {
     $.ajax({
         type: "POST",
-        url: "https://homeai.ml:5000/timeline",
+        url: "/timeline",
         data: JSON.stringify({
             start_time: startdate.getTime() / 1000
         }),
@@ -155,7 +151,7 @@ var updateTimeline = function () {
                     var tooltip = '<img src="' + seg["img"] + '" >';
                     tooltip += "<p>" + count + " images</p>";
                     var row = {
-                        id: rng(), group: 2, content: '', start: start, end: end, title: tooltip,
+                        id: createuuid(), group: 2, content: '', start: start, end: end, title: tooltip,
                         color: "hsl(" + i * 100 + ", 75%, 50%)", myType: "segment", editable: false
                     };
                     rows.push(row);
@@ -173,7 +169,7 @@ var updateTimeline = function () {
                     start.setMilliseconds(0);
                     end.setMilliseconds(0);
                     var row = {
-                        id: rng(), group: 1, content: '', start: start, end: end, title: tooltip,
+                        id: createuuid(), group: 1, content: '', start: start, end: end, title: tooltip,
                         color: "hsl(" + c * 100 + ", 75%, 50%)", myType: "prediction", editable: false
                     };
                     rows.push(row);
@@ -185,7 +181,7 @@ var updateTimeline = function () {
                 groups2.clear();
 
                 for (var i = 0; i < data.confidences.length; i++) {
-                    var gid = i;//rng();
+                    var gid = i;
                     groups2.add({id: gid, content: "", className: "areachart"});
 
                     for (var k = 0; k < data.confidences[i].length; k++) {
@@ -224,8 +220,8 @@ var updateTimeline = function () {
             firstUpdate = false;
             setTimeout(updateTimeline, 5000);
         },
-        error: function (data, status) {
-            console.log(status);
+        error: function (err) {
+            console.log(err);
         }
     });
 };
@@ -300,15 +296,19 @@ var addLabel = function (id, name, time) {
 
     $.ajax({
         type: "POST",
-        url: "https://homeai.ml:5000/label",
+        url: "/label",
         data: JSON.stringify({
             type: 'add',
             username: 'sean',
             time: time,
             id: id,
             label: name
-        })
+        }),
+        success: function(data) {
+            //updateFlowchart(true);
+        }
     });
+    //newLabelNode(0, 0, name, id);
 };
 
 var removeLabel = function(id) {
@@ -317,11 +317,14 @@ var removeLabel = function(id) {
 
     $.ajax({
         type: "POST",
-        url: "https://homeai.ml:5000/label",
+        url: "/label",
         data: JSON.stringify({
             type: 'remove',
             username: 'sean',
             id: id
-        })
+        }),
+        success: function(data) {
+            //setTimeout(function() {updateFlowchart(true)},
+        }
     });
-}
+};

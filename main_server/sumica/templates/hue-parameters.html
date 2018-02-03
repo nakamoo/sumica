@@ -1,0 +1,62 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12">
+          <label for="lightName">Hue light name(s):</label>
+          <input type="text" class="form-control" id="lightName" placeholder="1,3">
+        </div>
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="lightOnCheck" checked>
+                <label class="form-check-label" for="lightOnCheck">
+                    ON
+                </label>
+            </div>
+        </div>
+        <div class="col-sm-12">
+            <label for="colors">Set color:</label>
+            <div class="input-group" id="colors">
+                <input type="text" value="#ffeeaa" class="form-control" />
+                <span class="input-group-addon"><i></i></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var hueInitSetParameters = function() {
+        $('#colors').colorpicker({
+            format: "hex",
+            useAlpha: false
+        });
+
+        $('#lightOnCheck').change(function() {
+            if (this.checked) {
+                $('#colors').data('colorpicker').enable();
+            } else {
+                $('#colors').data('colorpicker').disable();
+            }
+        });
+    };
+
+    var hueInitFromObject = function(params) {
+        $('#lightName').val(params.hue_names);
+        $('#lightOnCheck').prop('checked', params.on);
+        $('#colors').data('colorpicker').setValue(params.color);
+
+        if (params.on) {
+            $('#colors').data('colorpicker').enable();
+        } else {
+            $('#colors').data('colorpicker').disable();
+        }
+    };
+
+    var hueToObject = function() {
+        return {
+            hue_names: $('#lightName').val(),
+            on: $('#lightOnCheck').is(":checked"),
+            color: $('#colors').data('colorpicker').getValue()
+        }
+    };
+
+</script>

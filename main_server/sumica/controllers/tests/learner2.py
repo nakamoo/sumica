@@ -75,7 +75,7 @@ class Learner:
         return downs
 
     def create_image_matrix(self, imdata):
-        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True)
+        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True, average=True)
 
         mat = np.concatenate([act_mat, pose_mat], axis=1)
 
@@ -149,7 +149,8 @@ class Learner:
                     self.trainers[mode] = Trainer()
 
                 if len(label_set) <= 0:
-                    label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
+                    label_data = {"raw": np.array([]), "augmented": np.array([]),
+                                  "intervals": [], "indices": [], 'seg_mapping': []}
                     m, m_breaks = None, []
                 else:
                     m, label_data, update_model = self.trainers[mode].learn_model(times, X, label_set, segments, segment_times)
@@ -176,7 +177,7 @@ class Learner:
 
     def predict(self, mode, images):
         clf = self.models[mode]
-        pose_mat, act_mat = self.data2vec.vectorize(images)
+        pose_mat, act_mat = self.data2vec.vectorize(images, average=True)
         input_mat = np.concatenate([act_mat, pose_mat], axis=1)
         probs = clf.predict_proba(input_mat)
         pred_labels = clf.classes_[np.argmax(probs, axis=1)]

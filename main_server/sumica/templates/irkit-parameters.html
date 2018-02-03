@@ -1,0 +1,28 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <label for="selectAction">Select action:</label>
+            <select class="form-control" id="selectAction">
+                <option value="0" disabled selected> -- select an action -- </option>
+                <option value="1">TV on</option>
+                <option value="2">TV off</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<script>
+    var irkitInitSetParameters = function() {
+    };
+
+    var irkitInitFromObject = function(params) {
+        $("#selectAction option:contains(" + params.action + ")").attr('selected', 'selected');
+    };
+
+    var irkitToObject = function() {
+        return {
+            action: $("#selectAction option:selected").text()
+        };
+    };
+</script>

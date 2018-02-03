@@ -10,6 +10,7 @@ import ruptures as rpt
 import numpy as np
 
 from utils import db
+import controllermanager as cm
 from controllers.controller import Controller
 from controllers.vectorizer.person2vec import Person2Vec
 from controllers.dbreader.imagereader import ImageReader
@@ -24,7 +25,6 @@ class ActivityLearner(Controller):
     def __init__(self, username, start_thread=True):
         super().__init__(username)
 
-        self.period = 3600
         # declare start_time for imagereader
         self.start_time = time.mktime(datetime.datetime(2018, 1, 20, 20).timetuple())
 
@@ -61,7 +61,7 @@ class ActivityLearner(Controller):
 
         models, misc = self.learner.update_models(labels, self.start_time, end_time)
 
-        if models["activity"] is not None:
+        if models is not None and models["activity"] is not None:
             raw_pred = models["activity"].predict_proba(misc["matrix"])
             self.confidences = np.max(raw_pred, axis=1).tolist()
             self.predictions = np.argmax(raw_pred, axis=1).tolist()
@@ -87,10 +87,11 @@ class ActivityLearner(Controller):
             self.current_images = get_newest_images(self.username, self.cams)
 
             # if model is ready
-            if "activity" in self.learner.models:
+            if "activity" in self.learner.models and self.classes is not None:
                 pred, pred_probs = self.learner.predict("activity", [self.current_images])
                 self.current_predictions = pred_probs[0].tolist()
                 self.current_activity = self.classes[np.argmax(self.current_predictions)]
+                cm.trigger_controllers(self.username, "activity", self.current_activity)
 
     def execute(self):
         return []

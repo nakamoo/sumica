@@ -4,10 +4,13 @@
     <title>sumica interface</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.6/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.js"></script>
@@ -16,37 +19,62 @@
 
     <link rel="stylesheet" type="text/css" href="static/main.css">
 
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.19.0/vis-timeline-graph2d.min.css" rel="stylesheet"
+          type="text/css"/>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.css" rel="stylesheet"
+          type="text/css"/>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js'></script>
 
-    <script src="static/masonry.pkgd.min.js"></script>
+    <script src='https://dagrejs.github.io/project/dagre/latest/dagre.min.js'></script>
+
+    <link href="static/css/bootstrap-colorpicker.min.css" rel="stylesheet">
+    <script src="static/js/bootstrap-colorpicker.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-duration-format/2.2.1/moment-duration-format.min.js"></script>
+
+    <script type="text/javascript"
+            src="https://rawgit.com/tempusdominus/bootstrap-4/master/build/js/tempusdominus-bootstrap-4.js"></script>
+    <link rel="stylesheet"
+          href="https://rawgit.com/tempusdominus/bootstrap-4/master/build/css/tempusdominus-bootstrap-4.css"/>
+
+    <link rel="stylesheet" type="text/css"
+          href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
 
 <div id="page">
-    <div id="mynav">
-        <nav class="navbar navbar-expand-sm navbar-dark " style="background-color: #000000;">
-            <a class="navbar-brand" href="#">sumica interface</a>
-        </nav>
-    </div>
+
     <div id="content">
         <div id="leftpane">
             <div id="flowchartcontainer">
-                <div id="flowchartcanvas">
-                    <!--
-                    <div class="item itemlabel" id="label1">LABEL 1
-                        <div class="ep"></div>
+                <div id="flowchartabscontainer">
+                    <div class="panzoom">
+                        <div id="flowchartbg"></div>
+                        <div id="flowchartcanvas">
+                            <!--
+                            <div class="item itemlabel" id="label1">LABEL 1
+                                <div class="ep"></div>
+                            </div>
+                            <div class="item itemlabel" id="label2">LABEL 2
+                                <div class="ep"></div>
+                            </div>
+                            <div class="item itemimg" id="image1">
+                                <img src="https://via.placeholder.com/50x50"></img>
+                                <div class="ep"></div>
+                            </div>
+                            -->
+                        </div>
                     </div>
-                    <div class="item itemlabel" id="label2">LABEL 2
-                        <div class="ep"></div>
-                    </div>
-                    <div class="item itemimg" id="image1">
-                        <img src="https://via.placeholder.com/50x50"></img>
-                        <div class="ep"></div>
-                    </div>
-                    -->
+
+                </div>
+
+                <div role="group" id="toolbar">
+                    <!--<button type="button" class="btn btn-outline-primary" id="addLabel">Add label</button><br><br>-->
+                    <button type="button" class="btn btn-outline-primary" id="addAction">Add action</button>
                 </div>
             </div>
             <div id="timelinecontainer">
@@ -72,7 +100,7 @@
                 <div id="prediction">
                     <canvas id="predCanvas">
 
-                    </canvas>
+                    </canvas><!-->
                 </div>
                 <div id="feed">
                 </div>
@@ -81,9 +109,150 @@
     </div>
 </div>
 
+<script src='https://cdn.rawgit.com/YuriGor/jquery.panzoom/ignoreChildrensEvents/dist/jquery.panzoom.min.js'></script>
+
+<div id="addLabelModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add label</h4>
+            </div>
+            <form id="newLabelForm">
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="addLabelName">Set name:</label>
+                        <input type="text" class="form-control" id="addLabelName" placeholder="読書">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="addLabelOk">OK</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<div id="actionModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="actionModalTitle">Add action</h4>
+            </div>
+            <form id="addActionForm">
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="actionName">Name</label>
+                        <input type="text" class="form-control" id="actionName" placeholder="音楽流す">
+                    </div>
+                    <div class="form-group">
+                        <label for="selectPlatform">Platform</label>
+                        <select class="form-control" id="selectPlatform">
+                            <option value="-1" selected="selected" disabled> -- select a platform --</option>
+                        </select>
+                    </div>
+                    <div class="card" id="paramsCard" style="display: none;">
+                        <div class="card-header">
+                            Action parameters
+                        </div>
+                        <div class="card-block">
+                            <div class="container" style="">
+                                <div id="actionParams"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top: 10px;">
+                        <div class="card-header" role="tab" id="headingOne">
+                            <p class="mb-0">
+                                <a data-toggle="collapse" href="#collapseOne">
+                                    Advanced settings
+                                </a>
+                            </p>
+                        </div>
+
+                        <div id="collapseOne" class="collapse hide" role="tabpanel" aria-labelledby="headingOne"
+                             style="margin: 20px;">
+                            <div class="form-group">
+                                <label for="activation">Activation threshold</label>
+                                <select class="form-control" id="activation">
+                                    <option>immediate</option>
+                                    <option selected="selected">10 seconds</option>
+                                    <option>30 seconds</option>
+                                    <option>1 minute</option>
+                                    <option>5 minutes</option>
+                                    <option>10 minutes</option>
+                                    <option>30 minutes</option>
+                                    <option>1 hour</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="timerange">Time range</label>
+                                <div id="timerange">
+                                    <div class="row">
+                                        <div class="col-sm-5">
+                                            <div class="form-group">
+                                                <div class="input-group date" id="starttimepicker"
+                                                     data-target-input="nearest">
+                                                    <input type="text" class="form-control datetimepicker-input"
+                                                           data-target="#starttimepicker"/>
+                                                    <div class="input-group-addon" data-target="#starttimepicker"
+                                                         data-toggle="datetimepicker">
+                                                        <div class="input-group-text"><i class="fa fa-clock-o"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-sm-1" style="top: 5px; padding-left: 10px; padding-right: 10px;">
+                                            <p class="text-center">to</p>
+                                        </div>
+
+                                        <div class="col-sm-5">
+                                            <div class="form-group">
+                                                <div class="input-group date" id="endtimepicker"
+                                                     data-target-input="nearest">
+                                                    <input type="text" class="form-control datetimepicker-input"
+                                                           data-target="#endtimepicker"/>
+                                                    <div class="input-group-addon" data-target="#endtimepicker"
+                                                         data-toggle="datetimepicker">
+                                                        <div class="input-group-text"><i class="fa fa-clock-o"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" id="testAction">Test Action</button>
+                        <button type="button" class="btn btn-primary" id="actionOk" disabled>OK</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+
 <script src="static/main.js"></script>
 <script src="static/flowchart.js"></script>
 <script src="static/timeline.js"></script>
 <script src="static/feed.js"></script>
+
 </body>
 </html>

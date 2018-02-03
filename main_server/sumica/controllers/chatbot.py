@@ -56,9 +56,6 @@ class Chatbot(Controller):
 
             self.cmds.append({"platform": "hue", "data": data})
 
-            # TODO
-            #self.log_operation(re)
-
         yield self.cmds
 
         self.cmds = []

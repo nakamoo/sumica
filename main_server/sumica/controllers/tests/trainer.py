@@ -75,7 +75,7 @@ class Trainer:
             label_mat[segments[segment_i][0]:segments[segment_i][1]] = y[i]
             assigned[y[i]] += 1
 
-        self.train_info = {"raw": sparse_labels, "augmented": label_mat, "indices": y_indices, "mapping": seg_indices.tolist()}
+        self.train_info = {"raw": sparse_labels, "augmented": label_mat, "indices": y_indices, "seg_mapping": seg_indices.tolist()}
 
         # take out remaining unlabeled data
         labeled_mask = label_mat != -1

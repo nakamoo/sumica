@@ -23,16 +23,18 @@ def data2command(data):
         hue = {'on': False}
 
     for id in data['hue_names'].split(','):
-        cmddata.append({'id': id, 'state': hue, 'confirmation': '電気を消しますか？'})
+        cmddata.append({'id': id, 'state': hue})
 
     cmddata = json.dumps(cmddata)
-    command = {'platform': 'hue', 'data': cmddata}
+    command = {'platform': 'hue', 'data': cmddata, 'confirmation': '照明を変えますか？'}
 
     return command
 
+def execute(command):
+    return True
+
 @bp.route('/parameters/' + platform_name)
 def params():
-    # TODO rename to hue-parameters.html
     return render_template('hue-parameters.html')
 
 
@@ -40,7 +42,6 @@ def params():
 def test():
     args = request.get_json(force=True)
     command = data2command(args)
-
     cm.test_commands[args['username']].append(command)
 
     return 'ok', 200

@@ -40,6 +40,8 @@ class RuleExecutor(Controller):
 
         def tosecs(act):
             tokens = act.split()
+            if act == "immediate":
+                return 0
             if "minute" in tokens[1]:
                 return int(tokens[0]) * 60
             elif "second" in tokens[1]:
@@ -65,23 +67,32 @@ class RuleExecutor(Controller):
             self.history.append([time.time(), data])
 
             def hit(activity, activation):
+                if len(self.history) <= 0:
+                    return False
+
                 hits = 0
                 tot = 0
 
-                for t, act in self.history[::-1]:
-                    if time.time() - t > activation:
-                        break
+                if activation == 0:
+                    t, act = self.history[-1]
 
                     if act == activity:
-                        hits += 1
-                    tot += 1
+                        return True
+                else:
+                    for t, act in self.history[::-1]:
+                        if time.time() - t > activation:
+                            break
 
-                if tot <= 0:
-                    return False
+                        if act == activity:
+                            hits += 1
+                        tot += 1
 
-                logger.debug('{} {}'.format(hits, tot))
+                    if tot <= 0:
+                        return False
 
-                return float(hits / tot) > 0.5
+                    logger.debug('{} {}'.format(hits, tot))
+
+                    return float(hits / tot) > 0.5
 
             actions = []
 
@@ -90,9 +101,13 @@ class RuleExecutor(Controller):
                 if hit(rule['activity'], rule['activation']) and (
                         rule['timerange'][0] == rule['timerange'][1] or (
                         rule['timerange'][0] <= now_min < rule['timerange'][1])):
-                    if not cm.states[self.username].satisfied(rule['action']['platform'],
-                                                                            rule['action']['data']):
-                        actions.append(rule['action'])
+                    action = rule['action']
+                    if ('continuous' in action and action['continuous']) or not cm.states[self.username].satisfied(
+                            action['platform'], action['data']):
+                        send_to_client = cm.server_execute(self.username, action)
+
+                        if send_to_client:
+                            actions.append(rule['action'])
 
             self.actions = actions
 

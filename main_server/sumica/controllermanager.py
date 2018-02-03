@@ -6,6 +6,7 @@ import importlib
 import threading
 from _thread import start_new_thread
 from collections import OrderedDict
+import types
 
 from flask import Flask, current_app
 
@@ -19,7 +20,10 @@ from controllers.reminder import Reminder
 from controllers.alarm import Alarm
 from controllers.activitylearner import ActivityLearner
 from controllers.ruleexecutor import RuleExecutor
+
+from statetracker import StateTracker
 from server_actors import hue_actor
+from utils import log_command
 
 
 logger = logging.getLogger(__name__)
@@ -30,13 +34,15 @@ def global_event(event, data):
     Chatbot.on_global_event(event, data)
 
 
-def standard_controllers(user_name):
+def standard_controllers(username):
     return OrderedDict([
-        ("featureextractor", FeatureExtractor(user_name)),
-        ("chatbot", Chatbot(user_name)),
-        ("speechbot", Speechbot(user_name)),
-        ("activitylearner", ActivityLearner(user_name)),
-        ("ruleexecutor", RuleExecutor(user_name))
+        ("featureextractor", FeatureExtractor(username)),
+        ("chatbot", Chatbot(username)),
+        ("speechbot", Speechbot(username)),
+        ("activitylearner", ActivityLearner(username)),
+        ("ruleexecutor", RuleExecutor(username)),
+
+        ("alarm", Alarm(username))
     ])
 
 
@@ -50,9 +56,10 @@ def trigger_controllers(user, event, data):
 # to be set by launcher
 platforms = None
 cons = dict()
+states = dict()
 # for stateless test commands (probably from browser)
-test_execute = dict()
-test_execute[current_app.config['USER']] = []
+test_commands = dict()
+test_commands[current_app.config['USER']] = []
 
 def initialize(platform_mods):
     global cons, platforms
@@ -60,4 +67,44 @@ def initialize(platform_mods):
     platforms = {p.platform_name: p for p in platform_mods}
 
     # TODO: use DB
-    cons[current_app.config['USER']] = standard_controllers(current_app.config['USER'])
+    for user in [current_app.config['USER']]:
+        cons[user] = standard_controllers(user)
+        states[user] = StateTracker()
+
+def execute(username):
+    commands = []
+
+    for con_name, controller in cons[username].items():
+        con_commands = controller.execute()
+
+        if isinstance(con_commands, types.GeneratorType):
+            con_commands = next(con_commands)
+
+        #logger.debug("{}: {}".format(con_name, con_commands))
+
+        for command in con_commands:
+            commands.append(command)
+
+            if command:
+                log_command(command, controller)
+
+    # prioritize test actions over controllers
+    for test in test_commands[username]:
+        p = test['platform']
+
+        # remove conflicting actions
+        response = [c for c in commands if p != r['platform']]
+
+        response.append(test)
+
+    test_commands[username].clear()
+
+    if len(commands) > 0:
+        logger.debug(commands)
+
+    states[username].track(commands)
+
+    # ???
+    commands = [[c] for c in commands]
+
+    return commands

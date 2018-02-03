@@ -6,11 +6,17 @@ from controllers.utils import sort_persons
 def area(b):
     return (b[2]-b[0])*(b[3]-b[1])
 
+def normalize_pose(pose_matrix):
+    # pose matrix is (18x3)
+    pose_matrix[:, :2] -= pose_matrix[1, :2]
+    return pose_matrix
+
+
 class Person2Vec(vectorizer.Vectorizer):
     def __init__(self):
         pass
     
-    def vectorize(self, imdata, get_meta=False):
+    def vectorize(self, imdata, get_meta=False, average=False):
         pose_mat = []
         act_mat = []
         meta = []
@@ -25,16 +31,41 @@ class Person2Vec(vectorizer.Vectorizer):
                 pose_vec = np.zeros(18*3)
 
                 if len(view["persons"]) > 0:
-                    det_index = view["persons"][0]["det_index"]
-                    pose_index = view["persons"][0]["pose_index"]
-                    top_person = view["detections"][det_index]
+                    if average:
+                        poses = 0
+                        dets = 0
 
-                    if "pose_body_index" in top_person: # doesnt contain if no filter
-                        pose_vec = np.array(view["pose"]["body"][pose_index]).flatten()
+                        for person in view["persons"]:
+                            det_index = person["det_index"]
+                            pose_index = person["pose_index"]
+                            top_person = view["detections"][det_index]
 
-                    if "action_vector" in top_person:
-                        act_vec = np.array(top_person["action_vector"])
-                    scene_meta.append([0])
+                            if pose_index >= 0:
+                                pose_vec += normalize_pose(np.array(view["pose"]["body"][pose_index])).flatten()
+                                poses += 1
+
+                            if det_index >= 0:
+                                act_vec += np.array(top_person["action_vector"])
+                                dets += 1
+
+                        if poses > 0:
+                            pose_vec /= poses
+
+                        if dets > 0:
+                            act_vec /= dets
+
+                        scene_meta.append([0])
+                    else:
+                        det_index = view["persons"][0]["det_index"]
+                        pose_index = view["persons"][0]["pose_index"]
+                        top_person = view["detections"][det_index]
+
+                        if "pose_body_index" in top_person: # doesnt contain if no filter
+                            pose_vec = normalize_pose(np.array(view["pose"]["body"][pose_index])).flatten()
+
+                        if "action_vector" in top_person:
+                            act_vec = np.array(top_person["action_vector"])
+                        scene_meta.append([0])
                 else:
                     scene_meta.append([-1])
                         

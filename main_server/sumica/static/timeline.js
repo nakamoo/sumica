@@ -303,8 +303,12 @@ var addLabel = function (id, name, time) {
             time: time,
             id: id,
             label: name
-        })
+        }),
+        success: function(data) {
+            //updateFlowchart(true);
+        }
     });
+    //newLabelNode(0, 0, name, id);
 };
 
 var removeLabel = function(id) {
@@ -318,6 +322,9 @@ var removeLabel = function(id) {
             type: 'remove',
             username: 'sean',
             id: id
-        })
+        }),
+        success: function(data) {
+            //setTimeout(function() {updateFlowchart(true)},
+        }
     });
-}
+};

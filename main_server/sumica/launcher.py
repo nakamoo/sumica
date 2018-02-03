@@ -17,10 +17,9 @@ with app.app_context():
     import sensors
     import interface
     import platforms
-    from utils import log_command
 
     sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor]
-    platform_mods = [platforms.hue_platform, platforms.irkit_platform]
+    platform_mods = [platforms.hue_platform, platforms.irkit_platform, platforms.voice_platform]
     platform_names = [p.platform_name for p in platform_mods]
 
     cm.initialize(platform_mods)
@@ -38,34 +37,10 @@ def get_platforms():
 
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
-    user_id = request.form['user_name']
-    response = []
+    username = request.form['user_name']
+    commands = cm.execute(username)
 
-    for controller in cm.cons[user_id].values():
-        commands = controller.execute()
-        for command in commands:
-            response.extend(command)
-            if command:
-                log_command(command, controller)
-
-    # prioritize test actions over controllers
-    for test in cm.test_execute[user_id]:
-        p = test['platform']
-
-        # remove conflicting actions
-        response = [r for r in response if p != r['platform']]
-
-        response.append(test)
-
-    cm.test_execute[user_id].clear()
-
-    if len(response) > 0:
-        logger.debug(response)
-
-    # ???
-    response = [[r] for r in response]
-
-    return jsonify(response), 201
+    return jsonify(commands), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=app.config["PORT"],

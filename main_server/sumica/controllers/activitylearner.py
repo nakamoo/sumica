@@ -61,7 +61,7 @@ class ActivityLearner(Controller):
 
         models, misc = self.learner.update_models(labels, self.start_time, end_time)
 
-        if models["activity"] is not None:
+        if models is not None and models["activity"] is not None:
             raw_pred = models["activity"].predict_proba(misc["matrix"])
             self.confidences = np.max(raw_pred, axis=1).tolist()
             self.predictions = np.argmax(raw_pred, axis=1).tolist()

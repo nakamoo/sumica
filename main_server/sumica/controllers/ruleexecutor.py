@@ -29,8 +29,7 @@ class RuleExecutor(Controller):
 
         self.rules = []
 
-        self.last_change = None
-        self.last_activity = None
+        self.history = []
 
         self.update_rules()
 
@@ -60,22 +59,42 @@ class RuleExecutor(Controller):
 
     def on_event(self, event, data):
         if event == "activity":
-            if self.last_activity != data:
-                self.last_activity = data
-                self.last_change = time.time()
-
-            activation = time.time() - self.last_change
             now = datetime.datetime.now()
             now_min = now.hour * 60 + now.minute
 
-            logger.debug("activity: {}, activation: {}".format(data, activation))
+            self.history.append([time.time(), data])
+
+            def hit(activity, activation):
+                hits = 0
+                tot = 0
+
+                for t, act in self.history[::-1]:
+                    if time.time() - t > activation:
+                        break
+
+                    if act == activity:
+                        hits += 1
+                    tot += 1
+
+                if tot <= 0:
+                    return False
+
+                logger.debug('{} {}'.format(hits, tot))
+
+                return float(hits / tot) > 0.5
+
+            actions = []
 
             # get action command based on rules
             for rule in self.rules:
-                if data == rule['activity'] and activation > rule['activation'] and (
+                if hit(rule['activity'], rule['activation']) and (
                         rule['timerange'][0] == rule['timerange'][1] or (
                         rule['timerange'][0] <= now_min < rule['timerange'][1])):
-                    self.actions.append(rule['action'])
+                    if not cm.states[self.username].satisfied(rule['action']['platform'],
+                                                                            rule['action']['data']):
+                        actions.append(rule['action'])
+
+            self.actions = actions
 
     def execute(self):
         yield self.actions

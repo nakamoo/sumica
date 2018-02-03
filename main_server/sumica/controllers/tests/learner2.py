@@ -75,7 +75,7 @@ class Learner:
         return downs
 
     def create_image_matrix(self, imdata):
-        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True)
+        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True, average=True)
 
         mat = np.concatenate([act_mat, pose_mat], axis=1)
 
@@ -176,7 +176,7 @@ class Learner:
 
     def predict(self, mode, images):
         clf = self.models[mode]
-        pose_mat, act_mat = self.data2vec.vectorize(images)
+        pose_mat, act_mat = self.data2vec.vectorize(images, average=True)
         input_mat = np.concatenate([act_mat, pose_mat], axis=1)
         probs = clf.predict_proba(input_mat)
         pred_labels = clf.classes_[np.argmax(probs, axis=1)]

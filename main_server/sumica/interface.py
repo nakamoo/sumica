@@ -212,7 +212,7 @@ def knowledge():
             # class name is id
             data["nodes"].append({"id": c, "type": "label", "text": c})
 
-        for i, label in enumerate(labels):
+        for i, label in enumerate(labels[:len(seg_indices)]):
             start, end = segs[seg_indices[i]]
             mid = (start + end) // 2
             cam_num = 0

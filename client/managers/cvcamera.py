@@ -47,10 +47,9 @@ class Manager:
 
     def start(self):
         for man in self.mans:
-            if man.enabled:
-                thread_stream = threading.Thread(target=man.start)
-                thread_stream.daemon = True
-                thread_stream.start()
+            thread_stream = threading.Thread(target=man.start)
+            thread_stream.daemon = True
+            thread_stream.start()
 
     def close(self):
         for man in self.mans:
@@ -121,10 +120,9 @@ class CamManager:
                             frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8).copy(), cv2.IMREAD_COLOR)
                             break
                 except:
-                    print("frame error")
+                    logging.warn("frame error")
 
             if frame is None:
-                print(self.cam_name, ": frame is ", frame)
                 time.sleep(1)
                 continue
                 #ret, frame = self.cap.read()
@@ -147,8 +145,9 @@ class CamManager:
             time.sleep(0.1)
 
     def start(self):
-        if not self.enabled:
-            return
+        #if self.enabled:
+        #    logging.warn('camera {} is down'.format(self.cam_name))
+        #    return
 
         if self.camtype == "webcam":
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800);
@@ -163,9 +162,9 @@ class CamManager:
         diff_thres = 0.5
 
         while True:
-            time.sleep(1)
             if self.image is None or self.image1 is None or self.image2 is None:
                 time.sleep(1)
+                logging.warn('camera {} is down?'.format(self.cam_name))
                 continue
 
             skip = False
@@ -228,12 +227,11 @@ class CamManager:
 
             addr = "{}/data/images".format(ip)
             t = time.time()
-            print(self.cam_name, "sending image to:", addr)
 
             r = requests.post(addr, files=files, data=data, verify=False)
-            print("time taken:", time.time()-t)
+            logging.debug("cam {}: sent image to server. Response time: {}".format(self.cam_name, time.time()-t))
         except:
-            logging.warn("{}: error in sending image".format(self.cam_name))
+            logging.error("{}: could not send image to server".format(self.cam_name))
 
     def show(self, image, ip):
         cv2.imwrite("image.jpg", image)

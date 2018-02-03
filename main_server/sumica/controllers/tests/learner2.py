@@ -149,7 +149,8 @@ class Learner:
                     self.trainers[mode] = Trainer()
 
                 if len(label_set) <= 0:
-                    label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
+                    label_data = {"raw": np.array([]), "augmented": np.array([]),
+                                  "intervals": [], "indices": [], 'seg_mapping': []}
                     m, m_breaks = None, []
                 else:
                     m, label_data, update_model = self.trainers[mode].learn_model(times, X, label_set, segments, segment_times)

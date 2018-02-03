@@ -10,7 +10,7 @@ platform_name = "voice"
 bp = Blueprint("voice_platform", __name__)
 
 def data2command(data):
-    command = {'platform': 'tts', 'data': data['voiceText'], 'continuous': False}
+    command = {'platform': 'tts', 'data': data['voiceText'], 'stateful': False}
 
     return command
 

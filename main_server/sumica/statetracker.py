@@ -19,6 +19,9 @@ class StateTracker():
         for command in commands:
             self.states[command['platform']] = command['data']
 
+    def clear(self, platform):
+        self.states[platform] = None
+
     def satisfied(self, platform, state):
         # state corresponds to 'data' in command
 

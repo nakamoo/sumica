@@ -11,7 +11,7 @@ platform_name = "ifttt"
 bp = Blueprint("ifttt_platform", __name__)
 
 def data2command(data):
-    command = {'platform': 'ifttt', 'data': {'url': data['urlText'], 'continuous': True}}
+    command = {'platform': 'ifttt', 'data': {'url': data['urlText']}, 'stateful': False}
 
     return command
 

@@ -98,19 +98,26 @@ class RuleExecutor(Controller):
 
             # get action command based on rules
             for rule in self.rules:
+                action = rule['action']
+
                 if hit(rule['activity'], rule['activation']) and (
                         rule['timerange'][0] == rule['timerange'][1] or (
                         rule['timerange'][0] <= now_min < rule['timerange'][1])):
-                    action = rule['action']
-                    if ('continuous' in action and action['continuous']) or not cm.states[self.username].satisfied(
-                            action['platform'], action['data']):
+
+                    satisfied = cm.states[self.username].satisfied(action['platform'], action['data'])
+
+                    if not satisfied:
                         send_to_client = cm.server_execute(self.username, action)
 
                         if send_to_client:
                             actions.append(rule['action'])
+                elif not action['stateful']:
+                    cm.states[self.username].clear(action['platform'])
+
 
             self.actions = actions
 
     def execute(self):
-        yield self.actions
+        actions = self.actions
         self.actions = []
+        return actions

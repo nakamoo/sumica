@@ -26,7 +26,10 @@ def data2command(data):
         cmddata.append({'id': id, 'state': hue})
 
     cmddata = json.dumps(cmddata)
-    command = {'platform': 'hue', 'data': cmddata, 'confirmation': '照明を変えますか？'}
+    command = {'platform': 'hue', 'data': cmddata, 'stateful': True}
+
+    if 'test' not in data:
+        command['confirmation'] = '照明を変えますか？'
 
     return command
 
@@ -41,6 +44,7 @@ def params():
 @bp.route('/test/' + platform_name, methods=['POST'])
 def test():
     args = request.get_json(force=True)
+    args["test"] = True
     command = data2command(args)
     cm.test_commands[args['username']].append(command)
 

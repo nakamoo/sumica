@@ -40,8 +40,9 @@ class Alarm(Controller):
                 self.response = [tts_actor.speech("起きる時間です")]
 
     def execute(self):
-        yield self.response
+        response = self.response
         self.response = []
 
+        return response
 
 

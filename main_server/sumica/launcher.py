@@ -19,7 +19,7 @@ with app.app_context():
     import platforms
 
     sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor]
-    platform_mods = [platforms.hue_platform, platforms.irkit_platform, platforms.voice_platform]
+    platform_mods = [platforms.hue_platform, platforms.irkit_platform, platforms.voice_platform, platforms.ifttt_platform]
     platform_names = [p.platform_name for p in platform_mods]
 
     cm.initialize(platform_mods)
@@ -38,7 +38,7 @@ def get_platforms():
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
     username = request.form['user_name']
-    commands = cm.execute(username)
+    commands = cm.client_execute(username)
 
     return jsonify(commands), 201
 

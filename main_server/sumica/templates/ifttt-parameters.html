@@ -1,0 +1,24 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <label for="urlText">URL</label>
+            <input class="form-control" type="text" id="urlText" placeholder="https://maker.ifttt.com/trigger/<event>/with/key/<id>">
+        </div>
+    </div>
+</div>
+
+<script>
+    var iftttInitSetParameters = function() {
+    };
+
+    var iftttInitFromObject = function(params) {
+        $("#urlText").val(params.urlText);
+    };
+
+    var iftttToObject = function() {
+        return {
+            urlText: $("#urlText").val()
+        };
+    };
+</script>

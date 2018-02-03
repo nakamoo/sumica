@@ -71,7 +71,16 @@ def initialize(platform_mods):
         cons[user] = standard_controllers(user)
         states[user] = StateTracker()
 
-def execute(username):
+def server_execute(username, command):
+    platform = command["platform"]
+    data = command["data"]
+
+    send_to_client = platforms[platform].execute(data)
+    logger.debug("server execute: {}, {}".format(platform, send_to_client))
+
+    return send_to_client
+
+def client_execute(username):
     commands = []
 
     for con_name, controller in cons[username].items():
@@ -93,14 +102,14 @@ def execute(username):
         p = test['platform']
 
         # remove conflicting actions
-        response = [c for c in commands if p != r['platform']]
+        commands = [c for c in commands if p != r['platform']]
 
-        response.append(test)
+        commands.append(test)
 
     test_commands[username].clear()
 
     if len(commands) > 0:
-        logger.debug(commands)
+        logger.debug("commands: {}".format(commands))
 
     states[username].track(commands)
 

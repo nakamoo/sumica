@@ -16,7 +16,6 @@ class StateTracker():
         self.states = {}
 
     def track(self, commands):
-        logger.debug(str(commands))
         for command in commands:
             self.states[command['platform']] = command['data']
 

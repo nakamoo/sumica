@@ -41,4 +41,3 @@ class ModuleManager(object):
                     inp.execute(act)
                 except:
                     traceback.print_exc()
-                    pass

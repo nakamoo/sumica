@@ -20,10 +20,10 @@ class Manager:
 
         if out.split("\n")[-2] != "ok":
             self.connected = False
-            print("failed to connect Hue; internet connection or press button?")
+            logging.warn("failed to connect Hue; internet connection or press button?")
         else:
             self.connected = True
-            print("connected to Hue.")
+            logging.debug("connected to Hue.")
 
     def start(self):
         if not self.connected:
@@ -34,7 +34,6 @@ class Manager:
             try:
                 out = subprocess.check_output(['node', './utils/hue.js', 'get_state'])
                 state = json.loads(out.decode('utf-8').split("\n")[-2])
-                logging.debug(state)
 
                 data = dict()
                 data["lights"] = json.dumps(state["lights"])
@@ -43,10 +42,10 @@ class Manager:
 
                 if self.send:
                     requests.post(self.server_ip + "/data/hue", data=data, verify=False)
+                    logging.debug("sent hue info to server")
 
-            except:
-                logging.warn("error in sending hue data")
-                traceback.print_exc()
+            except requests.exceptions.ConnectionError:
+                logging.error("could not connect to server")
 
 
 if __name__ == "__main__":

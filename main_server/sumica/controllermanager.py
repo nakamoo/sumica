@@ -18,6 +18,7 @@ from controllers.chatbot import Chatbot
 from controllers.speechbot import Speechbot
 from controllers.activitylearner import ActivityLearner
 from controllers.ruleexecutor import RuleExecutor
+from controllers.nodemanager import NodeManager
 
 from controllers.reminder import Reminder
 from controllers.alarm import Alarm
@@ -42,10 +43,8 @@ def standard_controllers(username):
         ("chatbot", Chatbot(username)),
         ("speechbot", Speechbot(username)),
         ("activitylearner", ActivityLearner(username)),
-        ("ruleexecutor", RuleExecutor(username)),
-
-        ("alarm", Alarm(username)),
-        ("timetracker", TimeTracker(username))
+        #("ruleexecutor", RuleExecutor(username)),
+        ("nodemanager", NodeManager(username))
     ])
 
 

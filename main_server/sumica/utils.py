@@ -4,7 +4,7 @@ from config import Config
 from flask import current_app
 
 mongo = MongoClient('localhost', current_app.config['DB_PORT'])
-db = mongo.sumica2
+db = mongo.sumica3
 
 db.images.ensure_index('time')
 db.hue.ensure_index('time')

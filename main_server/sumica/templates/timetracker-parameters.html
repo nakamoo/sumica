@@ -1,0 +1,30 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            Between
+            <input class="form-control" type="text" id="minTime" placeholder="1.5">
+            to
+            <input class="form-control" type="text" id="maxTime" placeholder="4">
+            hours
+            <br>
+        </div>
+    </div>
+</div>
+
+<script>
+    var timetrackerInitSetParameters = function() {
+    };
+
+    var timetrackerInitFromObject = function(params) {
+        $("#minTime").val(params.minTime);
+        $("#maxTime").val(params.maxTime);
+    };
+
+    var timetrackerToObject = function() {
+        return {
+            minTime: $("#minTime").val(),
+            maxTime: $("#maxTime").val()
+        };
+    };
+</script>

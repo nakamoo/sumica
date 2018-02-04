@@ -53,7 +53,7 @@ class RuleExecutor(Controller):
             act = data2command(r)
 
             for inp in r["data"]["inputs"]:
-                rule = {'activity': inp, 'timerange': [r["data"]["startTime"], r["data"]["endTime"]],
+                rule = {'input': inp, 'timerange': [r["data"]["startTime"], r["data"]["endTime"]],
                         'activation': tosecs(r["data"]["activation"]), 'action': act}
                 self.rules.append(rule)
 

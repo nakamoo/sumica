@@ -277,6 +277,7 @@ def change_action():
             "platform": args['platform'], "data": args['data']
         }}, upsert=False)
 
-    cm.cons[username]["ruleexecutor"].update_rules()
+    #cm.cons[username]["ruleexecutor"].update_rules()
+    cm.cons[username]["nodemanager"].update_nodes()
 
     return "ok", 201

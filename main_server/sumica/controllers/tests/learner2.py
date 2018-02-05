@@ -107,7 +107,8 @@ class Learner:
                 part = X[start:end]
                 model = "l1"  # "l2", "rbf"
                 algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
-                breaks = algo.predict(pen=np.log(part.shape[0]) * part.shape[1] * 2 ** 2)
+                sigma = 3
+                breaks = algo.predict(pen=np.log(part.shape[0]) * part.shape[1] * sigma ** 2)
                 breaks = (np.array(breaks) + start).tolist()
                 breaks[-1] -= 1  # avoid index out of range
                 part_intervals = [list(a) for a in zip([start] + breaks[:-1], breaks)]
@@ -120,8 +121,8 @@ class Learner:
         segments = [(max(s, last_fixed_index), e) for s, e in segments if e > last_fixed_index]
         segment_times = [(times[s], times[e]) for s, e in segments]
 
-        fix_threshold = len(times) - min_fit_size // 2
-        #logger.debug("new segments: {}".format(segments))
+        fix_threshold = max(len(times) - min_fit_size // 2, 0)
+
         record_segments(self.username, segments, segment_times, times[last_fixed_index], times[fix_threshold])
 
         segments = recorded_segments + segments
@@ -149,8 +150,8 @@ class Learner:
                     self.trainers[mode] = Trainer()
 
                 if len(label_set) <= 0:
-                    label_data = {"raw": np.array([]), "augmented": np.array([]),
-                                  "intervals": [], "indices": [], 'seg_mapping': []}
+                    label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": [],
+                                  "seg_mapping": []}
                     m, m_breaks = None, []
                 else:
                     m, label_data, update_model = self.trainers[mode].learn_model(times, X, label_set, segments, segment_times)

@@ -28,6 +28,7 @@ class Speechbot(Controller):
             chatbot_actor.send_fb_message(self.fb_id, "You said: %s" % data["text"])
 
     def execute(self):
-        yield self.cmds
-
+        cmds = self.cmds
         self.cmds = []
+
+        return cmds

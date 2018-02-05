@@ -18,8 +18,20 @@ with app.app_context():
     import interface
     import platforms
 
-    sensor_mods = [sensors.chatbot_sensor, sensors.hue_sensor, sensors.image_sensor, sensors.speech_sensor]
-    platform_mods = [platforms.hue_platform, platforms.irkit_platform, platforms.voice_platform, platforms.ifttt_platform]
+    sensor_mods = [
+        sensors.chatbot_sensor,
+        sensors.hue_sensor,
+        sensors.image_sensor,
+        sensors.speech_sensor
+    ]
+
+    platform_mods = [
+        platforms.hue_platform,
+        platforms.voice_platform,
+        platforms.ifttt_platform,
+        platforms.alarm_platform,
+        platforms.timetracker_platform
+    ]
     platform_names = [p.platform_name for p in platform_mods]
 
     cm.initialize(platform_mods)

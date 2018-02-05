@@ -33,10 +33,15 @@ keypoint_labels = [
     "Bkg"
 ]
 
-def impath2base64(impath, scale=0.5, quality=50):
+def impath2base64(impath, scale=0.5, quality=50, meta=None):
     with BytesIO() as output:
         try:
             with Image.open(impath) as img:
+                if meta:
+                    img = np.array(img)
+                    #draw_object(img, meta)
+                    img = Image.fromarray(img)
+
                 img = img.resize((int(img.width * scale), int(img.height * scale)))
                 img.save(output, "JPEG", quality=quality)
             bytedata = output.getvalue()
@@ -48,13 +53,18 @@ def impath2base64(impath, scale=0.5, quality=50):
 
         return encoded_string
 
-def saveimgtostatic(imname, impath, scale=0.5, quality=50):
+def saveimgtostatic(imname, impath, scale=0.5, quality=50, meta=None):
     imname = "s{}-q{}-{}".format(scale, quality, imname)
     path = os.path.join("static", "images", imname)
 
     if not os.path.exists(path):
         if os.path.exists(impath):
             with Image.open(impath) as img:
+                if meta:
+                    img = np.array(img)
+                    #img = visualize(img, meta, draw_objects=False)
+                    img = Image.fromarray(img)
+
                 img = img.resize((int(img.width * scale), int(img.height * scale)))
                 img.save(path, "JPEG", quality=quality)
 
@@ -174,30 +184,30 @@ def sort_persons(data):
     return results
     
 def draw_object(frame, result):
-            det = result["box"]
-            name = result["label"] + ": " + "%.2f" % result["confidence"]
+    det = result["box"]
+    name = result["label"] + ": " + "%.2f" % result["confidence"]
 
-            i = sum([ord(x) for x in result["label"]])
-            c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
-            c = tuple([int(x * 255.0) for x in c])
+    i = sum([ord(x) for x in result["label"]])
+    c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
+    c = tuple([int(x * 255.0) for x in c])
 
-            #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
-            
-            label_offsetx = det[0]
+    #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
 
-            if "action_crop" in result:
-                name += "; " + result["action_label"] + ": " + "%.2f" % result["action_confidence"]
-                act_box = result["action_crop"]
-                
-                label_offsetx = act_box[0]
-                cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 6)
-                cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
-            else:
-                cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+    label_offsetx = det[0]
 
-            cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), c, -1)
-            cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
-            cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    if "action_crop" in result:
+        name += "; " + result["action_label"] + ": " + "%.2f" % result["action_confidence"]
+        act_box = result["action_crop"]
+
+        label_offsetx = act_box[0]
+        cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 6)
+        cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
+    else:
+        cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+
+    cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), c, -1)
+    cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
+    cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
 
 def draw_pose(frame, person):
     body_lines = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [5, 6], [6, 7], [0, 14], [14, 16], [0, 15], [15, 17], [1, 8], [8, 9], [9, 10], [1, 11], [11, 12], [12, 13]]

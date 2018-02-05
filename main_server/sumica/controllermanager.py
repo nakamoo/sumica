@@ -16,10 +16,13 @@ import logging
 from controllers.features import FeatureExtractor
 from controllers.chatbot import Chatbot
 from controllers.speechbot import Speechbot
-from controllers.reminder import Reminder
-from controllers.alarm import Alarm
 from controllers.activitylearner import ActivityLearner
 from controllers.ruleexecutor import RuleExecutor
+from controllers.nodemanager import NodeManager
+
+from controllers.reminder import Reminder
+from controllers.alarm import Alarm
+from controllers.timetracker import TimeTracker
 
 from statetracker import StateTracker
 from server_actors import hue_actor
@@ -40,9 +43,8 @@ def standard_controllers(username):
         ("chatbot", Chatbot(username)),
         ("speechbot", Speechbot(username)),
         ("activitylearner", ActivityLearner(username)),
-        ("ruleexecutor", RuleExecutor(username)),
-
-        ("alarm", Alarm(username))
+        #("ruleexecutor", RuleExecutor(username)),
+        #("nodemanager", NodeManager(username))
     ])
 
 
@@ -75,10 +77,14 @@ def server_execute(username, command):
     platform = command["platform"]
     data = command["data"]
 
-    send_to_client = platforms[platform].execute(data)
-    logger.debug("server execute: {}, {}".format(platform, send_to_client))
+    # TODO e.g. tts not in platforms
+    if platform in platforms:
+        send_to_client = platforms[platform].execute(data)
+        logger.debug("server execute: {}, {}".format(platform, send_to_client))
 
-    return send_to_client
+        return send_to_client
+
+    return True
 
 def client_execute(username):
     commands = []
@@ -102,7 +108,7 @@ def client_execute(username):
         p = test['platform']
 
         # remove conflicting actions
-        commands = [c for c in commands if p != r['platform']]
+        commands = [c for c in commands if p != test['platform']]
 
         commands.append(test)
 

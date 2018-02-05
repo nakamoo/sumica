@@ -10,6 +10,7 @@ class IFTTTNode(Node):
     display_name = "IFTTT"
     input_types = ["boolean"]
     output_types = ["action"]
+    icon = Node.icon_pic("fab fa-app-store")
 
     def __init__(self, man, args):
         super().__init__(args)
@@ -17,7 +18,7 @@ class IFTTTNode(Node):
         self.act = data2command(args)
 
     def forward(self, values):
-        if not (False in [v[0] for v in values]):
+        if not (False in values):
             return [self.act]
 
         return []

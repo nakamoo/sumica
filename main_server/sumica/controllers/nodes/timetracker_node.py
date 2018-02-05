@@ -38,7 +38,8 @@ class TimetrackerNode(Node):
     param_file = "timetracker-parameters.html"
     display_name = "Activity Time Tracker"
     input_types = ["activity"]
-    output_types = ["action"]
+    output_types = ["action"] #["boolean", "boolean"]
+    icon = Node.icon_pic("fa fa-exclamation")
 
     def __init__(self, man, args):
         super().__init__(args)

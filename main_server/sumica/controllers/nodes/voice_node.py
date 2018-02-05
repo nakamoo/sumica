@@ -6,6 +6,7 @@ class VoiceNode(Node):
     display_name = "Voice"
     input_types = ["boolean"]
     output_types = ["action"]
+    icon = Node.icon_pic("fa fa-volume-up")
 
     def __init__(self, man, args):
         super().__init__(args)
@@ -14,7 +15,7 @@ class VoiceNode(Node):
         self.done = False
 
     def forward(self, values):
-        if not (False in [v[0] for v in values]):
+        if not (False in values):
             if not self.done:
                 self.done = True
                 return [{"platform": "tts", "data": self.text}]

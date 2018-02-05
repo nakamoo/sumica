@@ -17,7 +17,6 @@ from controllers.features import FeatureExtractor
 from controllers.chatbot import Chatbot
 from controllers.speechbot import Speechbot
 from controllers.activitylearner import ActivityLearner
-from controllers.ruleexecutor import RuleExecutor
 from controllers.nodemanager import NodeManager
 
 from controllers.reminder import Reminder
@@ -79,6 +78,7 @@ def get_node_types():
             "testable": node.testable,
             "input_types": node.input_types,
             "output_types": node.output_types,
+            "icon": node.icon
         }
 
         if node.display_name is None:

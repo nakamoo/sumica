@@ -19,6 +19,7 @@ class InputSmootherNode(Node):
     input_types = ["boolean"]
     output_types = ["boolean"]
     display_name = "Moving Average"
+    icon = Node.icon_pic("fa fa-sliders-h")
 
     def __init__(self, man, args):
         super().__init__(args)
@@ -27,7 +28,7 @@ class InputSmootherNode(Node):
         self.activation = tosecs(args["activation"])
 
     def forward(self, values):
-        self.history.append([time.time(), values[0][0]])
+        self.history.append([time.time(), values[0]])
 
         if len(self.history) <= 0:
             return [False]

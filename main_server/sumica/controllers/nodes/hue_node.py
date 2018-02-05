@@ -36,6 +36,7 @@ class HueNode(Node):
     input_types = ["boolean"]
     output_types = ["action"]
     display_name = "Hue"
+    icon = Node.icon_pic("fa fa-lightbulb")
 
     @staticmethod
     def test_execute(args):
@@ -47,7 +48,7 @@ class HueNode(Node):
         self.act = data2command(args)
 
     def forward(self, values):
-        if not (False in [v[0] for v in values]):
+        if not (False in values):
             return [self.act]
 
         return []

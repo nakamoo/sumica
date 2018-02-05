@@ -176,9 +176,10 @@ html, body {
     align-items: center;
     cursor: pointer;
     text-align: center;
+    z-index: -2;
 
     /*position: relative;*/
-    background-color: #eeeeef;
+    background-color: #ddd;
     color: black;
     font-family: helvetica, sans-serif;
     padding: 0.5em;
@@ -193,6 +194,9 @@ html, body {
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none;
 }
+
+.jtk-connector { z-index:4; }
+.jtk-endpoint { z-index:5; }
 
 .itemimage {
     max-width: 100%;
@@ -263,4 +267,16 @@ html, body {
 
 .deleteButton:hover {
     background-color: #880000;
+}
+
+.connector-active {
+    stroke-dasharray: 50;
+    animation: dash 5s linear;
+    animation-iteration-count:infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 1000;
+  }
 }

@@ -16,6 +16,11 @@ class AlarmNode(Node):
     display_name = "Alarm"
     input_types = ["boolean"]
     output_types = ["action"]
+    icon = Node.icon_pic("fa fa-bell")
 
     def __init__(self, man, args):
         super().__init__(args)
+
+    def forward(self, values):
+        # identity
+        return values

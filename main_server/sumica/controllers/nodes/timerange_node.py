@@ -7,6 +7,7 @@ class TimeRangeNode(Node):
     display_name = "Time Range"
     input_types = []
     output_types = ["boolean"]
+    icon = Node.icon_pic("fa fa-clock")
 
     def __init__(self, man, args):
         super().__init__(args)

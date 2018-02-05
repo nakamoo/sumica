@@ -7,6 +7,7 @@ class SuppressorNode(Node):
     display_name = "Suppressor"
     input_types = ["boolean"]
     output_types = ["boolean"]
+    icon = Node.icon_pic("fa fa-sliders-h")
 
     def __init__(self, man, args):
         super().__init__(args)
@@ -18,7 +19,7 @@ class SuppressorNode(Node):
         if self.wait_sec < 0:
             return [False]
 
-        if not (False in [v[0] for v in values]) and time.time() - self.last_fire >= self.wait_sec:
+        if not (False in values) and time.time() - self.last_fire >= self.wait_sec:
             self.last_fire = time.time()
             return [True]
 

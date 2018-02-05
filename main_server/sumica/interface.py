@@ -224,15 +224,18 @@ def knowledge():
 
             imid = str(d["_id"])
             data["nodes"].append({"id": imid, "type": "image", "image": impath})
-            data["edges"].append({"source": imid, "target": label})
+            data["edges"].append({"source": imid, "source_index": 0, "target": label, "target_index": 0})
 
         rules = list(db.actions.find())
 
         for rule in rules:
-            data["nodes"].append({"id": str(rule["_id"]), "type": "action", "text": rule["name"], "data": rule["data"]})
+            data["nodes"].append({"id": str(rule["_id"]), "type": "action", "text": rule["name"], "platform": rule["platform"],
+                                  "data": rule["data"]})
 
-            for inp in rule["data"]["inputs"]:
-                data["edges"].append({"source": inp, "target": str(rule["_id"])})
+            for target_i, inp_pts in enumerate(rule["data"]["inputs"]):
+                for source in inp_pts:
+                    data["edges"].append({"source": source["id"], "source_index": source["index"], "target": str(rule["_id"]),
+                                          "target_index": target_i})
 
     return jsonify(data)
 
@@ -282,3 +285,15 @@ def change_action():
     cm.cons[username]["nodemanager"].update_nodes()
 
     return "ok", 201
+
+@bp.route('/node_states', methods=['POST'])
+def node_states():
+    nm = cm.cons[current_app.config["USER"]]["nodemanager"]
+
+    if nm.values is None:
+        return jsonify([]), 200
+
+    re = dict()
+    re["nodes"] = [{"id": k, "values": v} for k, v in nm.values.items()]
+
+    return jsonify(re), 200

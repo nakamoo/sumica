@@ -1,11 +1,14 @@
 import time
 from datetime import datetime
+from collections import OrderedDict
+import uuid
 
 from flask import current_app
 from .controller import Controller
 from utils import db
 import coloredlogs
 import logging
+from toposort import toposort, toposort_flatten
 
 import controllermanager as cm
 
@@ -26,6 +29,32 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 
+def topo_sort(nodes):
+    n = [node.id for node in nodes]
+    n_dict = dict()
+
+    if None in n:
+        logger.error("node with id None")
+
+    for i, node in enumerate(nodes):
+        dep = []
+
+        for arg in node.inputs:
+            for val in arg:
+                if val["id"] in n:
+                    dep.append(n.index(val["id"]))
+
+        n_dict[i] = set(dep)
+
+    sorted_nodes = list(toposort(n_dict))
+
+    re = []
+    for rank in sorted_nodes:
+        for i in list(rank):
+            re.append(nodes[i])
+
+    return re
+
 class NodeManager(Controller):
     node_types = {
         'alarm': AlarmNode,
@@ -43,62 +72,89 @@ class NodeManager(Controller):
     def __init__(self, username):
         super().__init__(username)
 
-        self.nodes = []
+        self.nodes = OrderedDict([])
         self.actions = []
         self.values = None
 
         self.update_nodes()
 
     def update_nodes(self):
+        nodes = []
+
         acts = list(db.actions.find())
         logger.debug("acts: " + str(acts))
 
         for r in acts:
-            timerange = TimeRangeNode(self, r["data"])
+            if "action" in NodeManager.node_types[r["platform"]].output_types:
+                timerange = TimeRangeNode(self, r["data"])
+                timerange.id = uuid.uuid4()
 
-            ornode = OrNode(None)
-            ornode.inputs = r["data"]["inputs"]
+                #ornode = OrNode(self, None)
+                #ornode.id = uuid.uuid4()
+                #ornode.inputs = r["data"]["inputs"]
 
-            smoother = InputSmootherNode(self, r["data"])
-            smoother.inputs = [ornode]
+                smoother = InputSmootherNode(self, r["data"])
+                smoother.id = uuid.uuid4()
+                smoother.inputs = r["data"]["inputs"]#[[{"index": 0, "id": ornode.id}]]
 
-            andnode = AndNode(None)
-            andnode.inputs = [smoother, timerange]
+                andnode = AndNode(self, None)
+                andnode.id = uuid.uuid4()
+                andnode.inputs = [[{"index": 0, "id": smoother.id}], [{"index": 0, "id": timerange.id}]]
 
-            self.nodes.append(timerange)
-            self.nodes.append(ornode)
-            self.nodes.append(smoother)
-            self.nodes.append(andnode)
+                nodes.append(timerange)
+                #nodes.append(ornode)
+                nodes.append(smoother)
+                nodes.append(andnode)
 
-            if r["platform"] in self.node_types:
-                print(r["platform"])
                 act = NodeManager.node_types[r["platform"]](self, r["data"])
-                act.inputs = [andnode]
-                self.nodes.append(act)
+                act.inputs = [[{"index":0, "id": andnode.id}]]
+                act.id = str(r["_id"])
+                nodes.append(act)
 
-            if r["platform"] == "timetracker":
-                if r["data"]["lowText"]:
-                    supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
-                    supnode.inputs = [(act, 0)]
-                    self.nodes.append(supnode)
-                    voicenode = VoiceNode(self, {"voiceText": r["data"]["lowText"]})
-                    voicenode.inputs = [supnode]
-                    self.nodes.append(voicenode)
+                if r["platform"] == "timetracker":
+                    if r["data"]["lowText"]:
+                        supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
+                        supnode.id = uuid.uuid4()
+                        supnode.inputs = [[{"id": act.id, index: 0}]]
+                        nodes.append(supnode)
+                        voicenode = VoiceNode(self, {"voiceText": r["data"]["lowText"]})
+                        voicenode.inputs = [[{"id": supnode.id, index: 0}]]
+                        nodes.append(voicenode)
 
-                if r["data"]["highText"]:
-                    supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
-                    supnode.inputs = [(act, 1)]
-                    self.nodes.append(supnode)
-                    voicenode = VoiceNode(self, {"voiceText": r["data"]["highText"]})
-                    voicenode.inputs = [supnode]
-                    self.nodes.append(voicenode)
-            elif r["platform"] == "alarm":
-                supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
-                supnode.inputs = [andnode]
-                self.nodes.append(supnode)
-                voicenode = VoiceNode(self, {"voiceText": r["data"]["sayText"]})
-                voicenode.inputs = [supnode]
-                self.nodes.append(voicenode)
+                    if r["data"]["highText"]:
+                        supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
+                        supnode.id = uuid.uuid4()
+                        supnode.inputs = [[{"id": act.id, index: 1}]]
+                        nodes.append(supnode)
+                        voicenode = VoiceNode(self, {"voiceText": r["data"]["highText"]})
+                        voicenode.id = uuid.uuid4()
+                        voicenode.inputs = [[{"id": supnode.id, index: 0}]]
+                        nodes.append(voicenode)
+                elif r["platform"] == "alarm":
+                    repeat = 10
+
+                    try:
+                        repeat = int(r["data"]["repeat"])
+                    except:
+                        pass
+
+                    supnode = SuppressorNode(self, {"wait": repeat})
+                    supnode.id = uuid.uuid4()
+                    supnode.inputs = [[{"id": act.id, "index": 0}]]
+                    nodes.append(supnode)
+                    voicenode = VoiceNode(self, {"voiceText": r["data"]["sayText"]})
+                    voicenode.id = uuid.uuid4()
+                    voicenode.inputs = [[{"id": supnode.id, "index": 0}]]
+                    nodes.append(voicenode)
+            else:
+                act = NodeManager.node_types[r["platform"]](self, r["data"])
+                act.inputs = r["data"]["inputs"]
+                act.id = str(r["_id"])
+                nodes.append(act)
+
+
+        nodes = topo_sort(nodes)
+        self.nodes = OrderedDict([(n.id, n) for n in nodes])
 
         logger.debug("nodes: " + str(self.nodes))
 
@@ -115,26 +171,29 @@ class NodeManager(Controller):
             logger.debug("graph inputs: {}".format(data))
             all_values[data] = [True]
 
-            for node in self.nodes:
-                values = []
+            for node_id, node in self.nodes.items():
+                all_args = []
 
-                for inp in node.inputs:
-                    if isinstance(inp, tuple):
-                        values.append([all_values[inp[0]][inp[1]]])
-                    else:
-                        if inp in all_values:
-                            values.append(all_values[inp])
-                        else:
-                            values.append([False])
+                print(node, node_id)
 
-                #logger.debug(str(node))
+                for arg in node.inputs:
+                    arg_val = []
+
+                    for source in arg:
+                        arg_val.append(all_values[source["id"]][source["index"]])
+
+                    #logger.debug(str(arg_val))
+                    # OR operation
+                    all_args.append(True in arg_val)
+
+                #logger.debug(str(node) + " " + str(node_id))
                 #logger.debug(str(node.inputs))
-                #logger.debug(str(values))
-                all_values[node] = node.forward(values)
-                #logger.debug(str(all_values[node]))
+                #logger.debug(str(all_args))
+                all_values[node_id] = node.forward(all_args)
+                #logger.debug(str(all_values[node_id]))
                 #logger.debug("-"*10)
 
-            #logger.debug("graph outputs: {}".format(all_values))
+            logger.debug("graph outputs: {}".format(all_values))
             self.values = all_values
 
             actions = []

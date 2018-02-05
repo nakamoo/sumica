@@ -33,6 +33,7 @@ def data2command(data):
 class HueNode(Node):
     testable = True
     param_file = "hue-parameters.html"
+    input_types = ["boolean"]
     output_types = ["action"]
     display_name = "Hue"
 

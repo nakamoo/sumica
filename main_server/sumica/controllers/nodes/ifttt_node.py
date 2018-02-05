@@ -8,6 +8,8 @@ def data2command(data):
 class IFTTTNode(Node):
     param_file = "ifttt-parameters.html"
     display_name = "IFTTT"
+    input_types = ["boolean"]
+    output_types = ["action"]
 
     def __init__(self, man, args):
         super().__init__(args)

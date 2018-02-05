@@ -20,6 +20,7 @@ from controllers.nodes.voice_node import VoiceNode
 from controllers.nodes.or_node import OrNode
 from controllers.nodes.and_node import AndNode
 from controllers.nodes.suppressor_node import SuppressorNode
+from controllers.nodes.speech_node import SpeechNode
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
@@ -33,7 +34,10 @@ class NodeManager(Controller):
         'inputsmoother': InputSmootherNode,
         'voice': VoiceNode,
         'timetracker': TimetrackerNode,
-        'ifttt': IFTTTNode
+        'ifttt': IFTTTNode,
+        'speech': SpeechNode,
+        'or': OrNode,
+        'and': AndNode
     }
 
     def __init__(self, username):

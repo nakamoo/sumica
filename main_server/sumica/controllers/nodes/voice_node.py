@@ -3,6 +3,9 @@ from .node import Node
 
 class VoiceNode(Node):
     param_file = "voice-parameters.html"
+    display_name = "Voice"
+    input_types = ["boolean"]
+    output_types = ["action"]
 
     def __init__(self, man, args):
         super().__init__(args)

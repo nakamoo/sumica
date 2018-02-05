@@ -36,6 +36,9 @@ def predictions2segments(predictions, cam_segments, times):
 
 class TimetrackerNode(Node):
     param_file = "timetracker-parameters.html"
+    display_name = "Activity Time Tracker"
+    input_types = ["activity"]
+    output_types = ["action"]
 
     def __init__(self, man, args):
         super().__init__(args)

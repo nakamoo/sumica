@@ -1,6 +1,10 @@
 from .node import Node
 
 class AndNode(Node):
+    display_name = "AND gate"
+    input_types = ["boolean", "boolean"]
+    output_types = ["boolean"]
+
     def __init__(self, args):
         super().__init__(args)
 

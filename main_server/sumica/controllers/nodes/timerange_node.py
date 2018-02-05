@@ -4,6 +4,10 @@ from .node import Node
 
 
 class TimeRangeNode(Node):
+    display_name = "Time Range"
+    input_types = []
+    output_types = ["boolean"]
+
     def __init__(self, man, args):
         super().__init__(args)
 

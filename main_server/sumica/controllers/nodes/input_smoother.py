@@ -16,6 +16,10 @@ def tosecs(act):
         return 0
 
 class InputSmootherNode(Node):
+    input_types = ["boolean"]
+    output_types = ["boolean"]
+    display_name = "Moving Average"
+
     def __init__(self, man, args):
         super().__init__(args)
 

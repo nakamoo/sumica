@@ -4,6 +4,10 @@ from .node import Node
 
 
 class SuppressorNode(Node):
+    display_name = "Suppressor"
+    input_types = ["boolean"]
+    output_types = ["boolean"]
+
     def __init__(self, man, args):
         super().__init__(args)
 

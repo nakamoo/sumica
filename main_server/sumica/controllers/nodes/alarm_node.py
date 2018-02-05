@@ -13,6 +13,9 @@ coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 class AlarmNode(Node):
     param_file = 'alarm-parameters.html'
+    display_name = "Alarm"
+    input_types = ["boolean"]
+    output_types = ["action"]
 
     def __init__(self, man, args):
         super().__init__(args)

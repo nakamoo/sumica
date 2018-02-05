@@ -150,9 +150,15 @@ var updateTimeline = function () {
                     var count = seg["count"];
                     var tooltip = '<img src="' + seg["img"] + '" >';
                     tooltip += "<p>" + count + " images</p>";
+
+                    var col = "gray";
+                    if (i % 2 == 0) {
+                        col = "lightGray";
+                    }
+
                     var row = {
                         id: createuuid(), group: 2, content: '', start: start, end: end, title: tooltip,
-                        color: "hsl(" + i * 100 + ", 75%, 50%)", myType: "segment", editable: false
+                        color: col, myType: "segment", editable: false
                     };
                     rows.push(row);
                 }

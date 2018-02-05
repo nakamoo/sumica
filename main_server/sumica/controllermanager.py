@@ -43,8 +43,7 @@ def standard_controllers(username):
         ("chatbot", Chatbot(username)),
         ("speechbot", Speechbot(username)),
         ("activitylearner", ActivityLearner(username)),
-        #("ruleexecutor", RuleExecutor(username)),
-        #("nodemanager", NodeManager(username))
+        ("nodemanager", NodeManager(username))
     ])
 
 
@@ -56,22 +55,44 @@ def trigger_controllers(user, event, data):
             c.on_event(event, data)
 
 # to be set by launcher
-platforms = None
 cons = dict()
 states = dict()
 # for stateless test commands (probably from browser)
 test_commands = dict()
 test_commands[current_app.config['USER']] = []
 
-def initialize(platform_mods):
-    global cons, platforms
-
-    platforms = {p.platform_name: p for p in platform_mods}
+def initialize():
+    global cons
 
     # TODO: use DB
     for user in [current_app.config['USER']]:
         cons[user] = standard_controllers(user)
         states[user] = StateTracker()
+
+def get_node_types():
+    nodes = []
+
+    for name, node in NodeManager.node_types.items():
+        data = {
+            "name": name,
+            "param_file": node.param_file,
+            "testable": node.testable,
+            "input_types": node.input_types,
+            "output_types": node.output_types,
+        }
+
+        if node.display_name is None:
+            data["display_name"] = name
+        else:
+            data["display_name"] = node.display_name
+
+        nodes.append(data)
+
+    return nodes
+
+def test_execute(args):
+    node_type = args["platform"]
+    test_commands[args['username']].append(NodeManager.node_types[node_type].test_execute(args))
 
 def server_execute(username, command):
     platform = command["platform"]
@@ -108,7 +129,7 @@ def client_execute(username):
         p = test['platform']
 
         # remove conflicting actions
-        commands = [c for c in commands if p != test['platform']]
+        commands = [c for c in commands if p != c['platform']]
 
         commands.append(test)
 

@@ -8,7 +8,7 @@ class SuppressorNode(Node):
         super().__init__(args)
 
         self.wait_sec = args["wait"]
-        self.last_fire = 0
+        self.last_fire = time.time()
 
     def forward(self, values):
         if self.wait_sec < 0:

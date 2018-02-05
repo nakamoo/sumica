@@ -35,6 +35,8 @@ def predictions2segments(predictions, cam_segments, times):
     return np.array(segments)
 
 class TimetrackerNode(Node):
+    param_file = "timetracker-parameters.html"
+
     def __init__(self, man, args):
         super().__init__(args)
 

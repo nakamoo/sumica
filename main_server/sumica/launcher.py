@@ -16,7 +16,6 @@ with app.app_context():
     import controllermanager as cm
     import sensors
     import interface
-    import platforms
 
     sensor_mods = [
         sensors.chatbot_sensor,
@@ -25,27 +24,12 @@ with app.app_context():
         sensors.speech_sensor
     ]
 
-    platform_mods = [
-        platforms.hue_platform,
-        platforms.voice_platform,
-        platforms.ifttt_platform,
-        platforms.alarm_platform,
-        platforms.timetracker_platform
-    ]
-    platform_names = [p.platform_name for p in platform_mods]
-
-    cm.initialize(platform_mods)
+    cm.initialize()
 
 for sensor in sensor_mods:
     app.register_blueprint(sensor.bp)
-for platform in platform_mods:
-    app.register_blueprint(platform.bp)
 
 app.register_blueprint(interface.bp)
-
-@app.route('/platforms')
-def get_platforms():
-    return jsonify(platform_names), 200
 
 @app.route('/controllers/execute', methods=['POST'])
 def execute_controllers():
@@ -53,6 +37,20 @@ def execute_controllers():
     commands = cm.client_execute(username)
 
     return jsonify(commands), 201
+
+@app.route('/node_types')
+def get_node_types():
+    types = cm.get_node_types()
+
+    return jsonify(types), 200
+
+@app.route('/test_execute', methods=['POST'])
+def test_execute():
+    args = request.get_json(force=True)
+    logger.debug(str(args))
+    cm.test_execute(args)
+
+    return "ok", 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=app.config["PORT"],

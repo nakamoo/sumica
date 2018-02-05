@@ -11,7 +11,8 @@ import controllermanager as cm
 
 from controllers.nodes.hue_node import HueNode
 from controllers.nodes.timetracker_node import TimetrackerNode
-#from controllers.nodes.alarm_node import AlarmNode
+from controllers.nodes.alarm_node import AlarmNode
+from controllers.nodes.ifttt_node import IFTTTNode
 
 from controllers.nodes.timerange_node import TimeRangeNode
 from controllers.nodes.input_smoother import InputSmootherNode
@@ -25,16 +26,18 @@ coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 
 class NodeManager(Controller):
+    node_types = {
+        'alarm': AlarmNode,
+        'hue': HueNode,
+        'timerange': TimeRangeNode,
+        'inputsmoother': InputSmootherNode,
+        'voice': VoiceNode,
+        'timetracker': TimetrackerNode,
+        'ifttt': IFTTTNode
+    }
+
     def __init__(self, username):
         super().__init__(username)
-
-        self.node_types = {
-            'hue': HueNode,
-            'timerange': TimeRangeNode,
-            'inputsmoother': InputSmootherNode,
-            'voice': VoiceNode,
-            'timetracker': TimetrackerNode
-        }
 
         self.nodes = []
         self.actions = []
@@ -64,7 +67,8 @@ class NodeManager(Controller):
             self.nodes.append(andnode)
 
             if r["platform"] in self.node_types:
-                act = self.node_types[r["platform"]](self, r["data"])
+                print(r["platform"])
+                act = NodeManager.node_types[r["platform"]](self, r["data"])
                 act.inputs = [andnode]
                 self.nodes.append(act)
 
@@ -119,14 +123,14 @@ class NodeManager(Controller):
                         else:
                             values.append([False])
 
-                logger.debug(str(node))
-                logger.debug(str(node.inputs))
-                logger.debug(str(values))
+                #logger.debug(str(node))
+                #logger.debug(str(node.inputs))
+                #logger.debug(str(values))
                 all_values[node] = node.forward(values)
-                logger.debug(str(all_values[node]))
-                logger.debug("-"*10)
+                #logger.debug(str(all_values[node]))
+                #logger.debug("-"*10)
 
-            logger.debug("graph outputs: {}".format(all_values))
+            #logger.debug("graph outputs: {}".format(all_values))
             self.values = all_values
 
             actions = []

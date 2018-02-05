@@ -35,9 +35,5 @@ while True:
 
     except KeyboardInterrupt:
         for inp in modules.sensor_mods:
-            try:
-                inp.close()
-            except Exception as e:
-                logging.debug("shutting down")
-                exit()
+            inp.close()
 

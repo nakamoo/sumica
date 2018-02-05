@@ -11,12 +11,14 @@ import controllermanager as cm
 
 from controllers.nodes.hue_node import HueNode
 from controllers.nodes.timetracker_node import TimetrackerNode
+#from controllers.nodes.alarm_node import AlarmNode
 
 from controllers.nodes.timerange_node import TimeRangeNode
 from controllers.nodes.input_smoother import InputSmootherNode
 from controllers.nodes.voice_node import VoiceNode
 from controllers.nodes.or_node import OrNode
 from controllers.nodes.and_node import AndNode
+from controllers.nodes.suppressor_node import SuppressorNode
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
@@ -36,6 +38,7 @@ class NodeManager(Controller):
 
         self.nodes = []
         self.actions = []
+        self.values = None
 
         self.update_nodes()
 
@@ -44,25 +47,50 @@ class NodeManager(Controller):
         logger.debug("acts: " + str(acts))
 
         for r in acts:
-            timerange = TimeRangeNode(r["data"])
+            timerange = TimeRangeNode(self, r["data"])
 
             ornode = OrNode(None)
             ornode.inputs = r["data"]["inputs"]
 
-            smoother = InputSmootherNode(r["data"])
+            smoother = InputSmootherNode(self, r["data"])
             smoother.inputs = [ornode]
 
             andnode = AndNode(None)
             andnode.inputs = [smoother, timerange]
 
-            act = self.node_types[r["platform"]](r["data"])
-            act.inputs = [andnode]
-
             self.nodes.append(timerange)
             self.nodes.append(ornode)
             self.nodes.append(smoother)
             self.nodes.append(andnode)
-            self.nodes.append(act)
+
+            if r["platform"] in self.node_types:
+                act = self.node_types[r["platform"]](self, r["data"])
+                act.inputs = [andnode]
+                self.nodes.append(act)
+
+            if r["platform"] == "timetracker":
+                if r["data"]["lowText"]:
+                    supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
+                    supnode.inputs = [(act, 0)]
+                    self.nodes.append(supnode)
+                    voicenode = VoiceNode(self, {"voiceText": r["data"]["lowText"]})
+                    voicenode.inputs = [supnode]
+                    self.nodes.append(voicenode)
+
+                if r["data"]["highText"]:
+                    supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
+                    supnode.inputs = [(act, 1)]
+                    self.nodes.append(supnode)
+                    voicenode = VoiceNode(self, {"voiceText": r["data"]["highText"]})
+                    voicenode.inputs = [supnode]
+                    self.nodes.append(voicenode)
+            elif r["platform"] == "alarm":
+                supnode = SuppressorNode(self, {"wait": int(r["data"]["repeat"])})
+                supnode.inputs = [andnode]
+                self.nodes.append(supnode)
+                voicenode = VoiceNode(self, {"voiceText": r["data"]["sayText"]})
+                voicenode.inputs = [supnode]
+                self.nodes.append(voicenode)
 
         logger.debug("nodes: " + str(self.nodes))
 
@@ -76,16 +104,30 @@ class NodeManager(Controller):
             for c in classes:
                 all_values[c] = [False]
 
+            logger.debug("graph inputs: {}".format(data))
             all_values[data] = [True]
 
             for node in self.nodes:
-                values = [all_values[inp] for inp in node.inputs]
-                #logger.debug(str(node))
-                #logger.debug(str(node.inputs))
-                #logger.debug(str(values))
+                values = []
+
+                for inp in node.inputs:
+                    if isinstance(inp, tuple):
+                        values.append([all_values[inp[0]][inp[1]]])
+                    else:
+                        if inp in all_values:
+                            values.append(all_values[inp])
+                        else:
+                            values.append([False])
+
+                logger.debug(str(node))
+                logger.debug(str(node.inputs))
+                logger.debug(str(values))
                 all_values[node] = node.forward(values)
-                #logger.debug(str(all_values[node]))
-                #logger.debug("-"*10)
+                logger.debug(str(all_values[node]))
+                logger.debug("-"*10)
+
+            logger.debug("graph outputs: {}".format(all_values))
+            self.values = all_values
 
             actions = []
 

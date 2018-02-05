@@ -11,29 +11,6 @@ import controllermanager as cm
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
-
-def predictions2segments(predictions, cam_segments, times):
-    segments = []
-
-    for start_cam, end_cam in cam_segments:
-        current = None
-        start = None
-
-        seq = predictions[start_cam:end_cam]
-        for i, p in enumerate(seq):
-            if current != p or i == len(seq) - 1:
-                if current is not None:
-                    segments.append([
-                        times[start_cam + start],
-                        times[start_cam + i],
-                        current
-                    ])
-                start = i
-
-            current = p
-
-    return np.array(segments)
-
 class TimetrackerNode(Node):
     def __init__(self, man, args):
         super().__init__(args)

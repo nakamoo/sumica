@@ -43,7 +43,7 @@ def feed():
         for i, im in enumerate(al.current_images):
             impath = current_app.config["RAW_IMG_DIR"] + im["filename"]
 
-            encoded_string = impath2base64(impath)
+            encoded_string = impath2base64(impath, meta=im)
             images.append({"name": al.cams[i], "img": encoded_string})
 
         data["predictions"] = al.current_predictions
@@ -202,7 +202,7 @@ def knowledge():
     data["nodes"] = []
     data["edges"] = []
 
-    if misc is not None:
+    if misc is not None and al.classes is not None:
         segs = misc["segments"]
         seg_indices = misc["train_labels"]["activity"]["seg_mapping"]
         labels = al.labels

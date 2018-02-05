@@ -29,7 +29,7 @@ with app.app_context():
         platforms.hue_platform,
         platforms.voice_platform,
         platforms.ifttt_platform,
-        #platforms.alarm_platform,
+        platforms.alarm_platform,
         platforms.timetracker_platform
     ]
     platform_names = [p.platform_name for p in platform_mods]

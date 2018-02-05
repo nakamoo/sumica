@@ -16,7 +16,7 @@ def tosecs(act):
         return 0
 
 class InputSmootherNode(Node):
-    def __init__(self, args):
+    def __init__(self, man, args):
         super().__init__(args)
 
         self.history = []

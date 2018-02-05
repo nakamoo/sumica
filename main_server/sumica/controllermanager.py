@@ -44,7 +44,7 @@ def standard_controllers(username):
         ("speechbot", Speechbot(username)),
         ("activitylearner", ActivityLearner(username)),
         #("ruleexecutor", RuleExecutor(username)),
-        ("nodemanager", NodeManager(username))
+        #("nodemanager", NodeManager(username))
     ])
 
 

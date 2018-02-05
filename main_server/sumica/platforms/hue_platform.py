@@ -28,8 +28,8 @@ def data2command(data):
     cmddata = json.dumps(cmddata)
     command = {'platform': 'hue', 'data': cmddata, 'stateful': True}
 
-    if 'test' not in data:
-        command['confirmation'] = '照明を変えますか？'
+    #if 'test' not in data:
+    #    command['confirmation'] = '照明を変えますか？'
 
     return command
 

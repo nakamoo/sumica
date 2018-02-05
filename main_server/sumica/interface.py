@@ -124,6 +124,7 @@ def timeline():
     data["time_range"] = []
     data["classes"] = []
     data["segments_last_fixed"] = 0
+    cam_num = 1
 
     if misc is not None:
         segment_times = misc["segment_times"]
@@ -137,7 +138,7 @@ def timeline():
                 row["count"] = misc["segments"][i][1] - misc["segments"][i][0] + 1
 
                 midpoint = (misc["segments"][i][1] + misc["segments"][i][0]) // 2
-                imname = misc["raw_data"][midpoint][0]["filename"]
+                imname = misc["raw_data"][midpoint][cam_num]["filename"]
                 impath = current_app.config["RAW_IMG_DIR"] + imname
                 impath = saveimgtostatic(imname, impath, scale=0.2, quality=50)
                 row["img"] = "https://homeai.ml:5000/" + impath
@@ -215,7 +216,7 @@ def knowledge():
         for i, label in enumerate(labels[:len(seg_indices)]):
             start, end = segs[seg_indices[i]]
             mid = (start + end) // 2
-            cam_num = 0
+            cam_num = 1
 
             d = misc["raw_data"][mid][cam_num]
             impath = current_app.config["RAW_IMG_DIR"] + d["filename"]

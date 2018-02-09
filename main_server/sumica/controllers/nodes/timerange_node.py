@@ -8,9 +8,10 @@ class TimeRangeNode(Node):
     input_types = []
     output_types = ["boolean"]
     icon = Node.icon_pic("fa fa-clock")
+    param_file = "timerange-parameters.html"
 
-    def __init__(self, man, args):
-        super().__init__(args)
+    def __init__(self, id, man, args):
+        super().__init__(id, args)
 
         self.start_min, self.end_min = args["startTime"], args["endTime"]
         if self.end_min < self.start_min:

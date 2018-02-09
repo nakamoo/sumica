@@ -23,15 +23,19 @@ def data2command(data):
         cmddata.append({'id': id, 'state': hue})
 
     cmddata = json.dumps(cmddata)
-    command = {'platform': 'hue', 'data': cmddata, 'stateful': True}
+    command = {'platform': 'hue', 'data': cmddata}
 
-    #if 'test' not in data:
-    #    command['confirmation'] = '照明を変えますか？'
+    if "confirm" in data and data["confirm"] == "Always":
+        confirm = data["confirm_say"]
+
+        command['confirmation'] = confirm
 
     return command
 
 class HueNode(Node):
     testable = True
+    askable = True
+    check_state = True
     param_file = "hue-parameters.html"
     input_types = ["boolean"]
     output_types = ["action"]
@@ -40,10 +44,12 @@ class HueNode(Node):
 
     @staticmethod
     def test_execute(args):
-        return data2command(args)
+        cmd = data2command(args)
+        cmd["manual"] = True
+        return [cmd]
 
-    def __init__(self, man, args):
-        super().__init__(args)
+    def __init__(self, id, man, args):
+        super().__init__(id, args)
 
         self.act = data2command(args)
 

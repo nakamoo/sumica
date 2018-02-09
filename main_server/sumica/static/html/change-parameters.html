@@ -1,0 +1,27 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <label for="mode">Activation threshold</label>
+            <select class="form-control" id="mode">
+                <option selected="selected">ON to OFF</option>
+                <option >OFF to ON</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<script>
+    var changeInitSetParameters = function() {
+    };
+
+    var changeInitFromObject = function(params) {
+        $("#mode").val(params.mode);
+    };
+
+    var changeToObject = function() {
+        return {
+            mode: $("#mode").val()
+        };
+    };
+</script>

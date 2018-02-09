@@ -41,11 +41,11 @@ class Person2Vec(vectorizer.Vectorizer):
                             top_person = view["detections"][det_index]
 
                             if pose_index >= 0:
-                                pose_vec += normalize_pose(np.array(view["pose"]["body"][pose_index])).flatten()
+                                pose_vec += normalize_pose(np.array(view["pose"]["body"][pose_index])).flatten() * top_person["confidence"]
                                 poses += 1
 
                             if det_index >= 0:
-                                act_vec += np.array(top_person["action_vector"])
+                                act_vec += np.array(top_person["action_vector"]) * top_person["confidence"]
                                 dets += 1
 
                         if poses > 0:

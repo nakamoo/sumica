@@ -7,7 +7,7 @@ var container = document.getElementById('timeline');
 var items = new vis.DataSet([]);
 
 var startdate = new Date();
-startdate.setHours(startdate.getHours() - 24);
+startdate.setHours(startdate.getHours() - 12);
 var enddate = new Date();
 enddate.setHours(enddate.getHours() + 1);
 
@@ -25,7 +25,13 @@ var options2 = {
     shaded: {
         orientation: 'bottom'
     },
-
+    dataAxis: {
+        left: {
+            title: {
+                text: "conf."
+            }
+        }
+    }
     //left: {range: {min:0, max:1}}
 };
 var graph2d = new vis.Graph2d(document.getElementById('confidence'), dataset_graph, options2);
@@ -224,7 +230,11 @@ var updateTimeline = function () {
             timeline.addCustomTime(new Date(data.segments_last_fixed * 1000.0), "lastFixed");
 
             firstUpdate = false;
-            setTimeout(updateTimeline, 5000);
+
+            if (UPDATE_TIMELINE > 0) {
+                setTimeout(updateTimeline, UPDATE_TIMELINE * 1000);
+            }
+
         },
         error: function (err) {
             console.log(err);

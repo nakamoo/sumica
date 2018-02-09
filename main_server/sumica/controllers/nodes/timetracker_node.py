@@ -41,13 +41,29 @@ class TimetrackerNode(Node):
     output_types = ["action"] #["boolean", "boolean"]
     icon = Node.icon_pic("fa fa-exclamation")
 
-    def __init__(self, man, args):
-        super().__init__(args)
+    def __init__(self, id, man, args):
+        super().__init__(id, args)
 
         self.min_time = float(args["minTime"])
         self.max_time = float(args["maxTime"])
         self.activities = args["inputs"]
         self.username = man.username
+
+        if args["lowText"]:
+            supnode = SuppressorNode(uuid.uuid4(), man, {"wait": int(r["data"]["repeat"])})
+            supnode.inputs = [[{"id": id, index: 0}]]
+            nodes.append(supnode)
+            voicenode = VoiceNode(uuid.uuid4(), man, {"voiceText": r["data"]["lowText"]})
+            voicenode.inputs = [[{"id": supnode.id, index: 0}]]
+            nodes.append(voicenode)
+
+        if args["highText"]:
+            supnode = SuppressorNode(uuid.uuid4(), man, {"wait": int(r["data"]["repeat"])})
+            supnode.inputs = [[{"id": id, index: 1}]]
+            nodes.append(supnode)
+            voicenode = VoiceNode(uuid.uuid4(), man, {"voiceText": r["data"]["highText"]})
+            voicenode.inputs = [[{"id": supnode.id, index: 0}]]
+            nodes.append(voicenode)
 
     def forward(self, values):
         al = cm.cons[self.username]["activitylearner"]

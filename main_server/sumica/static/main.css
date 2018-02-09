@@ -147,7 +147,10 @@ html, body {
 #flowchartbg {
     position: absolute;
 
-    background-color: #131313;
+    background-image: url("tile.jpg");
+    background-repeat: repeat;
+    background-size: 500px 500px;
+    image-rendering: pixelated;
 
     z-index: -10;
 }

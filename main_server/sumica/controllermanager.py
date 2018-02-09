@@ -67,6 +67,7 @@ def initialize():
     for user in [current_app.config['USER']]:
         cons[user] = standard_controllers(user)
         states[user] = StateTracker()
+        test_commands[user].append({'platform': 'tts', 'data': 'サーバを起動しました．行動認識モジュールの準備をお待ちください．'})
 
 def get_node_types():
     nodes = []
@@ -78,7 +79,8 @@ def get_node_types():
             "testable": node.testable,
             "input_types": node.input_types,
             "output_types": node.output_types,
-            "icon": node.icon
+            "icon": node.icon,
+            "askable": node.askable
         }
 
         if node.display_name is None:
@@ -92,7 +94,7 @@ def get_node_types():
 
 def test_execute(args):
     node_type = args["platform"]
-    test_commands[args['username']].append(NodeManager.node_types[node_type].test_execute(args))
+    test_commands[args['username']].extend(NodeManager.node_types[node_type].test_execute(args))
 
 def server_execute(username, command):
     platform = command["platform"]
@@ -141,6 +143,6 @@ def client_execute(username):
     states[username].track(commands)
 
     # ???
-    commands = [[c] for c in commands]
+    #commands = [[c] for c in commands]
 
     return commands

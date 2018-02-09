@@ -1,0 +1,24 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <label for="voiceText">Reset every N seconds</label>
+            <input class="form-control" type="text" id="resetTime" placeholder="60">
+        </div>
+    </div>
+</div>
+
+<script>
+    var memoryInitSetParameters = function() {
+    };
+
+    var memoryInitFromObject = function(params) {
+        $("#resetTime").val(params.resetTime);
+    };
+
+    var memoryToObject = function() {
+        return {
+            resetTime: $("#resetTime").val()
+        };
+    };
+</script>

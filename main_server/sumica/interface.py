@@ -31,6 +31,7 @@ def interface():
 
 @bp.route('/feed', methods=['POST'])
 def feed():
+    args = request.get_json(force=True)
     data = {}
 
     #username = request.args.get('username')
@@ -38,16 +39,17 @@ def feed():
     al = cm.cons[current_app.config["USER"]]["activitylearner"]
 
     if al.current_images is not None:
-        images = []
+        if args['get_images']:
+            images = []
 
-        for i, im in enumerate(al.current_images):
-            impath = current_app.config["RAW_IMG_DIR"] + im["filename"]
+            for i, im in enumerate(al.current_images):
+                impath = current_app.config["RAW_IMG_DIR"] + im["filename"]
 
-            encoded_string = impath2base64(impath, meta=im)
-            images.append({"name": al.cams[i], "img": encoded_string})
+                encoded_string = impath2base64(impath, meta=im, quality=100)
+                images.append({"name": al.cams[i], "img": encoded_string})
+            data["images"] = images
 
         data["predictions"] = al.current_predictions
-        data["images"] = images
     else:
         data["predictions"] = []
         data["images"] = []
@@ -124,7 +126,7 @@ def timeline():
     data["time_range"] = []
     data["classes"] = []
     data["segments_last_fixed"] = 0
-    cam_num = 1
+    cam_num = 0
 
     if misc is not None:
         segment_times = misc["segment_times"]
@@ -188,6 +190,8 @@ def timeline():
     data["timeline"] = tl
     data["label_data"] = label_data
 
+
+
     return jsonify(data)
 
 
@@ -216,7 +220,7 @@ def knowledge():
         for i, label in enumerate(labels[:len(seg_indices)]):
             start, end = segs[seg_indices[i]]
             mid = (start + end) // 2
-            cam_num = 1
+            cam_num = 0
 
             d = misc["raw_data"][mid][cam_num]
             impath = current_app.config["RAW_IMG_DIR"] + d["filename"]

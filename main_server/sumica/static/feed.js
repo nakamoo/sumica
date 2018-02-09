@@ -51,13 +51,23 @@ function hslToRgb(h, s, l){
 }
 
 var feed = document.getElementById("feed");
+var counter = 0;
 
 var updateFeed = function() {
+    var get_images = false;
+
+    if (UPDATE_CAMFEED > 0) {
+        get_images = counter % UPDATE_CAMFEED == 0
+    }
+
     $.ajax({
         type: "POST",
         url: "/feed",
+        data: JSON.stringify({
+            get_images: get_images
+        }),
         success: function(data, status) {
-            if (data.images.length > 0) {
+            if (data.images && data.images.length > 0) {
                 var imgs = "";
 
                 for (var i = 0; i < data.images.length; i++) {
@@ -72,51 +82,51 @@ var updateFeed = function() {
                 }
 
                 feed.innerHTML = imgs;
-
-                if (data.classes.length > 0) {
-                    // is js retarded?
-                    if (myChart.data.labels.join(',') == data.classes.join(',')) {
-                        // only update values if labels are the same
-                        myChart.data.datasets[0].data = data.predictions;
-
-                        myChart.update();
-                    } else if (data.predictions) {
-                        // update everything if different
-                        myChart.config.data = {
-                            labels: data.classes,
-                            datasets: [{
-                                data: data.predictions,
-                                borderWidth: 1
-                            }]
-                        };
-
-                        var bgColors = [];
-                        var bColors = [];
-
-                        for (var i = 0; i < data.predictions.length; i++) {
-                            var rgb = hslToRgb(i * 100 / 360.0 % 1.0, 0.75, 0.5);
-                            var str = 'rgba(' + rgb[0] + ', ' + rgb[1] + ', ' + rgb[2];
-                            bgColors.push(str + ', 0.5)');
-                            bColors.push(str + ', 1.0)');
-                        }
-
-                        myChart.data.datasets[0].borderColor = bColors;
-                        myChart.data.datasets[0].backgroundColor = bgColors;
-
-                        myChart.update();
-                    }
-                }
-
-                setTimeout(updateFeed, 1000);
-            } else {
+            } else if (UPDATE_CAMFEED < 0) {
                 feed.innerHTML =
                     "<div class='card text-white bg-dark text-center'>" +
                     "<div class='card-block'>" +
                     "<p class='card-text'>NO FEED</p>" +
                     "</div>" +
                     "</div>";
-                setTimeout(updateFeed, 1000);
             }
+
+            if (data.classes.length > 0) {
+                // is js retarded?
+                if (myChart.data.labels.join(',') == data.classes.join(',')) {
+                    // only update values if labels are the same
+                    myChart.data.datasets[0].data = data.predictions;
+
+                    myChart.update();
+                } else if (data.predictions) {
+                    // update everything if different
+                    myChart.config.data = {
+                        labels: data.classes,
+                        datasets: [{
+                            data: data.predictions,
+                            borderWidth: 1
+                        }]
+                    };
+
+                    var bgColors = [];
+                    var bColors = [];
+
+                    for (var i = 0; i < data.predictions.length; i++) {
+                        var rgb = hslToRgb(i * 100 / 360.0 % 1.0, 0.75, 0.5);
+                        var str = 'rgba(' + rgb[0] + ', ' + rgb[1] + ', ' + rgb[2];
+                        bgColors.push(str + ', 0.5)');
+                        bColors.push(str + ', 1.0)');
+                    }
+
+                    myChart.data.datasets[0].borderColor = bColors;
+                    myChart.data.datasets[0].backgroundColor = bgColors;
+
+                    myChart.update();
+                }
+            }
+
+            counter += 1;
+            setTimeout(updateFeed, 1000);
         },
         error: function(data, status) {
             setTimeout(updateFeed, 1000);

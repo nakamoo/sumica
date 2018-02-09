@@ -6,8 +6,8 @@ class AndNode(Node):
     output_types = ["boolean"]
     icon = Node.icon_text("AND", "2em")
 
-    def __init__(self, man, args):
-        super().__init__(args)
+    def __init__(self, id, man, args):
+        super().__init__(id, args)
 
     def forward(self, values):
         return [not (False in values)]

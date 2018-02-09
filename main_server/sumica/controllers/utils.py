@@ -10,6 +10,7 @@ from PIL import Image
 from io import BytesIO
 import base64
 import uuid
+import traceback
 
 keypoint_labels = [
     "Nose",
@@ -39,7 +40,7 @@ def impath2base64(impath, scale=0.5, quality=50, meta=None):
             with Image.open(impath) as img:
                 if meta:
                     img = np.array(img)
-                    #draw_object(img, meta)
+                    visualize(img, meta, draw_objects=False)
                     img = Image.fromarray(img)
 
                 img = img.resize((int(img.width * scale), int(img.height * scale)))
@@ -49,6 +50,7 @@ def impath2base64(impath, scale=0.5, quality=50, meta=None):
             encoded_string = base64.b64encode(bytedata)
             encoded_string = encoded_string.decode("utf-8")
         except:
+            traceback.print_exc()
             encoded_string = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 
         return encoded_string
@@ -62,7 +64,7 @@ def saveimgtostatic(imname, impath, scale=0.5, quality=50, meta=None):
             with Image.open(impath) as img:
                 if meta:
                     img = np.array(img)
-                    #img = visualize(img, meta, draw_objects=False)
+                    visualize(img, meta)
                     img = Image.fromarray(img)
 
                 img = img.resize((int(img.width * scale), int(img.height * scale)))
@@ -184,6 +186,8 @@ def sort_persons(data):
     return results
     
 def draw_object(frame, result):
+    # frame uint8
+
     det = result["box"]
     name = result["label"] + ": " + "%.2f" % result["confidence"]
 
@@ -200,14 +204,16 @@ def draw_object(frame, result):
         act_box = result["action_crop"]
 
         label_offsetx = act_box[0]
-        cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 6)
-        cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
+        cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 5)
+        #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
     else:
         cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
 
     cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), c, -1)
     cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
     cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+    return frame
 
 def draw_pose(frame, person):
     body_lines = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [5, 6], [6, 7], [0, 14], [14, 16], [0, 15], [15, 17], [1, 8], [8, 9], [9, 10], [1, 11], [11, 12], [12, 13]]

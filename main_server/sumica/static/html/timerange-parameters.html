@@ -1,0 +1,70 @@
+<div class="setParameters">
+    <label for="timerange">Time range</label>
+    <div id="timerange">
+        <div class="row">
+            <div class="col-sm-5">
+                <div class="form-group">
+                    <div class="input-group date" id="starttimepicker"
+                         data-target-input="nearest">
+                        <input type="text" class="form-control datetimepicker-input"
+                               data-target="#starttimepicker"/>
+                        <div class="input-group-addon" data-target="#starttimepicker"
+                             data-toggle="datetimepicker">
+                            <div class="input-group-text"><i class="fa fa-clock"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-1" style="top: 5px; padding-left: 10px; padding-right: 10px;">
+                <p class="text-center">to</p>
+            </div>
+
+            <div class="col-sm-5">
+                <div class="form-group">
+                    <div class="input-group date" id="endtimepicker"
+                         data-target-input="nearest">
+                        <input type="text" class="form-control datetimepicker-input"
+                               data-target="#endtimepicker"/>
+                        <div class="input-group-addon" data-target="#endtimepicker"
+                             data-toggle="datetimepicker">
+                            <div class="input-group-text"><i class="fa fa-clock"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var timerangeInitSetParameters = function() {
+        $('#starttimepicker').datetimepicker({
+            format: 'HH:mm',
+            defaultDate: moment('00:00', 'HH:mm')
+        });
+        $('#endtimepicker').datetimepicker({
+            format: 'HH:mm',
+            defaultDate: moment('00:00', 'HH:mm')
+        });
+    };
+
+    var timerangeInitFromObject = function(params) {
+        var d = moment.utc(moment.duration(params.startTime, "m").asMilliseconds()).format("HH:mm");
+        $('#starttimepicker').datetimepicker('date', d);
+        d = moment.utc(moment.duration(params.endTime, "m").asMilliseconds()).format("HH:mm");
+        $('#endtimepicker').datetimepicker('date', d);
+    };
+
+    var timerangeToObject = function() {
+        var startTime = $('#starttimepicker').datetimepicker('date');
+        var endTime = $('#endtimepicker').datetimepicker('date');
+
+        return {
+            startTime: startTime.hour() * 60 + startTime.minute(),
+            endTime: endTime.hour() * 60 + endTime.minute()
+        };
+    };
+</script>

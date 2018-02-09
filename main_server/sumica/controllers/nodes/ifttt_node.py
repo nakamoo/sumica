@@ -6,6 +6,14 @@ def data2command(data):
 
     return command
 
+def request(args):
+    try:
+        requests.post(args["urlText"], params={'value1': args['urlParam1'],
+                                           'value2': args['urlParam2'],
+                                           'value3': args['urlParam3']})
+    except:
+        pass
+
 class IFTTTNode(Node):
     askable = True
     testable = True
@@ -17,10 +25,8 @@ class IFTTTNode(Node):
 
     @staticmethod
     def test_execute(args):
-        print("IFTTT >>> ", args["urlText"])
-        requests.post(args["urlText"])
+        request(args)
         return []
-        #return [data2command(args)]
 
     def __init__(self, id, man, args):
         super().__init__(id, args)
@@ -29,7 +35,7 @@ class IFTTTNode(Node):
 
     def forward(self, values):
         if not (False in values):
-            requests.post(self.args["urlText"])
+            request(self.args)
             return [self.act]
 
         return []

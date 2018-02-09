@@ -49,6 +49,19 @@ var options = {
         followMouse: true,
         overflowMethod: 'cap'
     },
+    format: {
+        majorLabels: {
+            millisecond:'HH:mm:ss',
+            second:     'HH:mm',
+            minute:     '',
+            hour:       '',
+            weekday:    '',
+            day:        '',
+            week:       '',
+            month:      '',
+            year:       ''
+        }
+    },
     editable: {
         add: true,
         updateTime: false,
@@ -154,16 +167,17 @@ var updateTimeline = function () {
                     start.setMilliseconds(0);
                     end.setMilliseconds(0);
                     var count = seg["count"];
-                    var tooltip = '<img src="' + seg["img"] + '" >';
+                    var tooltip = '<img class="seg-preview" src="' + seg["img"] + '" >';
                     tooltip += "<p>" + count + " images</p>";
-
+                    tooltip += "<p style='position: relative; bottom: 10px;'>" + start.toTimeString().split(' ')[0] +
+                        " ~ " + end.toTimeString().split(' ')[0] + "</p>";
                     var col = "gray";
                     if (i % 2 == 0) {
                         col = "lightGray";
                     }
 
                     var row = {
-                        id: createuuid(), group: 2, content: '', start: start, end: end, title: tooltip,
+                        id: createuuid() + "-seg" + i, group: 2, content: '', start: start, end: end, title: tooltip,
                         color: col, myType: "segment", editable: false
                     };
                     rows.push(row);
@@ -273,7 +287,12 @@ function onChangeTimeline(range) {
 
 graph2d.on('rangechange', onChangeGraph);
 timeline.on('rangechange', onChangeTimeline);
+timeline.on('select', function(props) {
+    var iid = props.items[0];
+    var i = iid.indexOf("seg");
+    //console.log(iid.substring(i+3, iid.length));
 
+});
 
 graph2d.on('_change', function () {
     visLabelSameWidth();

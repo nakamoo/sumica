@@ -40,14 +40,15 @@ class ActivityLearner(Controller):
         self.predictions, self.classes, self.confidences = None, None, None
         self.current_images, self.current_predictions = None, None
         self.current_activity = None
+        self.firstupdate = True
 
-        self.last_asked = 0
+        self.last_asked = time.time()
         self.re = []
 
         if start_thread:
             # start loop separate from flask thread
             self.thread = threading.Thread(target=self.loop)
-            self.thread.daemon = True
+            #self.thread.daemon = True
             self.thread.start()
 
     def update_learner(self):
@@ -66,8 +67,9 @@ class ActivityLearner(Controller):
 
         models, misc = self.learner.update_models(labels, self.start_time, end_time)
 
-        if self.classes is None:
+        if self.classes is None and self.firstupdate:
             self.re.append({"platform": "tts", "data": "行動認識モジュールの準備ができました"})
+        self.firstupdate = False
 
         if models is not None and models["activity"] is not None:
             raw_pred = models["activity"].predict_proba(misc["matrix"])
@@ -77,15 +79,14 @@ class ActivityLearner(Controller):
 
         self.misc = misc
 
-        logger.debug("model update time token: {}".format(time.time() - end_time))
+        logger.debug("model update time taken: {}".format(time.time() - end_time))
 
     def loop(self):
         while True:
             try:
                 if self.update:
-                    self.update_learner()
-
                     self.update = False
+                    self.update_learner()
             except:
                 traceback.print_exc()
 
@@ -144,9 +145,9 @@ class ActivityLearner(Controller):
                 conf_std = np.std(self.confidences[-1000:])
                 sigma = 1.0
                 current_conf = np.max(pred_probs[0])
-                patience = 60 # actually 1 hour or more is probably good
+                patience = 60*60 # actually 1 hour or more is probably good
 
-                if False:#current_conf < conf_mean - conf_std * sigma:
+                if current_conf < conf_mean - conf_std * sigma:
                     logger.debug("current confidence: {}; mean: {}, std: {}".format(current_conf, conf_mean, conf_std))
 
                     if time.time() - self.last_asked > patience:

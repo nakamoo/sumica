@@ -54,7 +54,7 @@ class HueNode(Node):
         self.act = data2command(args)
 
     def forward(self, values):
-        if not (False in values):
+        if len(values) > 0 and not (False in values):
             return [self.act]
 
         return []

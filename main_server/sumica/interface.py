@@ -142,7 +142,7 @@ def timeline():
                 midpoint = (misc["segments"][i][1] + misc["segments"][i][0]) // 2
                 imname = misc["raw_data"][midpoint][cam_num]["filename"]
                 impath = current_app.config["RAW_IMG_DIR"] + imname
-                impath = saveimgtostatic(imname, impath, scale=0.2, quality=50)
+                impath = saveimgtostatic(imname, impath, scale=0.3, quality=50)
                 row["img"] = "https://homeai.ml:5000/" + impath
 
                 tl.append(row)

@@ -2,6 +2,10 @@ from collections import Counter
 import time
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
 
 
@@ -90,7 +94,13 @@ class Trainer:
             self.train_y = labeled_y
 
             if len(labeled_x) > 0:
-                self.clf = RandomForestClassifier(n_estimators=20)
+                #logreg = LogisticRegression(class_weight="balanced")
+                #logreg = KNeighborsClassifier()
+                logreg = RandomForestClassifier(n_estimators=10, class_weight="balanced")
+                pca = PCA(50)
+                self.clf = Pipeline([('reduce_dim', pca), ('clf', logreg)])
+
+                #self.clf = RandomForestClassifier(n_estimators=10, class_weight="balanced")
                 self.clf.fit(labeled_x, labeled_y)
 
         return self.clf, self.train_info, update_model

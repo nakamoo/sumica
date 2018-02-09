@@ -1,5 +1,6 @@
 
 var ctx = document.getElementById("predCanvas").getContext('2d');
+ctx.height = 500;
 var myChart = new Chart(ctx, {
     type: 'horizontalBar',
     data: {
@@ -15,12 +16,20 @@ var myChart = new Chart(ctx, {
                     min: 0,
                     max: 1
                 }
+            }],
+            yAxes: [{
+                ticks: {
+                    fontSize: 14
+                }
             }]
         },
         title: {
             display: true,
-            text: 'predictions'
-        }
+            text: 'predictions',
+            fontSize: 14
+        },
+        responsive: true,
+        maintainAspectRatio: false
     }
 });
 Chart.defaults.global.defaultFontColor = "#fff";
@@ -76,7 +85,7 @@ var updateFeed = function() {
                         "<div class='card-block'>" +
                         "<p class='card-text'>" + data.images[i]["name"] + "</p>" +
                         "</div>";
-                    card += '<img class="card-img-bottom" src=' + 'data:image/jpeg;base64,' + data.images[i]["img"] + '>';
+                    card += '<img class="card-img-bottom feedImage" src=' + 'data:image/jpeg;base64,' + data.images[i]["img"] + '>';
                     card += "</div>";
                     imgs += card;
                 }
@@ -130,7 +139,8 @@ var updateFeed = function() {
         },
         error: function(data, status) {
             setTimeout(updateFeed, 1000);
-        }
+        },
+        timeout: 3000
     });
 };
 

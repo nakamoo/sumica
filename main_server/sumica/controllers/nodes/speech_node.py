@@ -4,6 +4,7 @@ from .node import Node
 
 class SpeechNode(Node):
     display_name = "Speech Recognition"
+    input_types = []
     output_types = ["boolean"]
     param_file = "speech-parameters.html"
     icon = Node.icon_pic("fa fa-microphone")
@@ -22,8 +23,11 @@ class SpeechNode(Node):
     def on_event(self, event, data):
         if event == "speech" and data["type"] == "speech":
             msg = data["text"]
-            print("SPEECH >>>", msg)
             match = True
+
+            if len(self.tokens) == 0:
+                self.state = False
+                return
 
             for t in self.tokens:
                 if t not in msg:

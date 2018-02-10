@@ -103,4 +103,28 @@ class Trainer:
                 #self.clf = RandomForestClassifier(n_estimators=10, class_weight="balanced")
                 self.clf.fit(labeled_x, labeled_y)
 
+                semisup = True
+                if semisup:
+                    pseudo = self.clf.predict(x)
+                    self.clf = self.pseudolabel(x, pseudo, segments)
+
         return self.clf, self.train_info, update_model
+
+    def pseudolabel(self, x, pseudo, segments):
+        from scipy import stats
+
+        print(x.shape, pseudo.shape, len(segments))
+        new_labels = np.zeros_like(pseudo.shape)
+
+        for start, end in segments:
+            if end - start > 0:
+                new_labels[start:end] = stats.mode(pseudo[start:end])[0][0]
+                print(stats.mode(pseudo[start:end])[0][0], new_labels[start:end])
+                #break
+
+        logreg = RandomForestClassifier(n_estimators=10, class_weight="balanced")
+        pca = PCA(50)
+        clf = Pipeline([('reduce_dim', pca), ('clf', logreg)])
+        clf.fit(x, new_labels)
+
+        return clf

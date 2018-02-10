@@ -136,13 +136,20 @@ class Learner:
         if end_time is None:
             end_time = time.time()
 
+        t = time.time()
         imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
+        print("1. read db: ", time.time() - t)
+        X, meta = self.create_image_matrix(imdata)
+        t = time.time()
+        print("2. create matrix: ", time.time() - t)
 
         if len(imdata) == 0:
             return None, None
         else:
-            X, meta = self.create_image_matrix(imdata)
+
+            t = time.time()
             segments, segment_times, cam_segments, fixed_time = self.calculate_segments(X, times, start_time, end_time)
+            print("3. calculate segments: ", time.time() - t)
             train_labels = {}
 
             for mode, label_set in labels.items():
@@ -158,6 +165,9 @@ class Learner:
 
                     if update_model:
                         logger.debug("model <{}> updated.".format(mode))
+
+                t = time.time()
+                print("4. fit model", time.time() - t)
 
                 self.models[mode] = m
                 train_labels[mode] = label_data

@@ -135,7 +135,7 @@ var updateFeed = function() {
             }
 
             counter += 1;
-            setTimeout(updateFeed, 1000);
+            //setTimeout(updateFeed, 1000);
         },
         error: function(data, status) {
             setTimeout(updateFeed, 1000);

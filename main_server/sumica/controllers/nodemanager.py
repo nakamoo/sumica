@@ -158,7 +158,7 @@ class NodeManager(Controller):
         nodes = topo_sort(nodes)
         self.nodes = OrderedDict([(n.id, n) for n in nodes])
 
-        logger.debug("nodes: " + str(self.nodes))
+        #logger.debug("nodes: " + str(self.nodes))
 
     def combine_actions(self, old_actions, new_actions):
         return old_actions + new_actions

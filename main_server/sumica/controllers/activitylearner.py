@@ -186,7 +186,6 @@ class ActivityLearner(Controller):
                 msg = data["answer"]
                 self.confirm_label(msg)
 
-
     def execute(self):
         re = self.re
         self.re = []

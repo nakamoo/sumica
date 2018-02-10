@@ -137,9 +137,46 @@ class Learner:
             end_time = time.time()
 
         t = time.time()
-        imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
+
+        chunk_size =  3600 * 24
+        start_segs = list(range(int(start_time), int(end_time), chunk_size))
+
+        imdata = []
+        times = []
+        X = []
+        meta = []
+
+        for i, start_seg in enumerate(start_segs):
+            if i == len(start_segs)-1:
+                end_seg = int(end_time)
+
+                _imdata, _times = imreader.read_db(self.username, start_seg, end_seg, self.cams, skip_absent=False)
+                _X, _meta = self.create_image_matrix(_imdata)
+                data = {"imdata": _imdata, "times": _times, "X": _X, "meta": _meta}
+            else:
+                end_seg = start_seg + chunk_size
+
+                p_name = "datafiles/dataloader_cache/" + str(start_seg) + "-" + str(end_seg) + ".pkl"
+
+                if not os.path.exists(p_name):
+                    _imdata, _times = imreader.read_db(self.username, start_seg, end_seg, self.cams, skip_absent=False)
+                    _X, _meta = self.create_image_matrix(_imdata)
+
+                    data = {"imdata": _imdata, "times": _times, "X": _X, "meta": _meta}
+                    pickle.dump(data, open(p_name, "wb+"))
+
+                data = pickle.load(open(p_name, "rb"))
+
+            if len(data["imdata"]) > 0:
+                imdata.extend(data["imdata"])
+                times.extend(data["times"])
+                X.append(data["X"])
+                meta.extend(data["meta"])
+
+        X = np.concatenate(X, axis=0)
+
         print("1. read db: ", time.time() - t)
-        X, meta = self.create_image_matrix(imdata)
+
         t = time.time()
         print("2. create matrix: ", time.time() - t)
 
@@ -150,6 +187,7 @@ class Learner:
             t = time.time()
             segments, segment_times, cam_segments, fixed_time = self.calculate_segments(X, times, start_time, end_time)
             print("3. calculate segments: ", time.time() - t)
+            t = time.time()
             train_labels = {}
 
             for mode, label_set in labels.items():
@@ -166,12 +204,10 @@ class Learner:
                     if update_model:
                         logger.debug("model <{}> updated.".format(mode))
 
-                t = time.time()
-                print("4. fit model", time.time() - t)
-
                 self.models[mode] = m
                 train_labels[mode] = label_data
 
+            print("4. fit model", time.time() - t)
             misc = {}
             misc["matrix"] = X
             misc["times"] = times

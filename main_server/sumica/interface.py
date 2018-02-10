@@ -85,31 +85,39 @@ def smooth_predictions(predictions, times):
 
     return modes.tolist()
 
-def points2segments(predictions, times, cam_segments):
+def points2segments(predictions, times, cam_segments, start_index):
+    logger.debug("smoothing...")
+
+    predictions = predictions[start_index:]
+    times = times[start_index:]
+
     predictions = smooth_predictions(predictions, times)
+    logger.debug("done " + str(len(predictions)))
     segments = []
 
     for start_cam, end_cam in cam_segments:
         current = None
         start = None
 
-        seq = predictions[start_cam:end_cam]
-        for i, p in enumerate(seq):
-            if current != p or i == len(seq)-1:
-                if current is not None:
-                    segments.append({
-                        "start_time": times[start_cam + start],
-                        "end_time": times[start_cam + i],
-                        "class": current
-                    })
-                start = i
+        if end_cam > start_index:
+            seq = predictions[max(0, start_cam-start_index):end_cam-start_index]
+            for i, p in enumerate(seq):
+                if current != p or i == len(seq)-1:
+                    if current is not None:
+                        segments.append({
+                            "start_time": times[max(0, start_cam-start_index) + start],
+                            "end_time": times[max(0, start_cam-start_index) + i],
+                            "class": current
+                        })
+                    start = i
 
-            current = p
+                current = p
 
     return segments
 
 @bp.route('/timeline', methods=['POST'])
 def timeline():
+    logger.debug("returning timeline data...")
     data = dict()
 
     args = request.get_json(force=True)
@@ -128,9 +136,14 @@ def timeline():
     data["segments_last_fixed"] = 0
     cam_num = 0
 
+    logger.debug("returning timeline data 2...")
+
     if misc is not None:
         segment_times = misc["segment_times"]
         segments = misc["segments"]
+
+        print("start time:", start_time)
+        print("end segs:", segment_times[0], segment_times[-1])
 
         for i in range(len(segments)):
             if segment_times[i][1] >= start_time:
@@ -150,15 +163,27 @@ def timeline():
         data["time_range"] = misc["time_range"]
         data["segments_last_fixed"] = misc["segments_last_fixed"]
 
+    logger.debug("returning timeline data 3...")
+
     if al.predictions is not None:
-        preds = points2segments(al.predictions, misc["times"], misc["cam_segments"])
-        data_preds = []
+        #print("AAA", len(al.predictions), len(misc["times"]), len(misc["cam_segments"]))
+        np_times = np.array(misc["times"])
+        np_preds = np.array(al.predictions)
+        start_index = np.where(np_times >= start_time)[0][0] # first index that is greater than start_time
+        logger.debug(str(start_index) + " start")
+        preds = points2segments(np_preds, np_times, misc["cam_segments"], start_index)
 
-        for i, p in enumerate(preds):
-            if p["end_time"] >= start_time:
-                data_preds.append(p)
+        logger.debug("returning timeline data 4...")
 
-        data["predictions"] = data_preds
+        #data_preds = []
+
+        #print(start_time, preds)
+
+        #for i, p in enumerate(preds):
+        #    if p["end_time"] >= start_time:
+        #        data_preds.append(p)
+
+        data["predictions"] = preds#data_preds
         data["classes"] = al.classes
 
         times = misc["times"]
@@ -190,7 +215,7 @@ def timeline():
     data["timeline"] = tl
     data["label_data"] = label_data
 
-
+    logger.debug("returned timeline data.")
 
     return jsonify(data)
 

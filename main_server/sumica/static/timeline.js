@@ -57,7 +57,6 @@ var options = {
             hour:       '',
             weekday:    '',
             day:        '',
-            week:       '',
             month:      '',
             year:       ''
         }
@@ -120,6 +119,8 @@ timeline.setGroups(groups);
 var firstUpdate = true;
 
 var updateTimeline = function () {
+    console.log("updating timeline");
+
     $.ajax({
         type: "POST",
         url: "/timeline",

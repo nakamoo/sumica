@@ -130,7 +130,7 @@ html, body {
     pointer-events: none;
 }
 
-#timeline .vis-item.vis-line {
+.vis-item.vis-line {
     z-index: 2;
     border-width: 3px;
     /*border-color: white;*/
@@ -210,6 +210,7 @@ html, body {
 .item:hover {
     background-color: #059;
     color: white;
+    border-radius: 0.5em;
 }
 
 .dragHover {
@@ -299,4 +300,12 @@ html, body {
 .seg-preview {
     /*width: 200px;
     height: auto;*/
+}
+
+#previewPanel {
+    max-height: 40vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    border: 5px lightgray solid;
 }

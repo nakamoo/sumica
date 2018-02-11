@@ -85,11 +85,11 @@ def smooth_predictions(predictions, times):
 
     return modes.tolist()
 
-def points2segments(predictions, times, cam_segments, start_index):
+def points2segments(predictions, times, cam_segments, start_index, end_index):
     logger.debug("smoothing...")
 
-    predictions = predictions[start_index:]
-    times = times[start_index:]
+    predictions = predictions[start_index:end_index]
+    times = times[start_index:end_index]
 
     predictions = smooth_predictions(predictions, times)
     logger.debug("done " + str(len(predictions)))
@@ -100,7 +100,7 @@ def points2segments(predictions, times, cam_segments, start_index):
         start = None
 
         if end_cam > start_index:
-            seq = predictions[max(0, start_cam-start_index):end_cam-start_index]
+            seq = predictions[max(0, start_cam-start_index):min(len(predictions),end_cam-start_index)]
             for i, p in enumerate(seq):
                 if current != p or i == len(seq)-1:
                     if current is not None:
@@ -122,6 +122,7 @@ def timeline():
 
     args = request.get_json(force=True)
     start_time = args['start_time']
+    end_time = args['end_time']
 
     al = cm.cons[current_app.config["USER"]]["activitylearner"]
     misc = al.misc
@@ -146,10 +147,11 @@ def timeline():
         print("end segs:", segment_times[0], segment_times[-1])
 
         for i in range(len(segments)):
-            if segment_times[i][1] >= start_time:
+            if segment_times[i][1] >= start_time and segment_times[i][0] <= end_time:
                 row = {}
                 row["start_time"] = segment_times[i][0]
                 row["end_time"] = segment_times[i][1]
+                row["seg_index"] = i
                 row["count"] = misc["segments"][i][1] - misc["segments"][i][0] + 1
 
                 midpoint = (misc["segments"][i][1] + misc["segments"][i][0]) // 2
@@ -157,6 +159,20 @@ def timeline():
                 impath = current_app.config["RAW_IMG_DIR"] + imname
                 impath = saveimgtostatic(imname, impath, scale=0.3, quality=50)
                 row["img"] = "https://homeai.ml:5000/" + impath
+
+                imgs = []
+                startpoint = min(misc["segments"][i][0] + 5, misc["segments"][i][1])
+                endpoint = max(misc["segments"][i][1] - 5, misc["segments"][i][1])
+                for point in [startpoint, midpoint, endpoint]:
+                    imname = misc["raw_data"][point][cam_num]["filename"]
+                    impath = current_app.config["RAW_IMG_DIR"] + imname
+                    impath = saveimgtostatic(imname, impath, scale=0.5, quality=100)
+
+                    d = {"url": "/" + impath, "time": misc["raw_data"][point][cam_num]["time"],
+                         "id": str(misc["raw_data"][point][cam_num]["_id"])}
+                    imgs.append(d)
+
+                row["imgs"] = imgs
 
                 tl.append(row)
 
@@ -170,10 +186,11 @@ def timeline():
         np_times = np.array(misc["times"])
         np_preds = np.array(al.predictions)
         start_index = np.where(np_times >= start_time)[0][0] # first index that is greater than start_time
-        logger.debug(str(start_index) + " start")
-        preds = points2segments(np_preds, np_times, misc["cam_segments"], start_index)
+        end_index = np.where(np_times <= end_time)[0][-1]
+        #logger.debug(str(start_index) + " start")
+        preds = points2segments(np_preds, np_times, misc["cam_segments"], start_index, end_index)
 
-        logger.debug("returning timeline data 4...")
+        #logger.debug("returning timeline data 4...")
 
         #data_preds = []
 
@@ -191,7 +208,7 @@ def timeline():
         conf_times = []
         step = CONFIDENCE_SMOOTH
 
-        for s, e in misc["cam_segments"]:
+        for i, (s, e) in enumerate(misc["cam_segments"]):
             if times[e - 1] >= start_time:
                 seg = []
                 tseg = []
@@ -271,6 +288,7 @@ def knowledge():
 
 @bp.route('/label', methods=['POST'])
 def change_label():
+    al = cm.cons[current_app.config["USER"]]["activitylearner"]
     args = request.get_json(force=True)
     logger.debug(str(args))
 
@@ -281,15 +299,19 @@ def change_label():
         id_ = args['id']
         db.labels.delete_one({"_id": ObjectId(id_)})
         logger.debug('removed label')
+        al.update = True
     elif action == 'add':
+        al.update = True
         db.labels.insert_one({"_id": ObjectId(args['id']), "username": username,
                               "time": args['time'], "label": args['label']})
         logger.debug('added label')
+
 
     return "ok", 201
 
 @bp.route('/action', methods=['POST'])
 def change_action():
+
     args = request.get_json(force=True)
     logger.debug(str(args))
 
@@ -325,4 +347,33 @@ def node_states():
     re = dict()
     re["nodes"] = [{"id": k, "values": v} for k, v in nm.values.items()]
 
+    return jsonify(re), 200
+
+@bp.route('/segment-info', methods=['POST'])
+def segment_info():
+    args = request.get_json(force=True)
+    cam_num = 0
+
+    al = cm.cons[current_app.config["USER"]]["activitylearner"]
+    misc = al.misc
+    imgs = []
+    #segment_times = misc["segment_times"]
+
+    seg_index = args["seg_index"]
+
+    #print(args)
+    #i = args["index"]
+    startpoint = misc["segments"][seg_index][0]
+    midpoint = (misc["segments"][seg_index][1] + misc["segments"][seg_index][0]) // 2
+    endpoint = misc["segments"][seg_index][1]
+
+    for point in [startpoint, midpoint, endpoint]:
+        imname = misc["raw_data"][point][cam_num]["filename"]
+        impath = current_app.config["RAW_IMG_DIR"] + imname
+        impath = saveimgtostatic(imname, impath, scale=0.3, quality=50)
+
+        imgs.append("/" + impath)
+
+    re = dict()
+    re["imgs"] = imgs
     return jsonify(re), 200

@@ -133,7 +133,7 @@ class Trainer:
     def pseudolabel(self, x, pseudo, segments):
         from scipy import stats
         print("DATA SIZE", x.shape)
-        mask = np.random.choice(np.arange(x.shape[0]), 10000)
+        #mask = np.random.choice(np.arange(x.shape[0]), 10000)
 
         new_labels = np.zeros_like(pseudo)
 
@@ -143,6 +143,6 @@ class Trainer:
                 new_labels[start:end] = stats.mode(pseudo[start:end])[0][0]
 
         clf = clf_instance()
-        clf.fit(x[mask], new_labels[mask])
+        clf.fit(x[-10000:], new_labels[-10000:])
 
         return clf

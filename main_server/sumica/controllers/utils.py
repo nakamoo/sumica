@@ -237,13 +237,13 @@ def visualize(frame, summ, draw_objects=True):
         if not draw_objects and result["label"] != "person":
                 continue
 
-        if result["confidence"] < 0.8:
+        if result["confidence"] < 0.95:
             continue
 
         draw_object(frame, result)
         
-    for person in summ["pose"]["body"]:
-        draw_pose(frame, person)
+    #for person in summ["pose"]["body"]:
+    #    draw_pose(frame, person)
             
     """
     for person in summ["pose"]["face"]:

@@ -118,22 +118,32 @@
         <!-- Modal content-->
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Add label</h4>
+                <h4 class="modal-title" id="addClipLabel">Add clip label</h4>
             </div>
-            <form id="newLabelForm">
-
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="addLabelName">Set name:</label>
-                        <input type="text" class="form-control" id="addLabelName" placeholder="読書">
+                        <div id="previews">
+                            <div class="container">
+                                <div class="row" id="previewPanel">
+
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding-top: 20px;">
+                            <p id="clipInfo">
+                                12 images<br>
+                                12:34 ~ 12:45<br>
+                                Best guess: パソコン
+                            </p>
+                            <label for="addLabelName">Label:</label>
+                            <input type="text" class="form-control" id="addLabelName" placeholder="読書">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary" id="addLabelOk">OK</button>
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="addLabelOk">OK</button>
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
                 </div>
-
-            </form>
         </div>
 
     </div>
@@ -270,6 +280,12 @@
 <script src="static/flowchart.js"></script>
 <script src="static/timeline.js"></script>
 <script src="static/feed.js"></script>
+
+<script>
+    if (DEMO) {
+        $("#rightpane").css('display', 'none')
+    }
+</script>
 
 </body>
 </html>

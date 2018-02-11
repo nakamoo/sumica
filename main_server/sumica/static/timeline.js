@@ -2,14 +2,23 @@ console.log("loading timeline");
 
 // DOM element where the Timeline will be attached
 var container = document.getElementById('timeline');
+var tl_start_index = null;
+var item2info = {};
 
 // Create a DataSet (allows two way data-binding)
 var items = new vis.DataSet([]);
 
-var startdate = new Date();
-startdate.setHours(startdate.getHours() - 12);
-var enddate = new Date();
-enddate.setHours(enddate.getHours() + 1);
+if (DEMO) {
+    var startdate = new Date();
+    startdate.setHours(startdate.getHours() - 38);
+    var enddate = new Date();
+    enddate.setHours(enddate.getHours() - 26);
+} else {
+    var startdate = new Date();
+    startdate.setHours(startdate.getHours() - 24);
+    var enddate = new Date();
+    enddate.setHours(enddate.getHours() + 1);
+}
 
 var labelBlacklist = [];
 
@@ -72,7 +81,7 @@ var options = {
         return Math.round(date / second) * second;
     },
     onAdd: function (item, callback) {
-        if (item.group != 0) {
+        /*if (item.group != 0) {
             callback(null);
         } else {
             prettyPrompt('New label', 'Enter name:', function (value) {
@@ -86,7 +95,8 @@ var options = {
                     callback(null); // cancel item creation
                 }
             });
-        }
+        }*/
+        callback(null);
     },
     onRemove: function (item, callback) {
         removeLabel(item.id);
@@ -125,7 +135,8 @@ var updateTimeline = function () {
         type: "POST",
         url: "/timeline",
         data: JSON.stringify({
-            start_time: startdate.getTime() / 1000
+            start_time: startdate.getTime() / 1000,
+            end_time: enddate.getTime() / 1000
         }),
         success: function (data, status) {
             var tldata = data.timeline;
@@ -158,6 +169,8 @@ var updateTimeline = function () {
             dataset_graph.clear();
 
             if (tldata.length > 0) {
+                tl_start_index = data.tl_start_index;
+
                 // video segments
                 rows = [];
 
@@ -169,18 +182,21 @@ var updateTimeline = function () {
                     end.setMilliseconds(0);
                     var count = seg["count"];
                     var tooltip = '<img class="seg-preview" src="' + seg["img"] + '" >';
-                    tooltip += "<p>" + count + " images</p>";
-                    tooltip += "<p style='position: relative; bottom: 10px;'>" + start.toTimeString().split(' ')[0] +
-                        " ~ " + end.toTimeString().split(' ')[0] + "</p>";
+                    //tooltip += "<p>" + count + " images</p>";
+                    //tooltip += "<p style='position: relative; bottom: 10px;'>" + start.toTimeString().split(' ')[0] +
+                    //    " ~ " + end.toTimeString().split(' ')[0] + "</p>";
                     var col = "gray";
                     if (i % 2 == 0) {
                         col = "lightGray";
                     }
 
+                    var item_id = createuuid();
+
                     var row = {
-                        id: createuuid() + "-seg" + i, group: 2, content: '', start: start, end: end, title: tooltip,
+                        id: item_id, group: 2, content: '', start: start, end: end, title: tooltip,
                         color: col, myType: "segment", editable: false
                     };
+                    item2info[item_id] = seg;
                     rows.push(row);
                 }
 
@@ -286,13 +302,81 @@ function onChangeTimeline(range) {
     });
 }
 
+$("#addLabelModal").on("show", function () {
+  $("body").addClass("modal-open");
+}).on("hidden", function () {
+  $("body").removeClass("modal-open")
+});
+
 graph2d.on('rangechange', onChangeGraph);
 timeline.on('rangechange', onChangeTimeline);
 timeline.on('select', function(props) {
-    var iid = props.items[0];
-    var i = iid.indexOf("seg");
-    //console.log(iid.substring(i+3, iid.length));
+    var clickTime = timeline.getEventProperties(props.event).time;
 
+    var data = item2info[props.items[0]];
+
+    if (!data) {
+        return;
+    }
+
+    var imgs = data.imgs;
+    var $previews = $('#previewPanel');
+    $previews.html("");
+
+    $('#addClipLabel').val("Clip");
+
+    for (var i = 0; i < data.imgs.length; i++) {
+        var timeText = new Date(imgs[i].time * 1000.0).toTimeString().split(' ')[0];
+        $previews.append('<div class="row" style="margin-top: 10px;">' +
+            '<div class="col-sm-12">' +
+            '<img style="display: block; margin-left: auto; margin-right: auto;" class="img-thumbnail" src="' + imgs[i].url + '">' +
+            '</div>' +
+            '<div class="col-sm-12">' +
+            '<h5 style="vertical-align: middle; text-align: center; margin-top: 10px;">' + timeText + '</h5>' +
+            '</div>' +
+            '</div>');
+    }
+
+    var startText = new Date(imgs[0].time * 1000.0).toTimeString().split(' ')[0];
+    var endText = new Date(imgs[2].time * 1000.0).toTimeString().split(' ')[0];
+    $('#clipInfo').html(startText + ' ~ ' + endText + '<br>' + data.count + ' images total');
+
+    $('#addLabelOk').unbind().click(function (e) {
+        e.preventDefault();
+        var labelText = $('#addLabelName').val();
+        var mat = $container.find(".panzoom").panzoom("getMatrix");
+
+        var con = $('#flowchartabscontainer');
+
+        var posX = (-mat[4] + con.width()/2)/mat[0];
+        var posY = (-mat[5] + con.height()/2)/mat[0];
+
+        if ($('#' + labelText).length == 0) {
+            newLabelNode(posX, posY, labelText, labelText);
+        }
+
+        newImageNode(posX - 300, posY, imgs[1].url, imgs[1].id);
+
+        instance.connect({
+            uuids: [imgs[1].id + '-source-0',
+                labelText + '-target-0'
+            ], editable: true
+        });
+
+        console.log("connecting to ", labelText + '-target-0');
+
+        items.add([{
+            id: createuuid(), group: 0, content: labelText,
+            start: clickTime,
+            myType: "label"
+        }]);
+
+        $("#addLabelModal").modal('hide');
+        //$('#newLabelForm').trigger('reset');
+    });
+
+    $('#addLabelName').val('');
+    $('#addLabelModal').modal();
 });
 
 graph2d.on('_change', function () {

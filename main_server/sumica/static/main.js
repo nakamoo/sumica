@@ -4,6 +4,7 @@ var USERNAME = "sean";
 var SHOW_IMAGES = true;
 var DEBUG = -1;
 var UPDATE_STATES = true;
+var DEMO = false;
 
 var url_string = window.location.href;
 var url = new URL(url_string);
@@ -16,6 +17,11 @@ if (c != null) {
 var c = url.searchParams.get("states");
 if (c != null) {
     UPDATE_STATES = parseInt(c) == 1;
+}
+
+var c = url.searchParams.get("demo");
+if (c != null) {
+    DEMO = parseInt(c) == 1;
 }
 
 var c = url.searchParams.get("d");
@@ -41,3 +47,4 @@ if (c != null) {
 var createuuid = function () {
     return Math.random().toString(16).substring(2, 14) + Math.random().toString(16).substring(2, 14);
 };
+

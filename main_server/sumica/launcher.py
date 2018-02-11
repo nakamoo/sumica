@@ -62,5 +62,5 @@ if __name__ == '__main__':
     #IOLoop.instance().start()
 
     app.run(host='0.0.0.0', port=app.config["PORT"],
-            debug=False, ssl_context=app.config['CONTEXT'], threaded=True)#processes=1)
+            debug=True, ssl_context=app.config['CONTEXT'], threaded=True)#processes=1)
     #gunicorn launcher:app --workers 16 --bind 0.0.0.0:5000

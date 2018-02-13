@@ -1,8 +1,15 @@
+from flask import current_app
 import time
 from datetime import datetime
 
+import coloredlogs
+import logging
+
 from .controller import Controller
 from server_actors import tts_actor
+
+logger = logging.getLogger(__name__)
+coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
 
 def get_current_activity():
@@ -14,34 +21,28 @@ def get_current_activity():
 class Alarm(Controller):
     def __init__(self, username):
         self.username = username
-        self.get_time_to_wake_up()
+        self.time_to_wake_up = -1
         self.response = []
         self.operation_time = 0
         self.operation_interval = 10
         self.monitor_time = 3 * 60 * 60
 
-    # TODO: get from DB
-    def get_time_to_wake_up(self):
-        self.time_to_wake_up = time.time()
-
-    # TODO: change function name
-    def check(self):
+    def check(self, activity):
         if time.time() - self.operation_time > self.operation_interval:
             if self.time_to_wake_up <= time.time() <= self.time_to_wake_up + self.monitor_time:
-                if get_current_activity() != '睡眠':
-                    return True
+                return activity == 'resting'
         return False
 
     def on_event(self, event, data):
-        if event == "image":
-            if self.check():
+        if event == "activity":
+            if self.check(data):
                 self.operation_time = time.time()
-                self.response.append(tts_actor.speech("起きてーーーーーーーー"))
+                self.response = [tts_actor.speech("起きる時間です")]
 
     def execute(self):
         response = self.response
         self.response = []
-        return response
 
+        return response
 
 

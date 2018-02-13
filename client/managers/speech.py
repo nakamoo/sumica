@@ -23,10 +23,20 @@ class Manager:
         self.ip = server_ip
         self.speech_event = speech_event
 
+        self.speech_start = -1
+        self.last_speech = -1
+        self.listen_speech = False
+        self.speech_detected = False
+        self.current_buffer = bytearray(b'')
+
+        models = ["hotwords/yes.pmdl", "hotwords/no.pmdl", "hotwords/ask.pmdl"]
+        self.detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.2, 0.5, 0.5], audio_gain=1)
+        self.recognizer = sr.Recognizer()
+
     def start(self):
-        while True:
-            self.speech_event.wait()
-            self.recognize()
+        #while True: << why loop?
+        self.speech_event.wait()
+        self.recognize()
 
     def interrupt_callback(self):
         if self.speech_event.is_set():
@@ -35,66 +45,60 @@ class Manager:
             logging.debug("SpeechManager: Interrupted")
             return True
 
-    def recognize(self):
-        models = ["hotwords/yes.pmdl", "hotwords/no.pmdl", "hotwords/ask.pmdl"]
-        listen_start = -1
-        last_spoken = -1
-        listening = False
-        said_something = False
-        current_buffer = bytearray(b'')
+    def speech(self, data, ans):
+        if not self.listen_speech:
+            if ans == 3:
+                logging.debug("speech recognition: awake")
+                tts.say("はい？")
+                self.listen_speech = True
+                self.listen_start = time.time()
+                self.last_speech = time.time()
+                self.speech_detected = False
+            elif ans == 1:
+                logging.debug("speech indication: yes")
 
-        detector = snowboydecoder.HotwordDetector(models, sensitivity=[0.2, 0.5, 0.5], audio_gain=1)
-        r = sr.Recognizer()
-        logging.debug("SpeechManager: Start")
+                data = {"user_name": self.user, "time": time.time(), "type": "yes"}
 
-        def speech(data, ans):
-            nonlocal last_spoken, listen_start, listening, current_buffer, said_something
-            if not listening:
-                if ans == 3:
-                    print("speech recognition: awake")
-                    tts.say("はい？")
-                    listening = True
-                    listen_start = time.time()
-                    last_spoken = time.time()
-                    said_something = False
-                elif ans == 1:
-                    logging.debug("speech indication: yes")
+                try:
+                   requests.post("%s/data/speech" % self.ip, data=data, verify=False)
+                except:
+                   logging.error("could not send speech event: yes")
+            elif ans == 2:
+                logging.debug("speech indication: no")
 
-                    data = {"user_name": self.user, "time": time.time(), "type": "yes"}
+                data = {"user_name": self.user, "time": time.time(), "type": "no"}
 
-                    try:
-                       requests.post("%s/data/speech" % self.ip, data=data, verify=False)
-                    except:
-                       logging.error("could not send speech event: yes")
-                elif ans == 2:
-                    logging.debug("speech indication: no")
+                try:
+                    requests.post("%s/data/speech" % self.ip, data=data, verify=False, timeout=1)
+                except:
+                    logging.error("could not send speech event: no")
+        elif ans == 0:
+            self.last_speech = time.time()
 
-                    data = {"user_name": self.user, "time": time.time(), "type": "no"}
+        listen_duration = time.time() - self.listen_start
+        start_delay = 0.5
+        max_duration = 5
 
-                    try:
-                        requests.post("%s/data/speech" % self.ip, data=data, verify=False, timeout=1)
-                    except:
-                        logging.error("could not send speech event: no")
-            elif ans == 0:
-                 last_spoken = time.time()
+        if self.listen_speech and listen_duration > start_delay:
+            speech_over = time.time() - self.last_speech > 1
 
-            a = time.time() - listen_start
-            if time.time() - last_spoken < 1 and a > 0.5 and a < 5:
-                current_buffer.extend(data)
+            if not speech_over and speech_duration < max_duration:
+                self.current_buffer.extend(data)
+
                 if ans == 0:
-                    said_something = True
-            elif listening and a > 2:
-                #print("buffer:", current_buffer)
-                if len(current_buffer) > 0:
-                    sampwidth = detector.audio.get_sample_size(detector.audio.get_format_from_width(
-                        detector.detector.BitsPerSample() / 8))
+                    self.speech_detected = True
 
-                    print("listening over")
+            else:
+                if len(self.current_buffer) > 0:
+                    sampwidth = self.detector.audio.get_sample_size(self.detector.audio.get_format_from_width(
+                        self.detector.detector.BitsPerSample() / 8))
 
-                    if said_something:
+                    logging.debug("listening over")
+
+                    if self.speech_detected:
                         try:
                             audiodata = sr.AudioData(current_buffer, detector.detector.SampleRate(), sampwidth)
-                            text = r.recognize_google(audiodata, language="ja")
+                            text = self.recognizer.recognize_google(audiodata, language="ja")
                             print("You said: " + text)
 
                             data = {"user_name": self.user, "time": time.time(), "type": "speech", "text": text}
@@ -104,27 +108,27 @@ class Manager:
                             print("some error")
                             print(e)
                     else:
-                        print("no speech detected")
+                        logger.debug("no speech detected")
                         tts.say("何か言いましたか？")
 
-                listening = False
-                current_buffer = bytearray(b'')
+                self.listen_speech = False
+                self.current_buffer = bytearray(b'')
 
-        callbacks = [speech]#[lambda: print("yes"),
-                     #lambda: print("no")]
+    def recognize(self):
+        logging.debug("SpeechManager: Start")
+
+        callbacks = [self.speech]
 
         try:
-            detector.start(detected_callback=callbacks,
+            self.detector.start(detected_callback=callbacks,
                            interrupt_check=self.interrupt_callback,
                            sleep_time=0.03)
         except Exception as e:
             logging.error("fatal audio error")
             logging.error(e)
-            import sys
-            sys.exit()
 
         logging.debug("SpeechManager: Terminate")
-        detector.terminate()
+        self.detector.terminate()
 
 if __name__ == "__main__":
     import threading

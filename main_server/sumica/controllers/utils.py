@@ -10,6 +10,7 @@ from PIL import Image
 from io import BytesIO
 import base64
 import uuid
+import traceback
 
 keypoint_labels = [
     "Nose",
@@ -33,26 +34,41 @@ keypoint_labels = [
     "Bkg"
 ]
 
-def impath2base64(impath, scale=0.5, quality=50):
+def impath2base64(impath, scale=0.5, quality=50, meta=None):
     with BytesIO() as output:
-        with Image.open(impath) as img:
-            img = img.resize((int(img.width * scale), int(img.height * scale)))
-            img.save(output, "JPEG", quality=quality)
-        bytedata = output.getvalue()
+        try:
+            with Image.open(impath) as img:
+                if meta:
+                    img = np.array(img)
+                    visualize(img, meta, draw_objects=False)
+                    img = Image.fromarray(img)
 
-        encoded_string = base64.b64encode(bytedata)
-        encoded_string = encoded_string.decode("utf-8")
+                img = img.resize((int(img.width * scale), int(img.height * scale)))
+                img.save(output, "JPEG", quality=quality)
+            bytedata = output.getvalue()
+
+            encoded_string = base64.b64encode(bytedata)
+            encoded_string = encoded_string.decode("utf-8")
+        except:
+            traceback.print_exc()
+            encoded_string = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 
         return encoded_string
 
-def saveimgtostatic(imname, impath, scale=0.5, quality=50):
+def saveimgtostatic(imname, impath, scale=0.5, quality=50, meta=None):
     imname = "s{}-q{}-{}".format(scale, quality, imname)
     path = os.path.join("static", "images", imname)
 
     if not os.path.exists(path):
-        with Image.open(impath) as img:
-            img = img.resize((int(img.width * scale), int(img.height * scale)))
-            img.save(path, "JPEG", quality=quality)
+        if os.path.exists(impath):
+            with Image.open(impath) as img:
+                if meta:
+                    img = np.array(img)
+                    visualize(img, meta)
+                    img = Image.fromarray(img)
+
+                img = img.resize((int(img.width * scale), int(img.height * scale)))
+                img.save(path, "JPEG", quality=quality)
 
     return path
 
@@ -170,30 +186,34 @@ def sort_persons(data):
     return results
     
 def draw_object(frame, result):
-            det = result["box"]
-            name = result["label"] + ": " + "%.2f" % result["confidence"]
+    # frame uint8
 
-            i = sum([ord(x) for x in result["label"]])
-            c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
-            c = tuple([int(x * 255.0) for x in c])
+    det = result["box"]
+    name = result["label"] + ": " + "%.2f" % result["confidence"]
 
-            #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
-            
-            label_offsetx = det[0]
+    i = sum([ord(x) for x in result["label"]])
+    c = colorsys.hsv_to_rgb(i%100.0/100.0, 1.0, 0.9)
+    c = tuple([int(x * 255.0) for x in c])
 
-            if "action_crop" in result:
-                name += "; " + result["action_label"] + ": " + "%.2f" % result["action_confidence"]
-                act_box = result["action_crop"]
-                
-                label_offsetx = act_box[0]
-                cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 6)
-                cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
-            else:
-                cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+    #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
 
-            cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), c, -1)
-            cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
-            cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    label_offsetx = det[0]
+
+    if "action_crop" in result:
+        name += "; " + result["action_label"] + ": " + "%.2f" % result["action_confidence"]
+        act_box = result["action_crop"]
+
+        label_offsetx = act_box[0]
+        cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 5)
+        #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
+    else:
+        cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
+
+    #cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), c, -1)
+    #cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
+    #cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+    return frame
 
 def draw_pose(frame, person):
     body_lines = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [5, 6], [6, 7], [0, 14], [14, 16], [0, 15], [15, 17], [1, 8], [8, 9], [9, 10], [1, 11], [11, 12], [12, 13]]
@@ -216,10 +236,14 @@ def visualize(frame, summ, draw_objects=True):
     for result in summ["detections"]:
         if not draw_objects and result["label"] != "person":
                 continue
+
+        if result["confidence"] < 0.95:
+            continue
+
         draw_object(frame, result)
         
-    for person in summ["pose"]["body"]:
-        draw_pose(frame, person)
+    #for person in summ["pose"]["body"]:
+    #    draw_pose(frame, person)
             
     """
     for person in summ["pose"]["face"]:

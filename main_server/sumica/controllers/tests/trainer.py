@@ -2,6 +2,11 @@ from collections import Counter
 import time
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
 
 
@@ -21,6 +26,14 @@ def get_segment_indices(y_times, segments):
 
     return np.array(segment_indices)
 
+def clf_instance():
+    #clf = SGDClassifier(loss='log', max_iter=100)
+    #logreg = LogisticRegression(class_weight="balanced")
+    # logreg = KNeighborsClassifier()
+    logreg = RandomForestClassifier(n_estimators=5, class_weight="balanced")
+    # pca = PCA(50)
+    return Pipeline([('clf', logreg)])
+
 class Trainer:
     def __init__(self):
         self.train_x = None
@@ -31,6 +44,7 @@ class Trainer:
         self.last_update = 0
 
     def learn_model(self, x_times, x, label_set, segments, segment_times):
+        t = time.time()
         update_model = True
 
         # TODO better update necessity check
@@ -75,7 +89,10 @@ class Trainer:
             label_mat[segments[segment_i][0]:segments[segment_i][1]] = y[i]
             assigned[y[i]] += 1
 
-        self.train_info = {"raw": sparse_labels, "augmented": label_mat, "indices": y_indices, "mapping": seg_indices.tolist()}
+        self.train_info = {"raw": sparse_labels, "augmented": label_mat, "indices": y_indices, "seg_mapping": seg_indices.tolist()}
+
+        print("data prepared", time.time()-t)
+        t = time.time()
 
         # take out remaining unlabeled data
         labeled_mask = label_mat != -1
@@ -90,7 +107,42 @@ class Trainer:
             self.train_y = labeled_y
 
             if len(labeled_x) > 0:
-                self.clf = RandomForestClassifier(n_estimators=20)
+                #logreg = LogisticRegression(class_weight="balanced")
+                #logreg = KNeighborsClassifier()
+                #logreg = RandomForestClassifier(n_estimators=10, class_weight="balanced")
+                #pca = PCA(50)
+                # self.clf = RandomForestClassifier(n_estimators=10, class_weight="balanced")
+
+                self.clf = clf_instance()
+
                 self.clf.fit(labeled_x, labeled_y)
 
+                print("first fitted", time.time() - t)
+                print(self.clf.score(labeled_x, labeled_y))
+                t = time.time()
+
+                semisup = True
+                if semisup:
+                    pseudo = self.clf.predict(x)
+                    print("labeled size:", labeled_x.shape)
+                    self.clf = self.pseudolabel(x, pseudo, segments)
+                    print("pseudo fitted", time.time() - t)
+
         return self.clf, self.train_info, update_model
+
+    def pseudolabel(self, x, pseudo, segments):
+        from scipy import stats
+        print("DATA SIZE", x.shape)
+        #mask = np.random.choice(np.arange(x.shape[0]), 10000)
+
+        new_labels = np.zeros_like(pseudo)
+
+        for start, end in segments:
+            if end - start > 0:
+                #print(start, end, new_labels.shape, new_labels[start:end].shape)
+                new_labels[start:end] = stats.mode(pseudo[start:end])[0][0]
+
+        clf = clf_instance()
+        clf.fit(x[-10000:], new_labels[-10000:])
+
+        return clf

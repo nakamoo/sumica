@@ -5,14 +5,10 @@ from .controller import Controller
 from server_actors import tts_actor
 
 
-def get_current_activity():
-    minute = datetime.now().minute
-    classes = ['勉強', '睡眠']
-    return classes[minute % 2]
-
-
 class Reminder(Controller):
     def __init__(self, username):
+        super(Reminder).__init__(username)
+
         self.username = username
         self.get_schedules()
         self.response = []

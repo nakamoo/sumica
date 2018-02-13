@@ -1,0 +1,49 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            Between
+            <input class="form-control" type="text" id="minTime" placeholder="1.5">
+            to
+            <input class="form-control" type="text" id="maxTime" placeholder="4">
+            hours per day
+            <br>
+            Say
+            <input class="form-control" type="text" id="lowText" placeholder="...の時間が足りなくないですか？">
+            if too low
+            <br>
+            Say
+            <input class="form-control" type="text" id="highText" placeholder="...をやりすぎではないですか？">
+            if too high
+            <br>
+            Repeat every
+            <input class="form-control" type="text" id="repeat" placeholder="30">
+            seconds
+            <br>
+        </div>
+    </div>
+</div>
+
+<script>
+    var timetrackerInitSetParameters = function() {
+    };
+
+    var timetrackerInitFromObject = function(params) {
+        $("#minTime").val(params.minTime);
+        $("#maxTime").val(params.maxTime);
+
+        $("#lowText").val(params.lowText);
+        $("#highText").val(params.highText);
+        $("#repeat").val(params.repeat);
+    };
+
+    var timetrackerToObject = function() {
+        return {
+            minTime: $("#minTime").val(),
+            maxTime: $("#maxTime").val(),
+            lowText: $("#lowText").val(),
+            highText: $("#highText").val(),
+            repeat: $("#repeat").val()
+        };
+    };
+</script>

@@ -1,0 +1,42 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <label for="activation">Activation threshold</label>
+            <select class="form-control" id="activation">
+                <option>immediate</option>
+                <option selected="selected">10 seconds</option>
+                <option>30 seconds</option>
+                <option>1 minute</option>
+                <option>5 minutes</option>
+                <option>10 minutes</option>
+                <option>30 minutes</option>
+                <option>1 hour</option>
+            </select>
+
+            OFF threshold
+            <input class="form-control" type="text" id="offThreshold" value="0.5">
+            ON threshold
+            <input class="form-control" type="text" id="onThreshold" value="0.5">
+        </div>
+    </div>
+</div>
+
+<script>
+    var inputsmootherInitSetParameters = function() {
+    };
+
+    var inputsmootherInitFromObject = function(params) {
+        $("#activation").val(params.activation);
+        $("#onThreshold").val(params.onThreshold);
+        $("#offThreshold").val(params.offThreshold);
+    };
+
+    var inputsmootherToObject = function() {
+        return {
+            activation: $("#activation").val(),
+            onThreshold: $("#onThreshold").val(),
+            offThreshold: $("#offThreshold").val()
+        };
+    };
+</script>

@@ -1,0 +1,36 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            Say
+            <input class="form-control" type="text" id="sayText" placeholder="起きる時間ですよ">
+            <br>
+            Repeat every
+            <input class="form-control" type="text" id="repeat" placeholder="30">
+            seconds
+            <br>
+        </div>
+    </div>
+</div>
+
+<script>
+    var alarmInitSetParameters = function() {
+    };
+
+    var alarmInitFromObject = function(params) {
+        $("#minTime").val(params.minTime);
+        $("#maxTime").val(params.maxTime);
+
+        $("#sayText").val(params.sayText);
+        $("#repeat").val(params.repeat);
+    };
+
+    var alarmToObject = function() {
+        return {
+            minTime: $("#minTime").val(),
+            maxTime: $("#maxTime").val(),
+            sayText: $("#sayText").val(),
+            repeat: $("#repeat").val()
+        };
+    };
+</script>

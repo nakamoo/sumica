@@ -1,0 +1,24 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <label for="speechText">What to listen for? In order, with spaces for tokens</label>
+            <input class="form-control" type="text" id="speechText" placeholder="電気 明るく">
+        </div>
+    </div>
+</div>
+
+<script>
+    var speechInitSetParameters = function() {
+    };
+
+    var speechInitFromObject = function(params) {
+        $("#speechText").val(params.speechText);
+    };
+
+    var speechToObject = function() {
+        return {
+            speechText: $("#speechText").val()
+        };
+    };
+</script>

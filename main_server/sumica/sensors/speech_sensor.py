@@ -25,12 +25,13 @@ def post_speech_data():
 
 @bp.route('/data/confirmation', methods=['POST'])
 def post_confirm_data():
-    data = request.form.to_dict()
-    logger.debug(str(data))
-    data["time"] = time.time()
-    data["action"] = json.loads(data["action"])
+    data = request.get_json(force=True)
+
+    #data["time"] = time.time()
+    #data["action"] = json.loads(data["action"])
     db.confirmation.insert_one(data)
     cm.trigger_controllers(data['user_name'], "confirmation", data)
+
     data.pop("_id")
     return jsonify(data), 201
 

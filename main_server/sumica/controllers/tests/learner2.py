@@ -75,9 +75,9 @@ class Learner:
         return downs
 
     def create_image_matrix(self, imdata):
-        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True)
+        pose_mat, act_mat, meta = self.data2vec.vectorize(imdata, get_meta=True, average=True)
 
-        mat = np.concatenate([act_mat, pose_mat], axis=1)
+        mat = act_mat#np.concatenate([act_mat, pose_mat], axis=1)
 
         return mat, meta
 
@@ -107,7 +107,8 @@ class Learner:
                 part = X[start:end]
                 model = "l1"  # "l2", "rbf"
                 algo = rpt.BottomUp(model=model, min_size=1, jump=1).fit(part)
-                breaks = algo.predict(pen=np.log(part.shape[0]) * part.shape[1] * 2 ** 2)
+                sigma = 2
+                breaks = algo.predict(pen=np.log(part.shape[0]) * part.shape[1] * sigma ** 2)
                 breaks = (np.array(breaks) + start).tolist()
                 breaks[-1] -= 1  # avoid index out of range
                 part_intervals = [list(a) for a in zip([start] + breaks[:-1], breaks)]
@@ -120,8 +121,8 @@ class Learner:
         segments = [(max(s, last_fixed_index), e) for s, e in segments if e > last_fixed_index]
         segment_times = [(times[s], times[e]) for s, e in segments]
 
-        fix_threshold = len(times) - min_fit_size // 2
-        #logger.debug("new segments: {}".format(segments))
+        fix_threshold = max(len(times) - min_fit_size // 2, 0)
+
         record_segments(self.username, segments, segment_times, times[last_fixed_index], times[fix_threshold])
 
         segments = recorded_segments + segments
@@ -135,13 +136,58 @@ class Learner:
         if end_time is None:
             end_time = time.time()
 
-        imdata, times = imreader.read_db(self.username, start_time, end_time, self.cams, skip_absent=False)
+        t = time.time()
+
+        chunk_size =  3600 * 24
+        start_segs = list(range(int(start_time), int(end_time), chunk_size))
+
+        imdata = []
+        times = []
+        X = []
+        meta = []
+
+        for i, start_seg in enumerate(start_segs):
+            if i == len(start_segs)-1:
+                end_seg = int(end_time)
+
+                _imdata, _times = imreader.read_db(self.username, start_seg, end_seg, self.cams, skip_absent=False)
+                _X, _meta = self.create_image_matrix(_imdata)
+                data = {"imdata": _imdata, "times": _times, "X": _X, "meta": _meta}
+            else:
+                end_seg = start_seg + chunk_size
+
+                p_name = "datafiles/dataloader_cache/" + str(start_seg) + "-" + str(end_seg) + ".pkl"
+
+                if not os.path.exists(p_name):
+                    _imdata, _times = imreader.read_db(self.username, start_seg, end_seg, self.cams, skip_absent=False)
+                    _X, _meta = self.create_image_matrix(_imdata)
+
+                    data = {"imdata": _imdata, "times": _times, "X": _X, "meta": _meta}
+                    pickle.dump(data, open(p_name, "wb+"))
+
+                data = pickle.load(open(p_name, "rb"))
+
+            if len(data["imdata"]) > 0:
+                imdata.extend(data["imdata"])
+                times.extend(data["times"])
+                X.append(data["X"])
+                meta.extend(data["meta"])
+
+        X = np.concatenate(X, axis=0)
+
+        print("1. read db: ", time.time() - t)
+
+        t = time.time()
+        print("2. create matrix: ", time.time() - t)
 
         if len(imdata) == 0:
             return None, None
         else:
-            X, meta = self.create_image_matrix(imdata)
+
+            t = time.time()
             segments, segment_times, cam_segments, fixed_time = self.calculate_segments(X, times, start_time, end_time)
+            print("3. calculate segments: ", time.time() - t)
+            t = time.time()
             train_labels = {}
 
             for mode, label_set in labels.items():
@@ -149,7 +195,8 @@ class Learner:
                     self.trainers[mode] = Trainer()
 
                 if len(label_set) <= 0:
-                    label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": []}
+                    label_data = {"raw": np.array([]), "augmented": np.array([]), "intervals": [], "indices": [],
+                                  "seg_mapping": []}
                     m, m_breaks = None, []
                 else:
                     m, label_data, update_model = self.trainers[mode].learn_model(times, X, label_set, segments, segment_times)
@@ -160,6 +207,7 @@ class Learner:
                 self.models[mode] = m
                 train_labels[mode] = label_data
 
+            print("4. fit model", time.time() - t)
             misc = {}
             misc["matrix"] = X
             misc["times"] = times
@@ -176,8 +224,8 @@ class Learner:
 
     def predict(self, mode, images):
         clf = self.models[mode]
-        pose_mat, act_mat = self.data2vec.vectorize(images)
-        input_mat = np.concatenate([act_mat, pose_mat], axis=1)
+        pose_mat, act_mat = self.data2vec.vectorize(images, average=True)
+        input_mat = act_mat#np.concatenate([act_mat, pose_mat], axis=1)
         probs = clf.predict_proba(input_mat)
         pred_labels = clf.classes_[np.argmax(probs, axis=1)]
 

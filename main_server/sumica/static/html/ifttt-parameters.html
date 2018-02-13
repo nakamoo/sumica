@@ -1,0 +1,36 @@
+
+<div class="setParameters">
+    <div class="row" style="margin: 20px;">
+        <div class="col-sm-12" style="margin-top: 10px;">
+            <label for="urlText">URL</label>
+            <input class="form-control" type="text" id="urlText" placeholder="https://maker.ifttt.com/trigger/<event>/with/key/<id>">
+            <label for="urlParam1">Value 1</label>
+            <input class="form-control" type="text" id="urlParam1">
+            <label for="urlParam2">Value 2</label>
+            <input class="form-control" type="text" id="urlParam2">
+            <label for="urlParam3">Value 3</label>
+            <input class="form-control" type="text" id="urlParam3">
+        </div>
+    </div>
+</div>
+
+<script>
+    var iftttInitSetParameters = function() {
+    };
+
+    var iftttInitFromObject = function(params) {
+        $("#urlText").val(params.urlText);
+        $("#urlParam1").val(params.urlParam1);
+        $("#urlParam2").val(params.urlParam2);
+        $("#urlParam3").val(params.urlParam3);
+    };
+
+    var iftttToObject = function() {
+        return {
+            urlText: $("#urlText").val(),
+            urlParam1: $("#urlParam1").val(),
+            urlParam2: $("#urlParam2").val(),
+            urlParam3: $("#urlParam3").val()
+        };
+    };
+</script>

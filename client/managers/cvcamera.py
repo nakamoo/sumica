@@ -80,12 +80,15 @@ class CamManager:
             elif camtype == "vstarcam":
                 if password is not None:
                     print(cam_loc + "/videostream.cgi?user=admin&pwd=*******")
+                    print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas={}&param=15&value=0".format(password)).text)
                     self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=" + password)
                 else:
                     print(cam_loc + "/videostream.cgi?user=admin&pwd=password")
-                    # resize resolution
                     print(requests.get(cam_loc + "/camera_control.cgi?loginuse=admin&loginpas=password&param=15&value=0").text)
+
+                    # resize resolution
                     self.stream = urllib.request.urlopen(cam_loc + "/videostream.cgi?user=admin&pwd=password")
+
                 print(self.stream)
 
         except Exception as e:

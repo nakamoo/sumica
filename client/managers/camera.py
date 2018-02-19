@@ -131,6 +131,8 @@ class CamManager:
         self.image = None
         self.imdata = []
         self.thresh = None
+        
+        self.last_processed = None
 
     def close(self):
         if self.camtype == "webcam":
@@ -201,8 +203,11 @@ class CamManager:
             frameDelta = cv2.absdiff(self.imdata[-2]["smoothgray"], self.imdata[-1]["smoothgray"])
             thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
             thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
+            
+            print(np.sum(thresh))
 
-            # TODO: skip decision with thresh
+            if np.sum(thresh) == 0:
+                skip = True
 
             self.movecam()
 
@@ -212,7 +217,7 @@ class CamManager:
                 if k == 27:
                     break
 
-                #self.send(self.image, thresh, self.server_ip)
+                self.send(self.image, thresh, self.server_ip)
                 # time.sleep(0.1)
                 # 恐らく早すぎてdetection serverに負荷がかかってエラーが生じている
                 time.sleep(0.5)
@@ -311,11 +316,14 @@ class CamManager:
         files["diff"] = open(diff_fn, "rb")
 
         try:
-            addr = "{}/data/images".format(ip)
+            addr = "{}/predict".format(ip)
             t = time.time()
-            requests.post(addr, files=files, data=data, verify=False)
+            r = requests.post(addr, files=files, data=data, verify=False)
             logging.debug("cam {}: sent image to server. Response time: {}".format(self.cam_name, time.time() - t))
+            
+            self.last_processed = {"image": image, "predictions": json.loads(r.text)["predictions"]}
         except:
+            traceback.print_exc()
             logging.error("{}: could not send image to server".format(self.cam_name))
 
 

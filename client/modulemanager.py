@@ -14,13 +14,17 @@ class ModuleManager(object):
 
         camera_manager = CameraManager(ID, SERVER_IP)
         talk_manager = TalkManager(ID, SERVER_IP)
-        self.sensor_mods = [talk_manager, camera_manager, ScreenManager(ID, SERVER_IP)]
+        self.sensor_mods = {
+            "talk": talk_manager,
+            "camera": camera_manager,
+            "screen": ScreenManager(ID, SERVER_IP, self)
+        }
 
         hue_actor = HueActor(self.ID, self.SERVER_IP)
         self.actor_mods = [hue_actor]
 
     def start_sensor_mods(self):
-        for inp in self.sensor_mods:
+        for inp in self.sensor_mods.values():
             thread_stream = threading.Thread(target=inp.start)
             thread_stream.daemon = True
             thread_stream.start()

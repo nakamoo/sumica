@@ -37,8 +37,6 @@ class Manager:
         self.recognizer = sr.Recognizer()
 
     def start(self):
-        #while True: << why loop?
-        #self.speech_event.wait()
         self.recognize()
 
     def interrupt_callback(self):

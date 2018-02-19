@@ -35,5 +35,10 @@ while True:
 
     except KeyboardInterrupt:
         for inp in modules.sensor_mods:
-            inp.close()
+            try:
+                inp.close()
+            except:
+                traceback.print_exc()
+
+        exit()
 

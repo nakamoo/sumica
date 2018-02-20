@@ -139,15 +139,18 @@ class CamManager:
         self.last_processed = None
         
         addr = "ws://homeai.ml:5002/predict_ws".format(server_ip)
-        #self.ws = websocket.WebSocketApp(addr,
-        #                      on_message = self.on_message)
-        self.ws = websocket.WebSocket()
-        self.ws.connect(addr)
+        self.ws = websocket.WebSocketApp(addr,
+                              on_message = self.on_message)
+        #self.ws = websocket.WebSocket()
+        #self.ws.connect(addr)
         
-        #thread_stream = threading.Thread(target=self.ws.run_forever)
-        #thread_stream.daemon = True
-        #thread_stream.start()
-        #self.ws.run_forever()
+        def run_loop():
+            while True:
+                self.ws.run_forever()
+        
+        thread_stream = threading.Thread(target=run_loop)
+        thread_stream.daemon = True
+        thread_stream.start()
 
     def close(self):
         if self.camtype == "webcam":
@@ -158,7 +161,12 @@ class CamManager:
         self.ws.close()
         
     def on_message(self, ws, message):
-        print(message)
+        print("message received")
+        data = json.loads(message)
+        
+        if os.path.exists(data['impath']):
+            self.last_processed = {"image": cv2.imread(data['impath']), "predictions": data["predictions"]}
+            os.remove(data['impath'])
 
     def capture_loop(self):
         bytes = b''
@@ -177,7 +185,7 @@ class CamManager:
                             jpg = bytes[a:b + 2]
                             bytes = bytes[b + 2:]
                             frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8).copy(), cv2.IMREAD_COLOR)
-                            frame = cv2.resize(frame, (frame.shape[1]//10, frame.shape[0]//10))
+                            #frame = cv2.resize(frame, (frame.shape[1]//10, frame.shape[0]//10))
                             
                             break
                 except:
@@ -227,8 +235,8 @@ class CamManager:
             thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
             thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
 
-            #if np.sum(thresh) == 0:
-            #    skip = True
+            if np.sum(thresh) == 0:
+                skip = True
 
             self.movecam()
 
@@ -246,9 +254,9 @@ class CamManager:
                 #thread_stream.start()
                 send_imdata()
                 
-                # time.sleep(0.1)
+                #time.sleep(0.3)
                 # 恐らく早すぎてdetection serverに負荷がかかってエラーが生じている
-                time.sleep(0.5)
+                time.sleep(0.01)
             else:
                 print("image not captured.")
                 time.sleep(1)
@@ -332,41 +340,47 @@ class CamManager:
     def send(self, image, thresh, ip):
         uid = uuid.uuid4()
         img_fn = "assets/tmp/image_{}-{}.jpg".format(self.cam_name, uid)
-        diff_fn = "assets/tmp/diff_{}-{}.jpg".format(self.cam_name, uid)
+        #diff_fn = "assets/tmp/diff_{}-{}.jpg".format(self.cam_name, uid)
 
         cv2.imwrite(img_fn, image)
-        cv2.imwrite(diff_fn, thresh)
+        #cv2.imwrite(diff_fn, thresh)
 
         files = {}
         data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
 
         data["motion_update"] = "True"
         data['image'] = base64.b64encode(open(img_fn, "rb").read()).decode("utf-8")
+        data['impath'] = img_fn
         #files['image'] = open(img_fn, "rb")
         #files["diff"] = open(diff_fn, "rb")
 
         try:
+            start_time = time.time()
             addr = "{}/predict".format(ip)
-            t = time.time()
+            
             
             #print("sending...")
             data = json.dumps(data)
+            
+            t = time.time()
             self.ws.send(data)
-            #print("sent")
-            result = self.ws.recv()
+            #print("sent ", time.time() - t, len(data))
+            #t = time.time()
+            #result = self.ws.recv()
+            #print("sent2 ", time.time() - t, len(result))
 
             #r = requests.post(addr, files=files, data=data, verify=False)
             # result=r.text
-            logging.debug("cam {}: sent image to server. Response time: {}".format(self.cam_name, time.time() - t))
+            logging.debug("cam {}: sent image to server. Response time: {}".format(self.cam_name, time.time() - start_time))
             
-            self.last_processed = {"image": image, "predictions": json.loads(result)["predictions"]}
+            #self.last_processed = {"image": image, "predictions": json.loads(result)["predictions"]}
             
         except:
             traceback.print_exc()
             logging.error("{}: could not send image to server".format(self.cam_name))
             
-        os.remove(img_fn)
-        os.remove(diff_fn)
+        #os.remove(img_fn)
+        #os.remove(diff_fn)
 
 
 if __name__ == "__main__":

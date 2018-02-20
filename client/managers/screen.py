@@ -1,5 +1,6 @@
 import cv2
 import time
+import colorsys
 
 class Manager:
     def __init__(self, user, server_ip, mm):
@@ -27,9 +28,19 @@ class Manager:
                 #    cv2.imshow("screen", self.mm.sensor_mods["camera"].mans[self.mode-1].imdata[-1]["bgr"])
                 if self.mm.sensor_mods["camera"].mans[self.mode-1].last_processed is not None:
                     last = self.mm.sensor_mods["camera"].mans[self.mode-1].last_processed
+                    
                     image = last["image"]
-                    conf = "{0:.3g}".format(last["predictions"]["confidence"])
+                    conf = "{0:.2g}".format(last["predictions"]["confidence"])
                     cv2.putText(image, "{}: {}".format(last["predictions"]["label"], conf), (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    
+                    for det in last["predictions"]["detections"]:
+                        box = det["box"]
+                        i = sum([ord(x) for x in det["label"]])
+                        c = colorsys.hsv_to_rgb(i%100/100.0, 1.0, 0.9)
+                        c = tuple([int(x * 255) for x in c])
+                        cv2.rectangle(image, (box[0], box[1]), (int(box[2]), int(box[3])), c, 2)
+                        conf = "{0:.2g}".format(det["confidence"])
+                        cv2.putText(image, "{}: {}".format(det["label"], conf), (box[0] + 10, box[1] + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, c, 2)
                     
                     cv2.imshow("screen", image)
             

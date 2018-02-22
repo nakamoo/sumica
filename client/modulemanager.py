@@ -14,6 +14,7 @@ class ModuleManager(object):
 
         camera_manager = CameraManager(ID, SERVER_IP)
         talk_manager = TalkManager(ID, SERVER_IP)
+
         self.sensor_mods = {
             "talk": talk_manager,
             "camera": camera_manager,

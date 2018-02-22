@@ -217,7 +217,7 @@ class CamManager:
         thread_stream = threading.Thread(target=self.capture_loop)
         thread_stream.daemon = True
         thread_stream.start()
-        
+
         while True:
             if self.image is None:
                 time.sleep(1)
@@ -245,7 +245,7 @@ class CamManager:
 
                 if k == 27:
                     break
-                    
+
                 def send_imdata():
                     self.send(self.image, thresh, self.server_ip)
 
@@ -259,6 +259,7 @@ class CamManager:
                 time.sleep(0.01)
             else:
                 print("image skipped.")
+
                 time.sleep(1)
 
                 if not self.enabled:
@@ -344,6 +345,11 @@ class CamManager:
 
         cv2.imwrite(img_fn, image)
         #cv2.imwrite(diff_fn, thresh)
+        img_fn = "image_{}.png".format(self.cam_name)
+        diff_fn = "diff_{}.png".format(self.cam_name)
+
+        cv2.imwrite(img_fn, image)
+        cv2.imwrite(diff_fn, thresh)
 
         files = {}
         data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}

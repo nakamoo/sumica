@@ -235,7 +235,7 @@ class CamManager:
             thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
             thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
 
-            if np.sum(thresh) == 0:
+            if np.sum(thresh) < 2000:
                 skip = True
 
             self.movecam()
@@ -258,7 +258,7 @@ class CamManager:
                 # 恐らく早すぎてdetection serverに負荷がかかってエラーが生じている
                 time.sleep(0.01)
             else:
-                print("image not captured.")
+                print("image skipped.")
                 time.sleep(1)
 
                 if not self.enabled:

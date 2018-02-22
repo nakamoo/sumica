@@ -13,7 +13,8 @@ class ModuleManager(object):
         self.SERVER_IP = SERVER_IP
 
         camera_manager = CameraManager(ID, SERVER_IP)
-        talk_manager = TalkManager(ID, SERVER_IP)
+        talk_manager = TalkManager(ID, SERVER_IP, self)
+
         self.sensor_mods = {
             "talk": talk_manager,
             "camera": camera_manager,

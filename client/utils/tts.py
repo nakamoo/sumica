@@ -4,6 +4,7 @@ import requests
 import subprocess
 import os
 import wave, array
+import contextlib
 
 def make_stereo(file1, output):
     ifile = wave.open(file1)
@@ -26,7 +27,7 @@ def make_stereo(file1, output):
 
 def say(text):
     if not text:
-        return
+        return 0
 
     path = "tts_cache/%s.wav" % text
 
@@ -46,3 +47,10 @@ def say(text):
         make_stereo(path, path)
 
     subprocess.Popen("aplay -Dplug:default %s" % path, shell=True)
+
+    with contextlib.closing(wave.open(path, 'r')) as f:
+        frames = f.getnframes()
+        rate = f.getframerate()
+        duration = frames / float(rate)
+
+        return duration + 0.1

@@ -2,9 +2,15 @@ import cv2
 import time
 import colorsys
 
+from managers import talk
+
 class Manager:
     def __init__(self, user, server_ip, mm):
-        self.faces = [cv2.imread("assets/face-smile.png"), cv2.imread("assets/face-talk.png")]
+        self.faces = {
+            "idle": cv2.imread("assets/face-smile-eyesclosed.png"),
+            "smile": cv2.imread("assets/face-smile.png"),
+            "talk": cv2.imread("assets/face-talk.png")
+        }
         
         cv2.namedWindow("screen", cv2.WND_PROP_FULLSCREEN)
         cv2.setWindowProperty("screen", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -22,7 +28,18 @@ class Manager:
     def start(self):
         while True:
             if self.mode == 0:
-                cv2.imshow("screen", 255 - self.faces[1])
+                talk_mode = self.mm.sensor_mods["talk"].mode
+
+                if talk_mode == talk.SPEAK:
+                    if time.time() % 1.0 < 0.5:
+                        cv2.imshow("screen", 255 - self.faces["smile"])
+                    else:
+                        cv2.imshow("screen", 255 - self.faces["talk"])
+                elif talk_mode == talk.LISTEN_SPEECH:
+                    cv2.imshow("screen", 255 - self.faces["smile"])
+                else:
+                    cv2.imshow("screen", 255 - self.faces["idle"])
+
             else:
                 #if len(self.mm.sensor_mods["camera"].mans[self.mode-1].imdata) > 0:
                 #    cv2.imshow("screen", self.mm.sensor_mods["camera"].mans[self.mode-1].imdata[-1]["bgr"])
@@ -43,7 +60,7 @@ class Manager:
                         cv2.putText(image, "{}: {}".format(det["label"], conf), (box[0] + 10, box[1] + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, c, 2)
                     
                     cv2.imshow("screen", image)
-            
+
             cv2.waitKey(30)
 
     def close(self):

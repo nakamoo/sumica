@@ -41,5 +41,5 @@ while True:
             except:
                 traceback.print_exc()
 
-        exit()
+        break
 

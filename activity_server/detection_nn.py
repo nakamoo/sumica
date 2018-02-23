@@ -11,7 +11,7 @@ from io import StringIO
 from matplotlib import pyplot as plt
 from PIL import Image
 
-det_root = "~/models"
+det_root = "/home/sean/models"
 
 # This is needed since the notebook is stored in the object_detection folder.
 sys.path.append(det_root + "/object_detection")

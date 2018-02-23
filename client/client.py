@@ -10,7 +10,7 @@ import coloredlogs, logging
 coloredlogs.install(level="DEBUG")
 from modulemanager import ModuleManager
 
-SERVER_IP = "https://homeai.ml:{}".format(sys.argv[2])
+SERVER_IP = "http://homeai.ml:{}".format(sys.argv[2])
 ID = sys.argv[1]
 logging.info("id: {}".format(ID))
 
@@ -31,13 +31,15 @@ while True:
         except requests.exceptions.ConnectionError as e:
             logging.error('could not connect to server')
         except Exception as e:
-            traceback.print_exc()
+            #traceback.print_exc()
+            pass
 
     except KeyboardInterrupt:
         for inp in modules.sensor_mods:
             try:
                 inp.close()
-            except Exception as e:
-                logging.debug("shutting down")
-                exit()
+            except:
+                traceback.print_exc()
+
+        break
 

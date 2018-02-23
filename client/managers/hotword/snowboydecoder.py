@@ -4,7 +4,7 @@ import collections
 import pyaudio
 
 import sys
-sys.path.insert(0, "../../snowboy/examples/Python3")
+sys.path.insert(0, "/Users/sean/PycharmProjects/snowboy/examples/Python3")
 
 import snowboydetect
 import time

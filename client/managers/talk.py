@@ -9,7 +9,6 @@ from managers.hotword import snowboydecoder
 import speech_recognition as sr
 
 from utils import tts
-from managers import look
 
 SPEAK = 0
 LISTEN_HOTWORD = 1
@@ -123,6 +122,7 @@ class Manager:
                 # write here for immediate listening
                 self.current_buffer = bytearray(b'')
                 self.mode = LISTEN_SPEECH
+
                 self.queue.append(("listen_speech", None))
             elif ans == 1:
                 logging.debug("speech indication: yes")
@@ -185,7 +185,7 @@ class Manager:
                         except sr.UnknownValueError:
                             self.queue.append(("tts", "何か言いましたでしょうか？"))
                             traceback.print_exc()
-                        except Exception:
+
                             self.queue.append(("tts", "音声認識でエラーが出ました"))
                             traceback.print_exc()
                     else:

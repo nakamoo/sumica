@@ -21,6 +21,8 @@ main_server/sumica/object_features/*
 !.gitkeep
 main_server/sumica/application.cfg
 
+activity_server/*.tar
+
 main_server/sumica/*.png
 main_server/sumica/*.jpg
 client/utils/hue_state.json

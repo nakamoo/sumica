@@ -50,6 +50,7 @@ def predict_loop():
                 output = db.get(k)
 
                 if output is not None:
+                    output = output.decode("utf-8")
                     redata["predictions"] = json.loads(output)
                     db.delete(k)
 
@@ -66,6 +67,8 @@ def predict_loop():
 
 class MainHandler(tornado.web.RequestHandler):
     def post(self):
+        print("post req")
+
         file_body = self.request.files['image'][0]['body']
         image = Image.open(io.BytesIO(file_body))
         image = prepare_image(image)
@@ -127,5 +130,5 @@ if __name__ == "__main__":
     
     print("* Starting web service...")
     app = make_app()
-    app.listen(5003)
+    app.listen(5003, address='192.168.100.103')
     tornado.ioloop.IOLoop.current().start()

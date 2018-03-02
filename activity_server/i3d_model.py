@@ -13,11 +13,16 @@ gpu = 0
 
 class I3DModel:
     def __init__(self):
-        self.kinetics_classes = [x.strip() for x in open(classes_path)]
+        lines = [line.rstrip() for line in open("Charades_v1_classes.txt", "r").readlines()]
+        self.kinetics_classes = [" ".join(line.split()[1:]) for line in lines]
+        #self.kinetics_classes = [x.strip() for x in open(classes_path)]
         
-        i3d_rgb = I3D(num_classes=400, modality='rgb')
+        i3d_rgb = I3D(num_classes=157, modality='rgb')
+
         i3d_rgb.eval()
-        i3d_rgb.load_state_dict(torch.load(rgb_weights_path))
+        save = torch.load("model_best.pth.tar")#rgb_weights_path)
+        i3d_rgb = torch.nn.DataParallel(i3d_rgb)
+        i3d_rgb.load_state_dict(save['state_dict'])
         i3d_rgb.cuda(gpu)
 
         self.i3d = i3d_rgb

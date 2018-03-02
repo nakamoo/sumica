@@ -96,9 +96,9 @@ class CameraMover:
 
         if self.man.mode == MODE_MOTION:
             if self.newmode:
-                self.controlcam(onestep, CAM_CENTER, [10, 10])
-                time.sleep(50)
-                self.controlcam(onestep, CAM_STOP, [10, 10])
+                #self.controlcam(onestep, CAM_CENTER, [10, 10])
+                #time.sleep(50)
+                #self.controlcam(onestep, CAM_STOP, [10, 10])
 
                 self.newmode = False
 
@@ -199,9 +199,10 @@ class Manager:
                 time.sleep(0.1)
 
         for i, cam in enumerate(self.mm.sensor_mods["camera"].mans):
-            thread_stream = threading.Thread(target=camloop, args=(cam,))
-            thread_stream.daemon = True
-            thread_stream.start()
+            #thread_stream = threading.Thread(target=camloop, args=(cam,))
+            #thread_stream.daemon = True
+            #thread_stream.start()
+            pass
 
     def setmode(self, mode):
         self.mode = mode
@@ -232,7 +233,7 @@ class Manager:
                                     bgr.shape[0] // 2 + int(self.info["move"][1] * mag[1] * scale)), (0, 0, 255), 1)
 
                 info = cv2.resize(bgr, (img.shape[1] // 2, img.shape[0] // 2))
-                img[:info.shape[0], :info.shape[1], :] = info
+                #img[:info.shape[0], :info.shape[1], :] = info
 
                 #cv2.putText(img, "{}".format(self.info["mag"]), (10, 60),
                 #            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)

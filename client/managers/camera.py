@@ -105,17 +105,17 @@ class CamManager:
         
         self.last_processed = None
         self.connection = False
-        
+
         addr = "ws://homeai.ml:5002/predict_ws".format(server_ip)
         self.ws = websocket.WebSocketApp(addr,
                               on_message = self.on_message)
-        #self.ws = websocket.WebSocket()
-        #self.ws.connect(addr)
-        
+        #sdelf.ws = websocket.WebSocket()
+        # self.ws.connect(addr)
+ 
         def run_loop():
             while True:
                 self.ws.run_forever()
-        
+
         thread_stream = threading.Thread(target=run_loop)
         thread_stream.daemon = True
         thread_stream.start()
@@ -246,12 +246,6 @@ class CamManager:
         #diff_fn = "assets/tmp/diff_{}-{}.jpg".format(self.cam_name, uid)
 
         cv2.imwrite(img_fn, image)
-        #cv2.imwrite(diff_fn, thresh)
-        img_fn = "image_{}.png".format(self.cam_name)
-        diff_fn = "diff_{}.png".format(self.cam_name)
-
-        cv2.imwrite(img_fn, image)
-        cv2.imwrite(diff_fn, thresh)
 
         files = {}
         data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}

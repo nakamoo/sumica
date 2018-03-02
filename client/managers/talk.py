@@ -3,6 +3,7 @@ import traceback
 import threading
 import logging
 import requests
+import datetime
 
 from managers.hotword import snowboydecoder
 import speech_recognition as sr
@@ -58,6 +59,9 @@ class Manager:
         thread_stream.start()
 
         while self.run:
+            if len(self.queue) > 0:
+                print(self.queue)
+
             if self.mode == LISTEN_SPEECH:
                 while self.sr_result is None:
                     time.sleep(0.1)
@@ -68,6 +72,20 @@ class Manager:
                     # do something?
                     if "こんにちは" in self.sr_result:
                         self.queue.append(("tts", "こんにちは"))
+                    elif "何時" in self.sr_result:
+                        text = "今は"
+                        now = datetime.datetime.now()
+                        text += str(now.hour) + "時"
+                        text += str(now.minute) + "分"
+                        text += "です"
+                        self.queue.append(("tts", text))
+                    elif "プライベート" in self.sr_result:
+                        if "解除" in self.sr_result:
+                            self.queue.append(("tts", "プライベートモードを解除します"))
+                            self.mm.sensor_mods["look"].setmode(look.MODE_MOTION)
+                        else:
+                            self.queue.append(("tts", "プライベートモードを始めます"))
+                            self.mm.sensor_mods["look"].setmode(look.MODE_PRIVATE)
 
                 self.sr_result = None
 
@@ -100,6 +118,11 @@ class Manager:
                 logging.debug("speech recognition: awake")
 
                 #self.queue.append(("tts", "はい？"))
+
+                # write here for immediate listening
+                self.current_buffer = bytearray(b'')
+                self.mode = LISTEN_SPEECH
+
                 self.queue.append(("listen_speech", None))
             elif ans == 1:
                 logging.debug("speech indication: yes")
@@ -161,7 +184,8 @@ class Manager:
 
                         except sr.UnknownValueError:
                             self.queue.append(("tts", "何か言いましたでしょうか？"))
-                        except Exception:
+                            traceback.print_exc()
+
                             self.queue.append(("tts", "音声認識でエラーが出ました"))
                             traceback.print_exc()
                     else:

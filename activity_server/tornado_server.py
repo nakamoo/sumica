@@ -50,6 +50,7 @@ def predict_loop():
                 output = db.get(k)
 
                 if output is not None:
+                    output = output.decode("utf-8")
                     redata["predictions"] = json.loads(output)
                     db.delete(k)
 
@@ -63,7 +64,36 @@ def predict_loop():
             except:
                 traceback.print_exc()
                 del queue[0]
-        
+
+class MainHandler(tornado.web.RequestHandler):
+    def post(self):
+        print("post req")
+
+        file_body = self.request.files['image'][0]['body']
+        image = Image.open(io.BytesIO(file_body))
+        image = prepare_image(image)
+        image = image.copy(order="C")
+
+        k = str(uuid.uuid4())
+        d = {"id": k, "image": base64_encode_image(image), "height": image.shape[0], "width": image.shape[1]}
+        db.rpush(settings.IMAGE_QUEUE, json.dumps(d))
+
+        redata = dict()
+
+        while True:
+            output = db.get(k)
+
+            if output is not None:
+                output = output.decode("utf-8")
+                redata["predictions"] = json.loads(output)
+                db.delete(k)
+
+                #redata['impath'] = data['impath']
+
+                break
+
+        self.write(json.dumps(redata))
+
 class SocketHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print("WebSocket opened")
@@ -89,6 +119,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
 def make_app():
     return tornado.web.Application([
+        (r'/predict', MainHandler),
         (r'/predict_ws', SocketHandler)
     ])
 
@@ -99,5 +130,5 @@ if __name__ == "__main__":
     
     print("* Starting web service...")
     app = make_app()
-    app.listen(5002)
+    app.listen(5003, address='192.168.100.103')
     tornado.ioloop.IOLoop.current().start()

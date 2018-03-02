@@ -3,6 +3,7 @@ import traceback
 
 from managers.camera import Manager as CameraManager
 from managers.talk import Manager as TalkManager
+from managers.look import Manager as LookManager
 from managers.screen import Manager as ScreenManager
 from actors.hueactor import HueActor
 
@@ -18,7 +19,8 @@ class ModuleManager(object):
         self.sensor_mods = {
             "talk": talk_manager,
             "camera": camera_manager,
-            "screen": ScreenManager(ID, SERVER_IP, self)
+            "screen": ScreenManager(ID, SERVER_IP, self),
+            "look": LookManager(self)
         }
 
         hue_actor = HueActor(self.ID, self.SERVER_IP)
@@ -29,6 +31,15 @@ class ModuleManager(object):
             thread_stream = threading.Thread(target=inp.start)
             thread_stream.daemon = True
             thread_stream.start()
+
+    def broadcast(self, name, data):
+        for inp in self.sensor_mods.values():
+            try:
+                inp.on_event(name, data)
+            except AttributeError:
+                pass
+            except:
+                traceback.print_exc()
 
     def execute_actor_mods(self, acts):
         for inp in self.actor_mods:

@@ -10,7 +10,7 @@ import cv2
 import settings
 
 from i3d_model import I3DModel
-import detection_nn
+#import detection_nn
 
 db = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB)
 
@@ -112,10 +112,10 @@ def classify_process():
             # loop over the image IDs and their corresponding set of
             # results from our model
             for i, imageID in enumerate(imageIDs):
-                img_feats, obj_dets, obj_feats = detection_nn.detect(orig_imgs[i], thres=0.5, only_img_feats=False)
-                obj_dets = nms(obj_dets, 0.5)
+                #img_feats, obj_dets, obj_feats = detection_nn.detect(orig_imgs[i], thres=0.5, only_img_feats=False)
+                #obj_dets = nms(obj_dets, 0.5)
                 
-                outData = {"label": model.kinetics_classes[top_idx[i]], "confidence": float(top_val[i]), "detections": obj_dets}
+                outData = {"label": model.kinetics_classes[top_idx[i]], "confidence": float(top_val[i])}#, "detections": obj_dets}
                 
                 db.set(imageID, json.dumps(outData))
  

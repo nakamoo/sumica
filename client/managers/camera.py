@@ -16,40 +16,6 @@ import uuid
 import os
 
 
-"""
-var PTZ_UP=0;
-var PTZ_UP_STOP=1;
-var PTZ_DOWN=2;
-var PTZ_DOWN_STOP=3;
-var PTZ_LEFT=4;
-var PTZ_LEFT_STOP=5;
-var PTZ_RIGHT=6;
-var PTZ_RIGHT_STOP=7;
-var PTZ_LEFT_UP=90;
-var PTZ_RIGHT_UP=91;
-var PTZ_LEFT_DOWN=92;
-var PTZ_RIGHT_DOWN=93;
-var PTZ_STOP=1;
-
-var PTZ_CENTER=25;
-var PTZ_VPATROL=26;
-var PTZ_VPATROL_STOP=27;
-var PTZ_HPATROL=28;
-var PTZ_HPATROL_STOP=29;
-
-
-"""
-
-CAM_UP = 0
-CAM_DOWN = 2
-CAM_LEFT = 4
-CAM_RIGHT = 6
-CAM_LEFT_UP = 90
-CAM_RIGHT_UP = 91
-CAM_LEFT_DOWN = 92
-CAM_RIGHT_DOWN = 93
-CAM_STOP = 1
-
 def visualize(frame, all_boxes, win_name="frame"):
     for result in all_boxes:
         det = result["box"]
@@ -131,23 +97,25 @@ class CamManager:
 
         except:
             traceback.print_exc()
+            self.enabled = False
 
         self.image = None
         self.imdata = []
         self.thresh = None
         
         self.last_processed = None
-        
+        self.connection = False
+
         addr = "ws://homeai.ml:5002/predict_ws".format(server_ip)
         self.ws = websocket.WebSocketApp(addr,
                               on_message = self.on_message)
-        #self.ws = websocket.WebSocket()
-        #self.ws.connect(addr)
-        
+        #sdelf.ws = websocket.WebSocket()
+        # self.ws.connect(addr)
+ 
         def run_loop():
             while True:
                 self.ws.run_forever()
-        
+
         thread_stream = threading.Thread(target=run_loop)
         thread_stream.daemon = True
         thread_stream.start()
@@ -207,9 +175,15 @@ class CamManager:
             if len(self.imdata) > self.maxdata:
                 self.imdata = self.imdata[-self.maxdata:]
 
-            time.sleep(0.1)
+            if not self.connection:
+                self.last_processed = {"image": self.image}
+
+            time.sleep(0.03)
 
     def start(self):
+        if not self.enabled:
+            return
+
         if self.camtype == "webcam":
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800);
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600);
@@ -237,8 +211,6 @@ class CamManager:
 
             if np.sum(thresh) < 2000:
                 skip = True
-
-            self.movecam()
 
             if not skip:
                 k = cv2.waitKey(1)
@@ -268,88 +240,12 @@ class CamManager:
 
         cv2.destroyAllWindows()
 
-    def movecam(self):
-        bgr = self.imdata[-1]["bgr"]
-        gray = self.imdata[-1]["smoothgray"]
-        return
-
-        lower, upper = np.array([0, 0, 100]), np.array([100, 100, 255])
-
-        #mask = cv2.inRange(bgr, lower, upper)
-        mask = cv2.absdiff(self.imdata[-2]["smoothgray"], self.imdata[-1]["smoothgray"])
-        mask = cv2.threshold(mask, 5, 255, cv2.THRESH_BINARY)[1]
-
-        cmd = CAM_STOP
-        mag = 10
-
-        print(np.sum(mask))
-        if np.sum(mask) > 1000:
-            M = cv2.moments(mask)
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-            cX /= mask.shape[1]
-            cY /= mask.shape[0]
-
-            moveX, moveY = 0, 0
-
-            print(cX, cY)
-
-            if cY < 0.45:
-                moveY = -1
-            elif cY > 0.55:
-                moveY = 1
-
-            if cX < 0.45:
-                moveX = -1
-            elif cX > 0.55:
-                moveX = 1
-
-            #mag = int(np.sqrt((0.5-cX)**2.0 + (0.5-cY)**2.0) * 20.0)
-            #print("mag:", mag)
-
-            if moveX == 0 and moveY < 0:
-                cmd = CAM_UP
-                print("U")
-            elif moveX > 0 and moveY < 0:
-                cmd = CAM_RIGHT_UP
-                print("RU")
-            elif moveX > 0 and moveY == 0:
-                cmd = CAM_RIGHT
-                print("R")
-            elif moveX > 0 and moveY > 0:
-                cmd = CAM_RIGHT_DOWN
-                print("RD")
-            elif moveX == 0 and moveY > 0:
-                cmd = CAM_DOWN
-                print("D")
-            elif moveX < 0 and moveY > 0:
-                cmd = CAM_LEFT_DOWN
-                print("LD")
-            elif moveX < 0 and moveY == 0:
-                cmd = CAM_LEFT
-                print("L")
-            elif moveX < 0 and moveY < 0:
-                cmd = CAM_LEFT_UP
-                print("LU")
-
-        requests.get(
-            self.cam_addr + "/decoder_control.cgi?loginuse=admin&loginpas={}&command={}&onestep=0".format(self.password, cmd))
-        requests.get(
-            self.cam_addr + "/set_misc.cgi?loginuse=admin&loginpas={0}&ptz_patrol_rate={1}&ptz_patrol_up_rate={1}&ptz_patrol_down_rate={1}&ptz_patrol_left_rate={1}&ptz_patrol_right_rate={1}".format(
-                self.password, mag))
-
     def send(self, image, thresh, ip):
         uid = uuid.uuid4()
         img_fn = "assets/tmp/image_{}-{}.jpg".format(self.cam_name, uid)
         #diff_fn = "assets/tmp/diff_{}-{}.jpg".format(self.cam_name, uid)
 
         cv2.imwrite(img_fn, image)
-        #cv2.imwrite(diff_fn, thresh)
-        img_fn = "image_{}.png".format(self.cam_name)
-        diff_fn = "diff_{}.png".format(self.cam_name)
-
-        cv2.imwrite(img_fn, image)
-        cv2.imwrite(diff_fn, thresh)
 
         files = {}
         data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
@@ -377,6 +273,7 @@ class CamManager:
 
             #r = requests.post(addr, files=files, data=data, verify=False)
             # result=r.text
+            self.connection = True
             logging.debug("cam {}: sent image to server. Response time: {}".format(self.cam_name, time.time() - start_time))
             
             #self.last_processed = {"image": image, "predictions": json.loads(result)["predictions"]}

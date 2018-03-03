@@ -8,7 +8,7 @@ from _thread import start_new_thread
 from collections import OrderedDict
 import types
 
-from flask import Flask, current_app
+from flask import Flask, current_app, copy_current_request_context
 
 import coloredlogs
 import logging
@@ -32,6 +32,14 @@ sys.path.insert(0, '../../activity_server')
 
 import redis
 from PIL import Image
+import settings
+import json
+import io
+import base64
+import numpy as np
+import uuid
+from utils import db
+from controllers.utils import sort_persons
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +53,7 @@ def global_event(event, data):
 
 def standard_controllers(username):
     return OrderedDict([
-        ("featureextractor", FeatureExtractor(username)),
+        #("featureextractor", FeatureExtractor(username)),
         ("chatbot", Chatbot(username)),
         ("speechbot", Speechbot(username)),
         ("activitylearner", ActivityLearner(username)),
@@ -90,18 +98,74 @@ def base64_decode_image(a, size):
     return a
 
 def image_loop():
-    while True:
-        queue = rdb.lrange('master', 0, 0)
+    #with current.test_request_context():
+    app = Flask(__name__)
+    app.config.from_object('config.Config')
 
-        if len(queue) > 0:
-            data = json.loads(queue[0])
-            a = bytes(data["image"], encoding="utf-8")
-            image = Image.open(io.BytesIO(base64.decodestring(a)))
-            image = np.array(image)
+    with app.app_context():
+        while True:
+            queue = rdb.lrange('master', 0, 0)
 
-            print('IMAGE', image.shape)
+            if len(queue) > 0:
+                d = json.loads(queue[0])
+                a = bytes(d["image"], encoding="utf-8")
+                image = Image.open(io.BytesIO(base64.decodestring(a)))
+                #image = np.array(image)
 
-            db.ltrim('master', 1, -1)
+                #print('IMAGE', image.shape)
+
+                data = {}
+                data['user_name'] = 'sean'
+                data['cam_id'] = 'cam1'
+                data['history'] = {'image_arrived': time.time()}
+                data["time"] = time.time()#float(data["time"])
+                data["motion_update"] = True#bool(data["motion_update"])
+
+                if data["motion_update"]:
+                    if current_app.config['ENCRYPTION']:
+                        byte_data = request.files['image'].read()
+                        token = cryptographic_key.encrypt(byte_data)
+                        filename = str(uuid.uuid4()) + ".dat"
+                        with open(Config.ENCRYPTED_IMG_DIR + filename, 'wb') as f:
+                            f.write(token)
+                        data['encryption'] = True
+                    else:
+                        filename = str(uuid.uuid4()) + ".jpg"
+                        image.save(current_app.config['RAW_IMG_DIR'] + filename)
+                        #logger.debug('saved: ' + current_app.config['RAW_IMG_DIR'] + filename)
+                        #m_filename = str(uuid.uuid4()) + ".jpg"
+                        #request.files['diff'].save(current_app.config['RAW_IMG_DIR'] + m_filename)
+                        data['encryption'] = False
+
+                data['filename'] = filename
+                #data['diff_filename'] = m_filename
+                data['version'] = '0.2'
+                data['history']['image_recorded'] = time.time()
+                data['detections'] = d['predictions']['object']
+                data['pose'] = d['predictions']['pose']
+                db.images.insert_one(data)
+
+                def process(img_data):
+                    try:
+                        with current_app.test_request_context('/'):
+                            if data["motion_update"]:
+                                persons = sort_persons(img_data)
+                                img_data.update({"persons": persons})
+
+                                db.images.update_one({"filename": img_data['filename']},
+                                                     {'$set': {"history.image_processing_start": time.time(),
+                                                               'persons': persons}},
+                                                     upsert=False)
+
+                                trigger_controllers(data['user_name'], "image", img_data)
+                                db.images.update_one({"filename": img_data['filename']},
+                                                     {'$set': {"history.image_processing_finish": time.time()}},
+                                                     upsert=False)
+                    except:
+                        traceback.print_exc()
+
+                rdb.ltrim('master', 1, -1)
+                process(data.copy())
 
 def get_node_types():
     nodes = []

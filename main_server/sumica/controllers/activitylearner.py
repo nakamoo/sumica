@@ -28,7 +28,7 @@ class ActivityLearner(Controller):
         # declare start_time for imagereader
         self.start_time = time.mktime(datetime.datetime(2018, 1, 20, 20).timetuple())
 
-        self.cams = ["cam1", "cam2"]#["ipcam0", "ipcam1"]#ActivityLearner.get_cams(username, self.start_time, time.time())
+        self.cams = ["cam1"]#["ipcam0", "ipcam1"]#ActivityLearner.get_cams(username, self.start_time, time.time())
 
         # update request when initializing
         self.update = True

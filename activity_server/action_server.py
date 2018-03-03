@@ -120,7 +120,8 @@ def start_process():
             current_batch = batch[:batch_size]
             imgmat = np.array([b['image'] for b in current_batch])
             print("* Action batch size: {}".format(imgmat.shape))
-            top_val, top_idx = model.predict(imgmat/128.0-1.0)
+            top_val, top_idx, feats = model.predict(imgmat/128.0-1.0)
+            #print(top_val, top_idx, feats.shape)
             #sizes[0] -= len(current_b)
 
             # loop over the image IDs and their corresponding set of
@@ -128,6 +129,7 @@ def start_process():
             for i in range(len(top_idx)):
                 outData = {"action_label": model.kinetics_classes[top_idx[i]], "action_confidence": float(top_val[i])}
                 outData['action_crop'] = current_batch[i]['crop']
+                outData['action_vector'] = feats[i].tolist()
                 results.append(outData)
 
                 #db.set(imageID + "-action", json.dumps(outData))

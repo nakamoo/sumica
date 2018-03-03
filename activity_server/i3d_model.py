@@ -47,10 +47,10 @@ class I3DModel:
         
     def predict(self, sample):
         sample_var = torch.autograd.Variable(torch.from_numpy(sample).float().cuda(gpu))
-        out_var, out_logit = self.i3d(sample_var)
+        out_var, out_logit, out_feats = self.i3d(sample_var)
 
         out_tensor = out_var.data.cpu()
 
         top_val, top_idx = torch.sort(out_tensor, 1, descending=True)
 
-        return top_val[:, 0].numpy(), top_idx[:, 0].numpy()
+        return top_val[:, 0].numpy(), top_idx[:, 0].numpy(), out_feats.data.cpu().numpy()[:, :, 0, 0, 0]

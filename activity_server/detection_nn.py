@@ -56,7 +56,7 @@ categories = label_map_util.convert_label_map_to_categories(label_map, max_num_c
 category_index = label_map_util.create_category_index(categories)
 
 #with detection_graph.as_default():
-config = tf.ConfigProto(gpu_options=tf.GPUOptions(visible_device_list="1"), device_count={"GPU":1})
+config = tf.ConfigProto(gpu_options=tf.GPUOptions(visible_device_list="2"), device_count={"GPU":1})
 sess = tf.Session(graph=detection_graph, config=config)
 
 image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')

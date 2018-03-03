@@ -104,7 +104,10 @@ class CamManager:
         self.thresh = None
         
         self.last_processed = None
+        self.data_hist = []
         self.connection = False
+        self.send_queue = []
+        self.roundtrip = 0
 
         addr = "ws://homeai.ml:5002/predict_ws".format(server_ip)
         self.ws = websocket.WebSocketApp(addr,
@@ -131,9 +134,24 @@ class CamManager:
     def on_message(self, ws, message):
         print("message received")
         data = json.loads(message)
-        
+        data['history'].append(('predictions_received', time.time()))
+
+        #print('return', time.time() - data['time'], os.path.exists(data['impath']))
+        self.roundtrip = time.time() - data['history'][0][1]
+        logging.debug("round trip: {}".format(self.roundtrip))
+
+        history = data['history']
+        for i, (event, t) in enumerate(history[1:]):
+            print(event, history[i+1][1]-history[i][1])
+
         if os.path.exists(data['impath']):
             self.last_processed = {"image": cv2.imread(data['impath']), "predictions": data["predictions"]}
+
+            self.data_hist.append(self.last_processed)
+
+            if len(self.data_hist) > 30:
+                self.data_hist = self.data_hist[-30:]
+
             os.remove(data['impath'])
 
     def capture_loop(self):
@@ -169,9 +187,7 @@ class CamManager:
 
             self.image = frame
 
-            gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (7, 7), 0)
-            self.imdata.append({"bgr": self.image, "smoothgray": gray})
+            self.imdata.append({"bgr": self.image, "history": [("capture", time.time())], "sent": False})
             if len(self.imdata) > self.maxdata:
                 self.imdata = self.imdata[-self.maxdata:]
 
@@ -180,15 +196,69 @@ class CamManager:
 
             time.sleep(0.03)
 
+    def send_loop(self):
+        while True:
+            if len(self.send_queue) > 0:
+                imdata = self.send_queue[-1]
+
+                if 'sent2' in imdata and imdata['sent2']:
+                    continue
+
+                image = imdata["image"]
+
+                uid = uuid.uuid4()
+                img_fn = "assets/tmp/image_{}-{}.jpg".format(self.cam_name, uid)
+
+                # write to file for use when response
+                cv2.imwrite(img_fn, image)
+
+                data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
+
+                data["motion_update"] = "True"
+                #data['image'] = base64.b64encode(image).decode("utf-8")
+                data['image'] = base64.b64encode(open(img_fn, "rb").read()).decode("utf-8")
+                data['width'] = image.shape[1]
+                data['height'] = image.shape[0]
+                data['impath'] = img_fn
+                data['history'] = imdata['history']
+                imdata['sent2'] = True
+
+                try:
+                    data['history'].append(("send_begin", time.time()))
+                    data = json.dumps(data)
+
+                    self.ws.send(data)
+
+                    self.connection = True
+                    #logging.debug(
+                    #    "cam {}: sent image to server. Response time: {}".format(self.cam_name, time.time() - start_time))
+                except:
+                    traceback.print_exc()
+                    logging.error("{}: could not send image to server".format(self.cam_name))
+
+                if len(self.send_queue) > 10:
+                    self.send_queue = self.send_queue[-10:]
+
+                # sleep time based on current latency
+                # good short latency -> keep sending
+                # too much latency -> slow down
+                if self.roundtrip > 0:
+                    time.sleep(self.roundtrip * 0.2)
+
+
     def start(self):
         if not self.enabled:
             return
 
         if self.camtype == "webcam":
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800);
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600);
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
 
         thread_stream = threading.Thread(target=self.capture_loop)
+        thread_stream.daemon = True
+        thread_stream.start()
+
+        thread_stream = threading.Thread(target=self.send_loop)
         thread_stream.daemon = True
         thread_stream.start()
 
@@ -205,85 +275,34 @@ class CamManager:
 
             skip = False
 
-            frameDelta = cv2.absdiff(self.imdata[-2]["smoothgray"], self.imdata[-1]["smoothgray"])
-            thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
-            thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
+            imgs = self.imdata[-2:]
 
-            if np.sum(thresh) < 2000:
-                skip = True
+            if not imgs[-1]['sent']:
+                gray1 = cv2.cvtColor(imgs[0]['bgr'], cv2.COLOR_BGR2GRAY)
+                gray1 = cv2.GaussianBlur(gray1, (7, 7), 0)
 
-            if not skip:
-                k = cv2.waitKey(1)
+                gray2 = cv2.cvtColor(imgs[1]['bgr'], cv2.COLOR_BGR2GRAY)
+                gray2 = cv2.GaussianBlur(gray2, (7, 7), 0)
 
-                if k == 27:
-                    break
+                frameDelta = cv2.absdiff(gray1, gray2)
+                thresh = cv2.threshold(frameDelta, 5, 255, cv2.THRESH_BINARY)[1]
+                #thresh = skimage.measure.block_reduce(thresh, (4, 4), np.max)
 
-                def send_imdata():
-                    self.send(self.image, thresh, self.server_ip)
+                if np.mean(thresh) < 0.1:
+                    skip = True
 
-                #thread_stream = threading.Thread(target=send_imdata)
-                #thread_stream.daemon = True
-                #thread_stream.start()
-                send_imdata()
-                
-                #time.sleep(0.3)
-                # 恐らく早すぎてdetection serverに負荷がかかってエラーが生じている
-                time.sleep(0.01)
-            else:
-                print("image skipped.")
+                if not skip:
+                    imgs[-1]['history'].append(("add_queue", time.time()))
+                    imgs[-1]['sent'] = True
+                    self.send_queue.append({"history": imgs[-1]["history"], "image": imgs[-1]["bgr"]})
+                else:
+                    #print("image skipped.")
 
-                time.sleep(1)
+                    if not self.enabled:
+                        print("webcam failure; exit.")
+                        break
 
-                if not self.enabled:
-                    print("webcam failure; exit.")
-                    break
-
-        cv2.destroyAllWindows()
-
-    def send(self, image, thresh, ip):
-        uid = uuid.uuid4()
-        img_fn = "assets/tmp/image_{}-{}.jpg".format(self.cam_name, uid)
-        #diff_fn = "assets/tmp/diff_{}-{}.jpg".format(self.cam_name, uid)
-
-        cv2.imwrite(img_fn, image)
-
-        files = {}
-        data = {"user_name": self.user, "time": time.time(), "cam_id": self.cam_name}
-
-        data["motion_update"] = "True"
-        data['image'] = base64.b64encode(open(img_fn, "rb").read()).decode("utf-8")
-        data['impath'] = img_fn
-        #files['image'] = open(img_fn, "rb")
-        #files["diff"] = open(diff_fn, "rb")
-
-        try:
-            start_time = time.time()
-            addr = "{}/predict".format(ip)
-            
-            
-            #print("sending...")
-            data = json.dumps(data)
-            
-            t = time.time()
-            self.ws.send(data)
-            #print("sent ", time.time() - t, len(data))
-            #t = time.time()
-            #result = self.ws.recv()
-            #print("sent2 ", time.time() - t, len(result))
-
-            #r = requests.post(addr, files=files, data=data, verify=False)
-            # result=r.text
-            self.connection = True
-            logging.debug("cam {}: sent image to server. Response time: {}".format(self.cam_name, time.time() - start_time))
-            
-            #self.last_processed = {"image": image, "predictions": json.loads(result)["predictions"]}
-            
-        except:
-            traceback.print_exc()
-            logging.error("{}: could not send image to server".format(self.cam_name))
-            
-        #os.remove(img_fn)
-        #os.remove(diff_fn)
+            time.sleep(0.1)
 
 
 if __name__ == "__main__":

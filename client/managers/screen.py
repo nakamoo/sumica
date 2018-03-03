@@ -1,7 +1,11 @@
 import cv2
 import time
 import colorsys
+import sys
 
+sys.path.insert(0, '../main_server/sumica')
+
+from controllers.utils import visualize
 from managers import talk
 
 class Manager:
@@ -52,11 +56,12 @@ class Manager:
                     image = last["image"].copy()
 
                     if "predictions" in last:
-                        conf = "{0:.2g}".format(last["predictions"]["confidence"])
-                        cv2.putText(image, "{}: {}".format(last["predictions"]["label"], conf), (10, image.shape[0]-50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        """
+                        conf = "{0:.2g}".format(last["predictions"]["action"]["confidence"])
+                        cv2.putText(image, "{}: {}".format(last["predictions"]["action"]["label"], conf), (10, image.shape[0]-50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-                        if "detections" in last["predictions"]:
-                            for det in last["predictions"]["detections"]:
+                        if "object" in last["predictions"]:
+                            for det in last["predictions"]["object"]:
                                 box = det["box"]
                                 i = sum([ord(x) for x in det["label"]])
                                 c = colorsys.hsv_to_rgb(i%100/100.0, 1.0, 0.9)
@@ -65,7 +70,25 @@ class Manager:
                                 conf = "{0:.2g}".format(det["confidence"])
                                 cv2.putText(image, "{}: {}".format(det["label"], conf), (box[0] + 10, box[1] + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, c, 2)
 
+                        if "pose" in last["predictions"]:
+                            def draw_dots(dots):
+                                for body in dots:
+                                    for x, y, c in body:
+                                        cv2.circle(image, (int(x), int(y)), 3, (0, 0, 255), -1)
+
+                            draw_dots(last["predictions"]["pose"]["body"])
+                        """
+
+                        summ = {}
+                        summ['pose'] = last['predictions']['pose']
+                        summ['detections'] = last['predictions']['object']
+                        image = visualize(image, summ, draw_objects=True, obj_thresh=0.9)
+
                     self.mm.broadcast("screen", {"image": image, "cam": self.mode-1})
+
+                    live = self.mm.sensor_mods["camera"].mans[self.mode-1].image
+                    live = cv2.resize(live, (live.shape[1] // 4, live.shape[0] // 4))
+                    image[-live.shape[0]:, -live.shape[1]:] = live
 
                     #cv2.imwrite("assets/anim/{}.jpg".format(int(time.time()*10)), image)
                     cv2.imshow("screen", image)

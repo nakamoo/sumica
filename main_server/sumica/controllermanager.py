@@ -27,10 +27,17 @@ from statetracker import StateTracker
 from server_actors import hue_actor
 from utils import log_command
 
+import sys
+sys.path.insert(0, '../../activity_server')
+
+import redis
+from PIL import Image
+
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level=current_app.config['LOG_LEVEL'], logger=logger)
 
+rdb = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB)
 
 def global_event(event, data):
     Chatbot.on_global_event(event, data)
@@ -68,6 +75,33 @@ def initialize():
         cons[user] = standard_controllers(user)
         states[user] = StateTracker()
         test_commands[user].append({'platform': 'tts', 'data': 'サーバを起動しました．行動認識モジュールの準備をお待ちください．'})
+
+    thread_stream = threading.Thread(target=image_loop)
+    thread_stream.daemon = True
+    thread_stream.start()
+
+def base64_decode_image(a, size):
+    if sys.version_info.major == 3:
+        a = bytes(a, encoding="utf-8")
+
+    a = np.frombuffer(base64.decodestring(a), dtype=np.uint8)
+    a = a.reshape((size[1], size[0], settings.IMAGE_CHANS))
+
+    return a
+
+def image_loop():
+    while True:
+        queue = rdb.lrange('master', 0, 0)
+
+        if len(queue) > 0:
+            data = json.loads(queue[0])
+            a = bytes(data["image"], encoding="utf-8")
+            image = Image.open(io.BytesIO(base64.decodestring(a)))
+            image = np.array(image)
+
+            print('IMAGE', image.shape)
+
+            db.ltrim('master', 1, -1)
 
 def get_node_types():
     nodes = []

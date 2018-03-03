@@ -35,7 +35,11 @@ while True:
             pass
 
     except KeyboardInterrupt:
-        for inp in modules.sensor_mods:
+        print('interrupt')
+
+        for inp in modules.sensor_mods.values():
+            print(inp)
+
             try:
                 inp.close()
             except:

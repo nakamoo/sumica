@@ -3,6 +3,7 @@ import time
 import requests
 import numpy as np
 import threading
+import logging
 
 #from managers import talk
 
@@ -58,6 +59,9 @@ class CameraMover:
 
         self.newmode = True
         self.man = man
+        self.absent = 100
+
+        self.last_cmd = -1
 
     def optflow(self, prev, next):
         prev = cv2.resize(prev, (prev.shape[1] // 4, prev.shape[0] // 4))
@@ -81,18 +85,100 @@ class CameraMover:
         return flow, flowmag, bgr
 
     def controlcam(self, onestep, cmd, mag):
+        if cmd == CAM_STOP and self.last_cmd == cmd:
+            return
+
         requests.get(
             self.cam.cam_addr + "/set_misc.cgi?loginuse=admin&loginpas={0}&ptz_patrol_rate={1}&ptz_patrol_up_rate={2}&ptz_patrol_down_rate={2}&ptz_patrol_left_rate={1}&ptz_patrol_right_rate={1}".format(
                 self.cam.password, mag[0], mag[1]))
         requests.get(
             self.cam.cam_addr + "/decoder_control.cgi?loginuse=admin&loginpas={}&command={}&onestep={}".format(self.cam.password, cmd, onestep))
+        self.last_cmd = cmd
+
+    def stopcam(self):
+        self.controlcam(0, CAM_STOP, [0, 0])
+
+    def stride(self, cmd, mag, t):
+        self.controlcam(0, cmd, mag)
+
+        if t >= 0:
+            time.sleep(t)
+            self.controlcam(0, CAM_STOP, [0, 0])
+
+    def start(self):
+        while True:
+            self.update()
 
     def update(self):
         self.movecam()
 
+    def find_person(self):
+        center = None
+        pose_found = False
+        #found = False
+        n = 0
+
+        last = self.cam.data_hist[-1]
+
+        if last is None or last["image"] is None:
+            return False, None
+
+        if "predictions" in last:
+            for body in last['predictions']['pose']['body']:
+                for x, y, c in body:
+                    #found = True
+
+                    if center is None:
+                        center = [0, 0]
+
+                    center[0] += x * c
+                    center[1] += y * c
+                    n += c
+                    pose_found = True
+
+            for det in last['predictions']['object']:
+                if det['label'] == 'person' and det['confidence'] > 0.95:
+                    #found = True
+
+                    if not pose_found:
+                        if center is None:
+                            center = [0, 0]
+
+                        b = det['box']
+                        c = det['confidence']
+
+                        center[0] += (b[0] + b[2] / 2) * c
+                        center[1] += (b[1] + b[3] / 2) * c
+                        n += c
+
+        if n > 0:
+            center = [center[0] / n, center[1] / n]
+
+        found = []
+
+        for data in self.cam.data_hist[-5:]:
+            f = False
+
+            for body in data['predictions']['pose']['body']:
+                for x, y, c in body:
+                    if c > 0.1:
+                        f = True
+                        break
+
+                if f:
+                    break
+
+            if not f:
+                for det in data['predictions']['object']:
+                    if det['label'] == 'person' and det['confidence'] > 0.95:
+                        f = True
+
+            found.append(f)
+
+        return found, center
+
     def movecam(self):
         onestep = 0
-        cam = self.cam
 
         if self.man.mode == MODE_MOTION:
             if self.newmode:
@@ -102,38 +188,93 @@ class CameraMover:
 
                 self.newmode = False
 
-            if len(self.cam.imdata) < 2:
+            last = self.cam.last_processed
+            if last is None or 'predictions' not in last:
                 return
 
-            #mask = cv2.absdiff(cam.imdata[-2]["smoothgray"], cam.imdata[-1]["smoothgray"])
-            #mask = cv2.threshold(mask, 5, 255, cv2.THRESH_BINARY)[1]
-            flow, flowmag, bgr = self.optflow(cam.imdata[-2]["bgr"], cam.imdata[-1]["bgr"])
+            found, center = self.find_person()
 
-            meanmag = np.mean(flowmag)
+            if found[-1]:
+                self.absent = 0
+            else:
+                self.absent += 1
 
-            cmd = CAM_STOP
+            if self.absent > 20:
+                self.info = {"mode": "scan", "text": "resetting"}
+                self.controlcam(0, CAM_LEFT_DOWN, [10, 10])
+                time.sleep(13)
 
-            if meanmag > 1:
-                M = cv2.moments(flowmag)
-                cpX = int(M["m10"] / M["m00"])
-                cpY = int(M["m01"] / M["m00"])
+                mode = CAM_RIGHT
+                done = False
+                ystrides = 3
+                #hist = []
+                done = False
 
+                for y in range(ystrides):
+                    for x in range(10):
+                        self.stride(mode, [10, 10], 1)
+                        #time.sleep(1)
+                        found, _ = self.find_person()
+                        #hist.append(int(found))
+
+                        self.info = {"mode": "scan", "text": "scanning... {} {} {}".format(found[-1], x, sum(found))}
+
+                        if sum(found) >= 4:
+                            done = True
+                            self.absent = 0
+
+                            if mode == CAM_RIGHT:
+                                self.stride(CAM_LEFT, [10, 10], 1)
+                            elif mode == CAM_LEFT:
+                                self.stride(CAM_RIGHT, [10, 10], 1)
+
+                            break
+
+                    if y != ystrides-1:
+                        self.stride(CAM_UP, [10, 10], 1)
+
+                    if done:
+                        self.info = {"mode": "scan", "text": "person spotted"}
+                        self.stopcam()
+                        break
+
+                    if mode == CAM_RIGHT:
+                        mode = CAM_LEFT
+                    elif mode == CAM_LEFT:
+                        mode = CAM_RIGHT
+
+            elif center is None:
+                self.stopcam()
+                self.info = {"text": "absent: {}".format(self.absent)}
+                time.sleep(0.5)
+            else:
+                cmd = CAM_STOP
                 moveX, moveY = 0, 0
 
-                cX = cpX / flowmag.shape[1]
-                cY = cpY / flowmag.shape[0]
+                cX = center[0] / last["image"].shape[1]
+                cY = center[1] / last["image"].shape[0]
 
-                if cY < 0.5:
-                    moveY = -1
-                elif cY > 0.5:
-                    moveY = 1
+                margin = 0.2
 
-                if cX < 0.5:
-                    moveX = -1
-                elif cX > 0.5:
-                    moveX = 1
+                if cY < 0.5-margin or cY > 0.5+margin or cX < 0.5-margin or cX > 0.5+margin:
+                    if cY < 0.5:
+                        moveY = -1
+                    elif cY > 0.5:
+                        moveY = 1
 
-                self.cammag = [int((0.5-cX)**2.0*20), int((0.5-cY)**2.0*20)]
+                    if cX < 0.5:
+                        moveX = -1
+                    elif cX > 0.5:
+                        moveX = 1
+
+                def calcm(xx):
+                    diff = abs(0.5 - cX)
+                    if diff > 0.3:
+                        return int(diff*20)
+                    else:
+                        return int(diff*1)
+
+                self.cammag = [max(calcm(cX), 1), max(calcm(cY), 1)]
                 # print("mag:", mag)
 
                 if moveX == 0 and moveY < 0:
@@ -153,20 +294,10 @@ class CameraMover:
                 elif moveX < 0 and moveY < 0:
                     cmd = CAM_LEFT_UP
 
-                self.info = {"bgr": bgr, "magmap": flowmag, "mag": self.cammag, "center": [cpX, cpY], "move": [moveX, moveY]}
-            else:
-                self.info = {"bgr": bgr, "magmap": flowmag}
+                self.info = {"center": center, "move": [moveX, moveY], "speed": self.cammag, "text": "absent: {}".format(self.absent)}
 
-            #if time.time() - self.last_moved > 1:
-            #    cmd = CAM_STOP
-
-            if cmd != CAM_STOP:
-                self.controlcam(onestep, cmd, self.cammag)
-                time.sleep(1)
-                self.controlcam(onestep, CAM_STOP, [0, 0])
-                time.sleep(5)
-            else:
-                time.sleep(0.1)
+                self.stride(cmd, self.cammag, -1)
+                #time.sleep(0.1)
 
         elif self.man.mode == MODE_PRIVATE:
             if self.newmode:
@@ -188,21 +319,13 @@ class Manager:
         self.cams = {}
 
     def start(self):
-        def camloop(cam):
-            while True:
-                if cam.cam_name not in self.cams:
-                    self.cams[cam.cam_name] = CameraMover(cam, self)
-
-                camman = self.cams[cam.cam_name]
-                camman.update()
-
-                time.sleep(0.1)
-
         for i, cam in enumerate(self.mm.sensor_mods["camera"].mans):
-            #thread_stream = threading.Thread(target=camloop, args=(cam,))
-            #thread_stream.daemon = True
-            #thread_stream.start()
-            pass
+            cammover = CameraMover(cam, self)
+            self.cams[cam.cam_name] = cammover
+
+            thread_stream = threading.Thread(target=cammover.start)
+            thread_stream.daemon = True
+            thread_stream.start()
 
     def setmode(self, mode):
         self.mode = mode
@@ -219,25 +342,27 @@ class Manager:
                 self.info = self.cams[current_cam].info
 
             if self.info is not None:
-                bgr = cv2.cvtColor(self.info["magmap"], cv2.COLOR_GRAY2BGR)#self.info["bgr"]
-                bgr /= np.max(bgr)
-                bgr *= 255
-
                 if "center" in self.info:
-                    cv2.putText(bgr, "x", (self.info["center"][0], self.info["center"][1]),
+                    cv2.putText(img, "x", (int(self.info["center"][0]), int(self.info["center"][1])),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                    mag = self.info["mag"]
-                    scale = 8
-                    cv2.arrowedLine(bgr, (bgr.shape[1] // 2, bgr.shape[0] // 2),
-                                    (bgr.shape[1] // 2 + int(self.info["move"][0] * mag[0] * scale),
-                                    bgr.shape[0] // 2 + int(self.info["move"][1] * mag[1] * scale)), (0, 0, 255), 1)
 
-                info = cv2.resize(bgr, (img.shape[1] // 2, img.shape[0] // 2))
+                    scale = 20
+                    cv2.arrowedLine(img, (img.shape[1] // 2, img.shape[0] // 2),
+                                    (img.shape[1] // 2 + int(self.info["move"][0] * self.info["speed"][0] * scale),
+                                    img.shape[0] // 2 + int(self.info["move"][1] * self.info["speed"][1] * scale)), (0, 0, 255), 3)
+
+                if "text" in self.info:
+                    cv2.putText(img, self.info["text"], (10, 60),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+                #info = cv2.resize(bgr, (img.shape[1] // 2, img.shape[0] // 2))
                 #img[:info.shape[0], :info.shape[1], :] = info
-
-                #cv2.putText(img, "{}".format(self.info["mag"]), (10, 60),
-                #            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
 
     def close(self):
-        return
+        print("closing cameras")
+        for cam in self.cams.values():
+            print(cam.cam.cam_name)
+            cam.controlcam(1, CAM_STOP, [0, 0])
+
+        time.sleep(1)

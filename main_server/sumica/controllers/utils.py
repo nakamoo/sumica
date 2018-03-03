@@ -2,7 +2,7 @@ import os
 import cv2
 import colorsys
 import numpy as np
-from utils import db
+
 from config import Config
 import pymongo
 import traceback
@@ -85,6 +85,8 @@ def safe_next(imgs):
     return img
 
 def get_newest_images(user, cam_ids):
+    from utils import db
+
     images = []
     for id in cam_ids:
         imgs = db.images.find({'user_name': user, 'cam_id': id, 'detections': {'$exists': True},
@@ -204,14 +206,15 @@ def draw_object(frame, result):
         act_box = result["action_crop"]
 
         label_offsetx = act_box[0]
-        cv2.rectangle(frame, (act_box[0], act_box[1]), (int(act_box[2]), int(act_box[3])), (255, 0, 0), 5)
+        cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), (0, 0, 255), 5)
         #cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 1)
     else:
         cv2.rectangle(frame, (det[0], det[1]), (int(det[2]), int(det[3])), c, 2)
 
-    #cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), c, -1)
-    #cv2.rectangle(frame, (label_offsetx, det[1]-20), (label_offsetx+len(name)*10, det[1]), (0, 0, 0), 1)
-    #cv2.putText(frame, name, (label_offsetx+5, det[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    offsety = 20
+    cv2.rectangle(frame, (label_offsetx, det[1]-20+offsety), (label_offsetx+len(name)*10, det[1]+offsety), c, -1)
+    cv2.rectangle(frame, (label_offsetx, det[1]-20+offsety), (label_offsetx+len(name)*10, det[1]+offsety), (0, 0, 0), 1)
+    cv2.putText(frame, name, (label_offsetx+5, det[1]-5+offsety), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
 
     return frame
 
@@ -222,7 +225,7 @@ def draw_pose(frame, person):
             pt1 = person[pt1_i]
             pt2 = person[pt2_i]
 
-            if pt1[2] < 0.05 or pt2[2] < 0.05:
+            if pt1[2] < 0.05 or pt2[2] < 0.1:
                 continue
 
             a = np.array([[[i*20, 255, 255]]], dtype=np.uint8)
@@ -232,18 +235,18 @@ def draw_pose(frame, person):
             cv2.circle(frame, (int(pt2[0]), int(pt2[1])), 5, col, -1)
             cv2.line(frame, (int(pt1[0]), int(pt1[1])), (int(pt2[0]), int(pt2[1])), col, 2)
             
-def visualize(frame, summ, draw_objects=True):
+def visualize(frame, summ, draw_objects=True, obj_thresh=0.95):
     for result in summ["detections"]:
         if not draw_objects and result["label"] != "person":
                 continue
 
-        if result["confidence"] < 0.95:
+        if result["confidence"] < obj_thresh:
             continue
 
         draw_object(frame, result)
         
-    #for person in summ["pose"]["body"]:
-    #    draw_pose(frame, person)
+    for person in summ["pose"]["body"]:
+        draw_pose(frame, person)
             
     """
     for person in summ["pose"]["face"]:
